@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-use lib "../../../Perl/perl_modules";
 use CGI;
 use DBI;
 use HTML::Template;
@@ -23,6 +22,7 @@ use fields (
 	'MyUrl',         # url of this script
 	'PhaTable',      # "phasen" table
 	'PhaUserTable',  # "phasen benutzer" table
+	'ProjectTmpl',   # project template
 	'ProTable',      # "projekt" table
 	'ProPhaTable',   # "projekte phasen" table
 	'SessDir',       # session directory
@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -72,6 +72,7 @@ sub handler {
 		MyUrl         => undef,
 		PhaTable      => $wbp_config::CONFIG->{PhaTable},
 		PhaUserTable  => $wbp_config::CONFIG->{PhaUserTable},
+		ProjectTmpl   => $wbp_config::CONFIG->{ProjectTmpl},
 		ProTable      => $wbp_config::CONFIG->{ProTable},
 		ProPhaTable   => $wbp_config::CONFIG->{ProPhaTable},
 		SessDir       => $wbp_config::CONFIG->{SessDir},
@@ -135,7 +136,7 @@ sub handler {
 	if ($@) {
 		warn "Can't create class [$param]";
 		warn "[Error] $@";
-		$self->fatal_error();
+		$self->fatal_error;
 	}
 
 	if ($class->can("parameter")) {
@@ -143,7 +144,7 @@ sub handler {
 		if ($@) {
 			warn "Can't execute method parameter in class [$param]";
 			warn "[Error] $@";
-			$self->fata_error;
+			$self->fatal_error;
 		}
 	} else {
 		warn "No parameter method in class [$param]";
@@ -193,7 +194,7 @@ sub _output {
 	print "Content-type: text/html\n\n";
 
 	unless (-r "$self->{TmplDir}/$self->{Template}") {
-		warn "Template [$self->{Template}] not found or readable";
+		warn "[Error]: Template [$self->{Template}] not found or readable";
 		$self->_template_error($self->{Template});
 	}
 
@@ -217,7 +218,13 @@ sub fatal_error {
 	my $msg  = shift;
 	
 	$self->{Template}      = $self->{ErrorTmpl}; 
-	$self->{TmplData}{MSG} = $self->decode_all($msg) if $msg;
+	
+	if (defined $msg) {
+		$self->{TmplData}{MSG} = $self->decode_all($msg);
+	} else {
+		$self->{TmplData}{MSG} = $self->decode_all("Es ist ein unbekannter Fehler aufgetreten.");
+	}
+
 	$self->_output;
 	exit;
 }
@@ -278,8 +285,26 @@ sub my_url {
 					$self->{ScriptName}, 
 					$self->{Action});
 	}
+	
 	return $self->{MyUrl};
 } 
+
+#====================================================================================================#
+# SYNOPSIS: $instance->fill_header();
+# PURPOSE:  Fills out the normal header.
+# RETURN:   true.
+#====================================================================================================#
+sub fill_header {
+
+	my $self = shift;
+	
+	$self->{TmplData}{FIRSTNAME} = $self->decode_all($self->{UserFirstName});
+	$self->{TmplData}{LASTNAME}  = $self->decode_all($self->{UserLastName});
+	$self->{TmplData}{LOGOUT}    = sprintf($self->{ScriptName}."?action=%s&sid=%s&method=logout",
+						$self->{DefaultMode}, $self->{Sid});
+
+	1;
+}
 
 #====================================================================================================#
 # SYNOPSIS: $instance->decode_all();
@@ -325,6 +350,18 @@ sub decode_some {
 	$value =~ s/>/&gt;/g;
 
 	return $value;
+}
+
+#====================================================================================================#
+# SYNOPSIS: $instance->DESTROY();
+# PURPOSE:  "Clears the ground here", disconnect and so one ...
+# RETURN:   true.
+#====================================================================================================#
+sub DESTROY {
+
+	my $self = shift;
+
+	$self->{DbHandle}->disconnect if $self->{DbHandle};
 }
 
 1;

@@ -1,4 +1,24 @@
 #====================================================================================================#
+*** 20.05.2001 ***
+Sören Wurch
+
+- project_config angelegt
+- Session.pm geaendert
+- start.tmpl erweitert
+- project.tmpl angelegt
+- header.tmpl angelegt
+- footer.tmpl angelegt
+- wbp.cgi
+	* fill_header angelegt
+	* Funktion DESTROY angelegt
+- wbp_config.pm
+	* require fuer persoehnlcihe Config angelegt
+- my_config.pm angelgt
+	* hier werden persoehnliche Daten gespeichert, wie
+	  Passwoerter oder so, jeweils passend zur jeweiligen
+	  Entwicklungsumgebung. (Muss jeder selbst anlegen und
+	  verwalten.)
+#====================================================================================================#
 *** 17.05.2001 ***
 Sören Wurch
 

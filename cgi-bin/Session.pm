@@ -10,7 +10,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 sub new {
  
@@ -61,15 +61,18 @@ sub start_session {
 sub kill_session {
 
 	my $self = shift;
+	my $sid  = shift || undef;
+
+	$sid = $self->{Sid} unless ($sid);
 
 	my (%sessions, $dir_file, $pag_file);
 
-	$dir_file = sprintf("%s/%s.dir", $self->{SessDir}, $self->{Sid});
-	$pag_file = sprintf("%s/%s.pag", $self->{SessDir}, $self->{Sid});
+	$dir_file = sprintf("%s/%s.dir", $self->{SessDir}, $sid);
+	$pag_file = sprintf("%s/%s.pag", $self->{SessDir}, $sid);
 
 	dbmopen %sessions, sprintf("%s/%s", $self->{SessDir}, $self->{SessFile}), 0644 
 	or die "Can't open session file. Reason: $!";
-		delete $sessions{$self->{Sid}};
+		delete $sessions{$sid};
 	dbmclose %sessions;
 
 	unlink $dir_file if (-e $dir_file);
