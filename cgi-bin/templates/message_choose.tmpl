@@ -5,39 +5,123 @@
 
 <hr size="1" noshade width="80%">
 
-<TMPL_INCLUDE message_nav.tmpl>
-
-<p><div align="center"><font color="#ff0000"><TMPL_VAR GROUP></font></p>
-
-<table cellspacing="0" cellpadding="5" border="0" align="center">
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
 <tr>
-<th>Groups</th><th><TMPL_VAR GROUP></th>
-</tr>
-<tr>
-<td>
-<TMPL_LOOP GROUPS_LOOP>
-<a href="<TMPL_VAR GROUP_LINK>"><TMPL_VAR GROUP_NAME></a><br>
-</TMPL_LOOP>
-</td>
-<td valign="top">
+<td align="center">
 
-<TMPL_IF MEMBERS_LOOP>
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+Benutzer hinzuf&uuml;gen
+<hr size="1" noshade width="80%">
 <table cellspacing="0" cellpadding="0" border="0" align="center">
-<TMPL_LOOP MEMBERS_LOOP>
 <tr>
-<td><TMPL_IF RECEIVER><b>TO:</b><TMPL_ELSE>-&nbsp;</TMPL_IF></td>
-<td><a href="<TMPL_VAR MEMBER_LINK>"><TMPL_VAR MEMBER_NAME></a></td>
+	<td>Typ A/B</td><td>Typ C</td><td>Typ D</td><td>&nbsp;</td>
+</tr>
+<tr>
+	<td><select name="user" size="1">
+	<option value="0">Ausw&auml;hlen
+	<TMPL_LOOP TYPE_AB_LOOP>
+	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
+	</TMPL_LOOP>
+	</select>
+	</td>
+
+	<td><select name="user" size="1">
+	<option value="0">Ausw&auml;hlen
+	<TMPL_LOOP TYPE_C_LOOP>
+	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
+	</TMPL_LOOP>
+	</select>
+	</td>
+
+	<td><select name="user" size="1">
+	<option value="0">Ausw&auml;hlen
+	<TMPL_LOOP TYPE_D_LOOP>
+	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
+	</TMPL_LOOP>
+	</select>
+	</td>
+
+	<td><input type="submit" name="add_recv_users" value="Hinzuf&uuml;gen"></td>
+</tr>
+</table>
+
+</td></tr>
+<tr><td>
+
+<hr size="1" noshade>
+
+</td></tr>
+<tr><td align="center">
+Projekt hinzuf&uuml;gen
+<hr size="1" noshade width="80%">
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+	<td><select name="project" size="1">
+	<option value="0">Ausw&auml;hlen
+	<TMPL_LOOP PROJECT_LOOP>
+	<option value="<TMPL_VAR PROJECT_ID>"><TMPL_VAR PROJECT_NAME>
+	</TMPL_LOOP>
+	</select>
+	</td>
+
+	<td><input type="submit" name="add_recv_project" value="Hinzuf&uuml;gen"></td>
+</tr>
+</table>
+
+
+</td></tr>
+<tr><td>
+
+
+<hr size="1" noshade>
+
+</td></tr>
+<tr><td align="center">
+
+Empf&auml;nger entfernen
+<hr size="1" noshade width="80%">
+<table cellspacing="0" cellpadding="0" border="0" align="center" bgcolor="#b0b0b0">
+<TMPL_IF RECV_LOOP>
+<TMPL_LOOP RECV_LOOP>
+<tr>
+	<td><input type="checkbox" name="remove_receivers" value="<TMPL_VAR RECV_UID>"></td>
+	<td><input type="hidden" name="recv" value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME></td>
 </tr>
 </TMPL_LOOP>
-</table>
-</TMPL_IF>
 
-</td>
+<tr>
+	<td colspan="2"><input type="submit" name="remove_recv_users" value="Entfernen"></td>
 </tr>
+<TMPL_ELSE>
+	<tr><td>Keine Empf&auml;nger</td></tr>
+</TMPL_IF>
 </table>
 
-<TMPL_INCLUDE message_nav.tmpl>
+
+</td></tr>
+<tr><td>
+
+
+<hr size="1" noshade>
+
+
+</td></tr>
+<tr><td align="center">
+
+
+<input type="submit" name="back" value="Zur&uuml;ck">
+</form>
+
+
+
+</td></tr>
+</table>
+
+
 
 <hr size="1" noshade width="80%">
+
 
 <TMPL_INCLUDE footer.tmpl>

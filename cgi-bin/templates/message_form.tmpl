@@ -16,25 +16,25 @@
 <p>
 <table cellspacing="0" cellpadding="5" border="0" width="80%" align="center" bgcolor="#b0b0b0">
 <tr>
-	<td><b>To:</b><br>
-	<input type="text" name="to_usernames" size="40" value="<TMPL_VAR TO_USERNAMES>"></td>
+	<td><b>An:</b><br>
+	<textarea name="to_usernames" rows="2" cols="40" wrap="virtual"><TMPL_VAR TO_USERNAMES></textarea>
+	</td>
 	<td valign="top" rowspan="2">
-	<b>To:</b><br>
-	<TMPL_IF ANSWERMODE>
-		<input type=radio name="answermode" value="sender_only" checked>Sender only<br>
-		<input type=radio name="answermode" value="all">All receivers<br>
-		<input type=radio name="answermode" value="choose"><input type="submit" name="choose_receivers" value="Empfänger Auswählen">
-	<TMPL_ELSE>
+	<br>
 	<input type="submit" name="choose_receivers" value="Empfänger Auswählen">
+	<TMPL_IF ANSWERMODE>
+	<b>Antwort an:</b><br>
+		<input type="checkbox" name="answermode_sender" value="1" <TMPL_IF SENDER_CHECKED>checked</TMPL_IF>>Absender<br>
+		<input type="checkbox" name="answermode_all" value="1" <TMPL_IF ALL_CHECKED>checked</TMPL_IF>>Empf&auml;nger<br>
 	</TMPL_IF>
 	</td>
 </tr>
 <tr>
-	<td><b>Subject:</b><br>
+	<td><b>Betreff:</b><br>
 	<input type="text" name="subject" size="40" maxlength="255" value="<TMPL_VAR MESSAGE_SUBJECT>"></td>
 </tr>
 <tr>
-	<td colspan="2"><b>Content:</b><br>
+	<td colspan="2"><b>Text:</b><br>
 	<textarea name="content" rows="10" cols="60" wrap="virtual"><TMPL_VAR MESSAGE_CONTENT></textarea></td>
 </tr>
 <tr>

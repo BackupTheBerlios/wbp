@@ -8,7 +8,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -70,12 +70,18 @@ sub parameter {
 	} elsif (defined $cgi->param('choose_receivers')) {
 	    $self->choose_receivers();
 	    return 1;
-	} elsif (defined $cgi->param('spy_harddisk')) {
-
-	} elsif (defined $cgi->param('spread_virus')) {
-
-	} elsif (defined $cgi->param('surprise...')) {
-
+	} elsif (defined $cgi->param('back')) {
+	    $self->compose_message();
+	    return 1;
+	} elsif (defined $cgi->param('add_recv_users')) {
+	    $self->add_recv_users();
+	    return 1;
+	} elsif (defined $cgi->param('add_recv_project')) {
+	    $self->add_recv_project();
+	    return 1;
+	} elsif (defined $cgi->param('remove_recv_users')) {
+	    $self->remove_recv_users();
+	    return 1;
 	}
     }
 
@@ -267,11 +273,27 @@ sub show_message {
 
     $mgr->{TmplData}{MESSAGE_DATE} = $mgr->format_date($message[5]);
 
+
+    # Alle Empfaenger anzeigen
+    my @receiver_loop;
+    my @receivers = $self->{BASE}->fetch_receiver($mid);
+    if (@receivers) {
+	foreach my $uid (@receivers) {
+	    my %tmp;
+	    # Namen des Mitglieds bestimmen
+	    my @user = $self->{BASE}->get_user($uid);
+	    $tmp{RECEIVER_NAME} =
+		$mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+	    push(@receiver_loop,\%tmp);
+	}
+	$mgr->{TmplData}{MESSAGE_RECEIVERS_LOOP} = \@receiver_loop;
+    }
+
     # Namen des Absenders bestimmen
     my @user = $self->{BASE}->get_user($message[1]);
     $mgr->{TmplData}{MESSAGE_SENDER} =
 	$mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
-
+    
     $mgr->{TmplData}{MESSAGE_SUBJECT} = $mgr->decode_all($message[6]);
     $mgr->{TmplData}{MESSAGE_CONTENT} = $mgr->decode_all($message[7]);
     $link = $mgr->my_url;
@@ -316,19 +338,30 @@ sub show_send_message {
 	my @parent_send = $self->{BASE}->get_send_message($message[1]);
 	my @parent = $self->{BASE}->get_message($message[1]);
 	if (@parent_send) {
-	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_send_message", $message[3]);
+	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_send_message", $message[1]);
 	    $mgr->{TmplData}{PARENT_SUBJECT} =  $mgr->decode_all($parent_send[3]);
 	} elsif (@parent) {
-	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_message", $message[3]);
+	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_message", $message[1]);
 	    $mgr->{TmplData}{PARENT_SUBJECT} =  $mgr->decode_all($parent[6]);
 	} 
     }
 
     $mgr->{TmplData}{MESSAGE_DATE} = $mgr->format_date($message[2]);
 
-    # Alle Empfaenger bestimmen
-    my @uid = $self->{BASE}->fetch_receiver($message[0]);
-    # ...HIER FEHLT NOCH WAS
+    # Alle Empfaenger anzeigen
+    my @receiver_loop;
+    my @receivers = $self->{BASE}->fetch_receiver($mid);
+    if (@receivers) {
+	foreach my $uid (@receivers) {
+	    my %tmp;
+	    # Namen des Mitglieds bestimmen
+	    my @user = $self->{BASE}->get_user($uid);
+	    $tmp{RECEIVER_NAME} =
+		$mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+	    push(@receiver_loop,\%tmp);
+	}
+	$mgr->{TmplData}{MESSAGE_RECEIVERS_LOOP} = \@receiver_loop;
+    }
 
 
     $mgr->{TmplData}{MESSAGE_SUBJECT} = $mgr->decode_all($message[3]);
@@ -357,11 +390,25 @@ sub compose_message {
     my $mgr = $self->{MGR};
     my $cgi = $self->{MGR}->{CGI};
  
-    my $uid = $cgi->param('uid');
     my $parent_mid = $mgr->{Session}->get("ParentMid") || $cgi->param('parent_mid') || 0;
-    my $to_usernames = $cgi->param('to_usernames') || "";
+    my $to_usernames = $mgr->{Session}->get("ToUsernames") || "";
     my $subject = $mgr->{Session}->get("Subject") || $cgi->param('subject') || "";
     my $content = $mgr->{Session}->get("Content") || $cgi->param('content') || "";
+    my $answermode_sender = $mgr->{Session}->get("AnswerModeSender") || 0;
+    my $answermode_all = $mgr->{Session}->get("AnswerModeAll") || 0;
+    $mgr->{Session}->del("AnswerModeSender");
+    $mgr->{Session}->del("AnswerModeAll");
+
+
+    my @recv = $cgi->param('recv');
+    if (@recv) {
+	my @usernames;
+	foreach my $uid (@recv) {
+	    my @user = $self->{BASE}->get_user($uid);
+	    push(@usernames, $user[2]);
+	}
+	$to_usernames = join(',',@usernames);
+    }
 
     # MessageNew-Template (Formular) vorbereiten
     $mgr->{Template} = $C_TMPL->{MessageForm};
@@ -374,6 +421,14 @@ sub compose_message {
     if ($parent_mid != 0) {
 	$mgr->{TmplData}{ANSWERMODE} = 1;
     }
+
+    if ($answermode_sender == 1) {
+	$mgr->{TmplData}{SENDER_CHECKED} = 1;
+    }
+    if ($answermode_all == 1) {
+	$mgr->{TmplData}{ALL_CHECKED} = 1;
+    }
+
 
     $self->fill_nav;
 
@@ -392,103 +447,283 @@ sub compose_message {
 sub choose_receivers {
     my $self = shift;
 
+    my $msg = shift || undef;
+    my $recv_ids = shift || undef;
+
     my $mgr = $self->{MGR};
     my $cgi = $self->{MGR}->{CGI};
-
-    my $grp = $cgi->param('grp') || 'textfield';
+    
     my $parent_mid = $cgi->param('parent_mid') || 0;
     my $subject = $cgi->param('subject') || "";
     my $content = $cgi->param('content') || "";
+    my $to_usernames = $cgi->param('to_usernames') || "";
+    my $answermode_all = $cgi->param('answermode_all') || 0;
+    my $answermode_sender = $cgi->param('answermode_sender') || 0;
+
+    # Whitespaces entfernen, Kommaliste trennen
+    $to_usernames =~ s/\s+//gs;
+    my @usernames = split /,+/, $to_usernames;
+    my $id = $self->{BASE}->fetch_uids(\@usernames) || undef;
 
     # Message in die Session schreiben
-    $mgr->{Session}->set(ParentMid => $parent_mid,
-			 Subject => $subject,
-			 Content => $content);
+    $mgr->{Session}->set('ParentMid' => $parent_mid,
+			 'Subject' => $subject,
+			 'Content' => $content,
+			 'AnswerModeAll' => $answermode_all,
+			 'AnswerModeSender' => $answermode_sender);
 
     # MessageChooseRecv-Template vorbereiten
     $mgr->{Template} = $C_TMPL->{MessageChooseRecv};
-
-    my @group_loop;
-    my @members_loop;
-
+   
     my $link = $mgr->my_url;
-    $link .= "&%s=&grp=%s";
+    
+    # Anzeige der Empfaenger
+    my @recv_loop;
+    my @recv;
 
-    # statische Gruppen, z.B. Textfield, Alle User, ... etc.
-    my @default_groups;
-    $default_groups[0] = ['textfield','Textfield'];
-    $default_groups[1] = ['all','All Users'];
-
-    foreach my $group (@default_groups) {
-	my %tmp;
-	$tmp{GROUP_LINK} = $mgr->decode_all(sprintf($link, "choose_receivers",$group->[0]));
-	$tmp{GROUP_NAME} = $mgr->decode_all($group->[1]);
-	push(@group_loop,\%tmp);
-	# diese Gruppe wurde angewaehlt
-	if ($grp eq $group->[0]) {
-	    $mgr->{TmplData}{GROUP} = $group->[1];
-	}
-    }	
-
-    # Projektgruppen kommen dazu
-    my @groups = $self->{BASE}->fetch_projects();
-    # Es wurden Projekte gefunden
-    if (@groups) {	
-	foreach my $group (@groups) {
-	    my %tmp;
-	    $tmp{GROUP_LINK} = $mgr->decode_all(sprintf($link, "choose_receivers",$group->[0]));
-	    $tmp{GROUP_NAME} = $mgr->decode_all($group->[1]);
-	    push(@group_loop,\%tmp);
-	    # diese Gruppe wurde angewaehlt
-	    if ($grp eq $group->[0]) {
-		$mgr->{TmplData}{GROUP} = $group->[1];
-	    }
-	}
-
+    if (defined $id) {
+	push(@recv, @$id);
+    }
+    if (defined $recv_ids) {
+	push(@recv, @$recv_ids);
     }
 
-    # Gruppen zur Auswahl anbieten
-    $mgr->{TmplData}{GROUPS_LOOP} = \@group_loop;
-
-    # IDs der Gruppenmitglieder bestimmen
-    my $members = undef;
-
-    if ($grp eq 'textfield') {
-	# User aus dem Textfeld
-	my $to_usernames = $cgi->param('to_usernames') || "";
-	# Whitespaces entfernen, Kommaliste trennen
-	$to_usernames =~ s/\s+//gs;
-	my @usernames = split /,+/, $to_usernames;
-	$members = $self->{BASE}->fetch_uids(\@usernames);
-    } elsif ($grp eq 'all') {
-	$members = $self->{BASE}->fetch_users(1);
-    } else {
-	$members = $self->{BASE}->fetch_project_members($grp);
+    my @recv_new;
+    my $count;
+    foreach my $uid (@recv) {
+	$count = grep { $uid == $_} @recv_new;
+	if ($count == 0) {
+	    push (@recv_new,$uid);
+	}
     }
 
     # Jedes Mitglied kommt in den Loop
-    if (@$members) {
-	foreach my $member (@$members) {
+    if (@recv_new) {
+	foreach my $uid (@recv_new) {
 	    my %tmp;
 	    # Namen des Mitglieds bestimmen
-	    my @user = $self->{BASE}->get_user($member);
-	    $tmp{MEMBER_NAME} =
+	    my @user = $self->{BASE}->get_user($uid);
+	    $tmp{RECV_NAME} =
 		$mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
-	    $tmp{MEMBER_LINK} = $mgr->decode_all(sprintf($link, "add_receivers",$member));
+	    $tmp{RECV_UID} = $mgr->decode_all($uid);
 
-	    push(@members_loop,\%tmp);
+	    push(@recv_loop,\%tmp);
+	}
+    }
+
+    $mgr->{TmplData}{RECV_LOOP} = \@recv_loop;
+
+
+    # Auswahl der Benutzer
+    my @type_ab_loop;
+    my @type_c_loop;
+    my @type_d_loop;
+
+    # Auswahl des A_User
+    # fetcht aktive Typ-A Benutzer
+    my $a_user = $self->{BASE}->fetch_users(1,'A');
+    if (@$a_user) {
+	foreach my $uid (@$a_user) {
+	    my $count = grep { $uid == $_} @recv_new;
+	    if ($count == 0) {
+		my %tmp;
+		# Namen des A bestimmen
+		my @user = $self->{BASE}->get_user($uid);
+		$tmp{RECV_NAME} =
+		    $mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+		$tmp{RECV_UID} = $mgr->decode_all($uid);
+
+		push(@type_ab_loop,\%tmp);
+	    }
+	}
+    }
+
+    # Auswahl der B_User
+    # fetcht aktive Typ-B Benutzer
+    my $b_users = $self->{BASE}->fetch_users(1,'B');
+    # Jedes Mitglied kommt in den Loop
+    if (@$b_users) {
+	foreach my $uid (@$b_users) {
+	    my $count = grep { $uid == $_} @recv_new;
+	    if ($count == 0) {
+		my %tmp;
+		# Namen des Benutzers bestimmen
+		my @user = $self->{BASE}->get_user($uid);
+		$tmp{RECV_NAME} =
+		    $mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+		$tmp{RECV_UID} = $mgr->decode_all($uid);
+
+		push(@type_ab_loop,\%tmp);
+	    }
 	}
 
 	# Gruppenmitglieder anzeigen
-	$mgr->{TmplData}{MEMBERS_LOOP} = \@members_loop;
+	$mgr->{TmplData}{TYPE_AB_LOOP} = \@type_ab_loop;
     }
 
-    $self->fill_nav;
-    
-    $mgr->fill;
-    
-    return 1;
+    # Auswahl der C_User
+    # fetcht aktive Typ-C Benutzer
+    my $c_users = $self->{BASE}->fetch_users(1,'C');
+    # Jedes Mitglied kommt in den Loop
+    if (@$c_users) {
+	foreach my $uid (@$c_users) {
+	    my $count = grep { $uid == $_} @recv_new;
+	    if ($count == 0) {
+		my %tmp;
+		# Namen des Benutzers bestimmen
+		my @user = $self->{BASE}->get_user($uid);
+		$tmp{RECV_NAME} =
+		    $mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+		$tmp{RECV_UID} = $mgr->decode_all($uid);
+		
+		push(@type_c_loop,\%tmp);
+	    }
+	}
+
+	# Gruppenmitglieder anzeigen
+	$mgr->{TmplData}{TYPE_C_LOOP} = \@type_c_loop;
+    }
+
+
+    # Auswahl der D_User
+    # fetcht aktive Typ-D Benutzer
+    my $d_users = $self->{BASE}->fetch_users(1,'D');
+    # Jedes Mitglied kommt in den Loop
+    if (@$d_users) {
+	foreach my $uid (@$d_users) {
+	    my $count = grep { $uid == $_} @recv_new;
+	    if ($count == 0) {
+		my %tmp;
+		# Namen des Benutzers bestimmen
+		my @user = $self->{BASE}->get_user($uid);
+		$tmp{RECV_NAME} =
+		    $mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+		$tmp{RECV_UID} = $mgr->decode_all($uid);
+		
+		push(@type_d_loop,\%tmp);
+	    }
+	}
+
+	# Gruppenmitglieder anzeigen
+	$mgr->{TmplData}{TYPE_D_LOOP} = \@type_d_loop;
+    }
+
+    # Auswahl der Projekte
+    my @project_loop;
+
+    my @projects = $self->{BASE}->fetch_projects();
+    # Es wurden Projekte gefunden
+    if (@projects) {	
+	foreach my $project (@projects) {
+	    my %tmp;
+	    $tmp{PROJECT_ID} = $project->[0];
+	    $tmp{PROJECT_NAME} = $mgr->decode_all($project->[1]);
+	    push(@project_loop,\%tmp);
+	}
+    }
+
+    $mgr->{TmplData}{PROJECT_LOOP} = \@project_loop;
+
+
+
+    $mgr->{TmplData}{FORM} = $mgr->my_url();
+
+    if (defined $msg) {
+	$mgr->fill($msg);
+    } else {
+	$mgr->fill();
+    }
+
+    return;
 }
+
+
+
+#====================================================================================================#
+# SYNOPSIS: add_recv_users();
+# PURPOSE:  Hinzufuegen der Empfaenger
+# RETURN:   ---
+#====================================================================================================#
+sub add_recv_users {
+    my $self = shift;
+
+    my $mgr = $self->{MGR};
+    my $cgi = $self->{MGR}->{CGI};
+
+    my @uid = $cgi->param('user');
+    my @recv = $cgi->param('recv');
+    my $users = undef;
+    foreach my $id (@uid) {
+	unless ($id == 0) {
+	    push(@$users,$id);
+	}
+    }
+  if (defined $users) {
+	push(@recv, @$users);
+	my @u = @$users;
+	$self->choose_receivers(sprintf($C_MSG->{UsersAdded},1 + $#u),\@recv);
+    } else {
+	$self->choose_receivers($C_MSG->{NoSelection},\@recv);
+    }
+}
+
+#====================================================================================================#
+# SYNOPSIS: add_recv_project();
+# PURPOSE:  Hinzufuegen eines Projektes
+# RETURN:   ---
+#====================================================================================================#
+sub add_recv_project {
+    my $self = shift;
+
+    my $mgr = $self->{MGR};
+    my $cgi = $self->{MGR}->{CGI};
+
+    my $pid = $cgi->param('project') || 0;
+    my @recv = $cgi->param('recv');
+    if ($pid == 0) {
+	$self->choose_receivers($C_MSG->{NoSelection},\@recv);
+    } else {
+	my $members = $self->{BASE}->fetch_project_members($pid);
+	my $name = $self->{BASE}->get_project_name($pid);
+	$members = [1,2,3,4];
+	push(@recv, @$members);
+	$self->choose_receivers(sprintf($C_MSG->{ProjectAdded},$name),\@recv);
+    }
+}
+
+
+
+#====================================================================================================#
+# SYNOPSIS: remove_recv_users();
+# PURPOSE:  Entfernen von Empfaengern
+# RETURN:   ---
+#====================================================================================================#
+sub remove_recv_users {
+    my $self = shift;
+
+    my $mgr = $self->{MGR};
+    my $cgi = $self->{MGR}->{CGI};
+    my @remove = $cgi->param('remove_receivers');
+    my @recv = $cgi->param('recv');
+    if (@remove) {
+	my @recv_new;
+	my $count;
+	foreach my $uid (@recv) {
+	    $count = grep { $uid == $_} @remove;
+	    if ($count == 0) {
+		push (@recv_new,$uid);
+	    }
+	}
+	$self->choose_receivers(sprintf($C_MSG->{UsersRemoved},1+$#remove),\@recv_new);
+    } else {
+	$self->choose_receivers($C_MSG->{NoSelection},\@recv);
+    }
+}
+
+
+
+
+
 
 
 
@@ -506,16 +741,55 @@ sub send_message {
         my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
 
-        my @uid = $cgi->param('uid') || undef;
-	my $to_usernames = $cgi->param('to_usernames') || "";
-	my $parent_mid = $cgi->param('parent_mid') || 0;
-        my $subject = $cgi->param('subject') || "no subject";
-        my $content = $cgi->param('content') || "no content";
+	my $parent_mid        = $cgi->param('parent_mid')   || 0;
+	my $to_usernames      = $cgi->param('to_usernames') || "";
+	my $subject           = $cgi->param('subject')      || "";
+	my $content           = $cgi->param('content')        || "";
+	my $answermode_all    = $cgi->param('answermode_all') || 0;
+	my $answermode_sender = $cgi->param('answermode_sender') || 0;
+
+	$mgr->{Session}->del("ParentMid");
+	$mgr->{Session}->del("ToUsernames");
+	$mgr->{Session}->del("Subject");
+	$mgr->{Session}->del("Content");
+	$mgr->{Session}->del("AnswerModeSender");
+	$mgr->{Session}->del("AnswerModeAll");
 
 	# Whitespaces entfernen, Kommaliste trennen
 	$to_usernames =~ s/\s+//gs;
 	my @usernames = split /,+/, $to_usernames;
 	my $id = $self->{BASE}->fetch_uids(\@usernames);
+
+	if ($answermode_sender == 1) {
+	    # empfangene Parent-Message holen
+	    my @message = $self->{BASE}->get_message($parent_mid);
+	    # Es existiert eine Message
+	    if (@message) {
+		# Sender ermitteln
+		my $sender_id = $message[1];
+		my $count = grep { $sender_id == $_} @$id;
+		# Sender ist noch nicht in der Liste der Empfaenger
+		if ($count == 0) {
+		    push(@$id, $sender_id);
+		}
+	    }
+	}
+
+	if ($answermode_all == 1) {
+	    # Alle Empfaenger bestimmen
+	    my @all = $self->{BASE}->fetch_receiver($parent_mid);
+	    # Es gibt Empfaenger
+	    if (@all) {
+		foreach my $uid (@all) {
+		    my $count = grep { $uid == $_} @$id;
+		    # Empfaenger der Parent_message ist noch nicht in der Liste der Empfaenger
+		    if ($count == 0) {
+			push(@$id, $uid);
+		    }
+		}
+	    }
+	}
+
 	my $mid = $self->{BASE}->insert_new_messages($id, $parent_mid, $subject, $content);
 
 	# gleich ansehen
@@ -546,5 +820,29 @@ sub fill_nav {
     return;
 }
 
+
+
+
 1;
 # end of file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

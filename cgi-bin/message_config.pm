@@ -2,7 +2,7 @@ package message_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
 
 $MSG = {
     NoMessages     => "Sie haben keine Nachrichten.", # unused
@@ -17,6 +17,10 @@ $MSG = {
     SendMessages    => "Sie haben %s Nachrichten versandt.", # plural
     Unknownerror   => "Es ist ein unbekannter Fehler aufgetreten.",
     NoSuchMsgError => "Nachricht konnte nicht gefunden werden.",
+    NoSelection => "Keine Aenderung, da keine Auswahl vorgenommen wurde.",
+    ProjectAdded => "Mitglieder von Projekt %s wurden aufgenommen.",
+    UsersAdded => "%s Benutzer aufgenommen.",
+    UsersRemoved => "%s Benutzer entfernt.",
     DbError        => "Es ist ein Fehler mit der Datenbank aufgetreten.",
     NoSubject      => "Sie haben kein Betreff angegeben."
 };

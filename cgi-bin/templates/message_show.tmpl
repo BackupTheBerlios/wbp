@@ -30,6 +30,19 @@
 	</td>
 </tr>
 </TMPL_IF>
+<TMPL_IF MESSAGE_RECEIVERS_LOOP>
+<tr>
+	<td>Empf&auml;nger</td>
+	<td><form>
+	<select name="dummy" size="1">
+	<TMPL_LOOP MESSAGE_RECEIVERS_LOOP>
+	<option><TMPL_VAR RECEIVER_NAME>
+	</TMPL_LOOP>
+	</select>
+	</form>
+	</td>
+</tr>
+</TMPL_IF>
 <tr>
 	<td>Betreff</td>
 	<td>
