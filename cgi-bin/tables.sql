@@ -26,7 +26,7 @@ create table wbp_user (
 );
 
 insert into wbp_user (username, password, firstname, lastname, email, type, status, desc_user, ins_dt, ins_id) values
-		     ('admin', 'test', 'Testie', 'Testtest', 'test@test.de', 'A', '1', 'den gibs nur einmal ...', 
+		     ('admin', 'test', 'Testie', 'Labba', 'test@test.de', 'A', '1', 'den gibs nur einmal ...', 
 		      '2001-03-14 12:15:20', '1');
 
 create table wbp_project (
