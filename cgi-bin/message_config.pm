@@ -2,7 +2,7 @@ package message_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
 
 $MSG = {
     NoMessages     => "Sie haben keine Nachrichten.", # unused
