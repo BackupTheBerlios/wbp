@@ -1,0 +1,74 @@
+
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
+<tr>
+    <td colspan="2">
+	<hr size="1" noshade>
+    </td>
+</tr>
+<tr>
+    <td align="left">
+        <h3>neuer User:</h3>
+    </td>
+    <td align="left">
+	<TMPL_IF A_USER>
+	    <select name="type">
+		<option value="B">Typ B
+    		<option value="C">Typ C
+		<option value="D">Typ D
+	    </select>
+	<TMPL_ELSE>
+	    <select name="type">
+		<option value="typd">Typ D
+	    </select>
+	</TMPL_IF>
+	<input type="submit" name="add" value="anlegen">
+    </td>
+</tr>
+<tr>
+    <td colspan="2">
+	<hr size="1" noshade>
+    </td>
+</tr>
+<tr>
+    <td align="left">
+	<h3>User suchen:</h3>
+    </td>
+    <td>
+        <table cellspacing="0" cellpadding="0" border="0" align="left">
+	    <tr>
+		<td>
+		    <b>Username:</b>
+		</td>
+		<td>
+		    <input type="text" name="username">
+		</td>
+	    </tr>
+	    <tr>
+		<td>
+		    &nbsp;
+		</td>
+		<td>
+		    <input type="submit" name="search" value="suchen">
+		</td
+	    </tr>
+	</table>
+    </td>
+</tr>
+<tr>
+    <td colspan="2">
+	<hr size="1" noshade>
+    </td>
+</tr>
+
+</table>
+
+</form>
+<TMPL_INCLUDE footer.tmpl>

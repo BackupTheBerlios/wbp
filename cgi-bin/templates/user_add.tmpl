@@ -1,7 +1,147 @@
 <TMPL_INCLUDE header.tmpl>
 
+<form action=<TMPL_VAR FORM> method="post">
+
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="type" value="<TMPL_VAR TYPE>">
 
-
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="90%">
+  <tr>
+    <td align="center">
+      <h3><TMPL_VAR OUTPUT></h3>
+      <input type="submit" name="add" value="anlegen">
+    </td>
+    <td>
+      <table cellspacing="0" cellpadding="0" border="0" align="center">
+	<tr>
+		    <td>
+			Username <br>
+		    </td>
+		    <td>
+		        <TMPL_IF USERNAME>
+			    <input type="text" name="username" size=20 maxlength=8 value="<TMPL_VAR USERNAME>">
+			<TMPL_ELSE>
+			    <input type="text" name="username" size=20 maxlength=8>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF USER_ERROR>
+			    <TMPL_VAR USER_ERROR> existiert bereits !
+			</TMPL_IF>
+			<TMPL_IF USERNAME>
+			<TMPL_ELSE>
+			    Bitte geben Sie einen Usernamen ein !
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Password <br>
+		    </td>
+		    <td>
+			<TMPL_IF PASSWORD>
+			    <input type="password" name="password" size=20 maxlength=8 value="<TMPL_VAR PASSWORD>">
+			<TMPL_ELSE>
+			    <input type="password" name="password" size=20 maxlength=8>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF PASSWORD>
+			<TMPL_ELSE>
+			    Bitte geben Sie ein Password ein !
+			</TMPL_IF>
+			<TMPL_IF PASS_ERROR>
+			    Passwort und dessen Best&auml;tigung
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			- Confirm<br>
+		    </td>
+		    <td>
+			<TMPL_IF PASSWORD2>
+			    <input type="password" name="password2" size=20 maxlength=8 value="<TMPL_VAR PASSWORD2>">
+			<TMPL_ELSE>
+			    <input type="password" name="password2" size=20 maxlength=8>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF PASS_ERROR>
+			    stimmen nicht &uuml;berein !
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Vorname <br>
+		    </td>
+		    <td>
+			<TMPL_IF FIRST_NAME>
+			    <input type="text" name="first_name" size=20 maxlength=30 value="<TMPL_VAR FIRST_NAME>">
+			<TMPL_ELSE>
+			    <input type="text" name="first_name" size=20 maxlength=30>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF FIRST_NAME>
+			<TMPL_ELSE>
+			    Bitte geben Sie einen Vornamen ein !
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Nachname <br>
+		    </td>
+		    <td>
+			<TMPL_IF LAST_NAME>
+			    <input type="text" name="last_name" size=20 maxlength=30 value="<TMPL_VAR LAST_NAME>">
+			<TMPL_ELSE>
+			    <input type="text" name="last_name" size=20 maxlength=30>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF LAST_NAME>
+			<TMPL_ELSE>
+			    Bitte geben Sie einen Nachnamen ein !
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+		    	eMail <br>
+		    </td>
+		    <td>
+			<TMPL_IF EMAIL>
+			    <input type="text" name="email" size=20 maxlength=100 value="<TMPL_VAR EMAIL>">
+			<TMPL_ELSE>
+			    <input type="text" name="email" size=20 maxlength=100>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF EMAIL>
+			<TMPL_ELSE>
+			    Bitte geben Sie eine Mail-Adresse ein !
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+		    	Beschreibung <br>
+		    </td>
+		    <td>	
+			<TMPL_IF DESC>
+			    <input type="text" name="desc" size=20 maxlength=100 value="<TMPL_VAR DESC>">
+			<TMPL_ELSE>
+			    <input type="text" name="desc" size=20 maxlength=100>
+			</TMPL_IF>
+		    </td>
+    		</tr>
+      </table>	
+    </td>
+  </tr>        
+</table>
+</form>
 <TMPL_INCLUDE footer.tmpl>

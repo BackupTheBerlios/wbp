@@ -4,23 +4,35 @@
 
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="id" value="<TMPL_VAR ID>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center">
-    <tr>
-	<td>
-	    <h1>User mit ID: <TMPL_VAR ID> wird editiert</h1>
-	</td>
-    </tr>
-
-    <tr>
-    	<td>
-	    <table cellspacing="0" cellpadding="0" border="0" align="center">
-		<tr>
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
+  <tr>
+    <td align="center">
+      <h3><TMPL_VAR OUTPUT><TMPL_VAR ID></h3>
+      <input type="submit" name="ok" value="&uuml;bernehmen">
+    </td>
+    <td>
+      <table cellspacing="0" cellpadding="0" border="0" align="center">
+	<tr>
 		    <td>
 			Username <br>
 		    </td>
 		    <td>
-			<input type=text name="USERNAME" size=20 maxlength=20 value="<TMPL_VAR USERNAME>"><br>
+		        <TMPL_IF USERNAME>
+			    <input type="text" name="username" size=20 maxlength=8 value="<TMPL_VAR USERNAME>">
+			<TMPL_ELSE>
+			    <input type="text" name="username" size=20 maxlength=8>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF USER_ERROR>
+			    <TMPL_VAR USER_ERROR> existiert bereits !
+			</TMPL_IF>
+			<TMPL_IF USERNAME>
+			<TMPL_ELSE>
+			    Bitte geben Sie einen Usernamen ein !
+			</TMPL_IF>
 		    </td>
 		</tr>
 		<tr>
@@ -28,7 +40,37 @@
 			Password <br>
 		    </td>
 		    <td>
-			<input type=password name="PASSWORD" size=20 maxlength=20><br>
+			<TMPL_IF PASSWORD>
+			    <input type="password" name="password" size=20 maxlength=8 value="<TMPL_VAR PASSWORD>">
+			<TMPL_ELSE>
+			    <input type="password" name="password" size=20 maxlength=8>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF PASSWORD>
+			<TMPL_ELSE>
+			    Bitte geben Sie ein Password ein !
+			</TMPL_IF>
+			<TMPL_IF PASS_ERROR>
+			    Passwort und dessen Best&auml;tigung
+			</TMPL_IF>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			- Confirm<br>
+		    </td>
+		    <td>
+			<TMPL_IF PASSWORD2>
+			    <input type="password" name="password2" size=20 maxlength=8 value="<TMPL_VAR PASSWORD2>">
+			<TMPL_ELSE>
+			    <input type="password" name="password2" size=20 maxlength=8>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF PASS_ERROR>
+			    stimmen nicht &uuml;berein !
+			</TMPL_IF>
 		    </td>
 		</tr>
 		<tr>
@@ -36,7 +78,17 @@
 			Vorname <br>
 		    </td>
 		    <td>
-			<input type=text name="FIRSTNAME" size=20 maxlength=20 value="<TMPL_VAR FIRSTNAME>"><br>
+			<TMPL_IF FIRST_NAME>
+			    <input type="text" name="first_name" size=20 maxlength=30 value="<TMPL_VAR FIRST_NAME>">
+			<TMPL_ELSE>
+			    <input type="text" name="first_name" size=20 maxlength=30>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF FIRST_NAME>
+			<TMPL_ELSE>
+			    Bitte geben Sie einen Vornamen ein !
+			</TMPL_IF>
 		    </td>
 		</tr>
 		<tr>
@@ -44,7 +96,17 @@
 			Nachname <br>
 		    </td>
 		    <td>
-			<input type=text name="LASTNAME" size=20 maxlength=20 value="<TMPL_VAR LASTNAME>"><br>
+			<TMPL_IF LAST_NAME>
+			    <input type="text" name="last_name" size=20 maxlength=30 value="<TMPL_VAR LAST_NAME>">
+			<TMPL_ELSE>
+			    <input type="text" name="last_name" size=20 maxlength=30>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF LAST_NAME>
+			<TMPL_ELSE>
+			    Bitte geben Sie einen Nachnamen ein !
+			</TMPL_IF>
 		    </td>
 		</tr>
 		<tr>
@@ -52,34 +114,67 @@
 		    	eMail <br>
 		    </td>
 		    <td>
-			<input type=text name="EMAIL" size=20 maxlength=20 value="<TMPL_VAR EMAIL>"><br>
+			<TMPL_IF EMAIL>
+			    <input type="text" name="email" size=20 maxlength=100 value="<TMPL_VAR EMAIL>">
+			<TMPL_ELSE>
+			    <input type="text" name="email" size=20 maxlength=100>
+			</TMPL_IF>
+		    </td>
+		    <td>
+			<TMPL_IF EMAIL>
+			<TMPL_ELSE>
+			    Bitte geben Sie eine Mail-Adresse ein !
+			</TMPL_IF>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-			Typ <br>
+			    Typ <br>
 		    </td>
 		    <td>
-			<input type=text name="TYPE" size=20 maxlength=20 value="<TMPL_VAR TYPE>"><br>
+		    	<TMPL_IF A_USER_B>
+			    <select name="type">
+				<option value="B" selected>Typ B
+	        		<option value="C">Typ C
+				<option value="D">Typ D
+			    </select>
+			</TMPL_IF>
+			<TMPL_IF A_USER_C>
+			    <select name="type">
+				<option value="B">Typ B
+	        		<option value="C" selected>Typ C
+				<option value="D">Typ D
+			    </select>
+			</TMPL_IF>
+			<TMPL_IF A_USER_D>
+			    <select name="type">
+				<option value="B">Typ B
+	        		<option value="C">Typ C
+				<option value="D" selected>Typ D
+			    </select>
+			</TMPL_IF>
+			<TMPL_IF C_USER>
+			    <select name="type">
+	        		<option value="C" selected>Typ C
+			    </select>
+			</TMPL_IF>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
 		    	Beschreibung <br>
 		    </td>
-		    <td>			
-			<input type=text name="DESC" size=20 maxlength=20 value="<TMPL_VAR DESC>"><br>
+		    <td colspan="2">	
+			<TMPL_IF DESC>
+			    <input type="text" name="desc" size=50 maxlength=100 value="<TMPL_VAR DESC>">
+			<TMPL_ELSE>
+			    <input type="text" name="desc" size=50 maxlength=100>
+			</TMPL_IF>		
 		    </td>
-		</tr>
-	    </table>
-	</td>
-    </tr>
-    <tr>
-	<td>
-	    <input type="submit" name="OK" value="Ok">
-	</td>
-    </tr>
-        
+    		</tr>
+      </table>	
+    </td>
+  </tr>        
 </table>
 </form>
 <TMPL_INCLUDE footer.tmpl>

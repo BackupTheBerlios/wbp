@@ -1,0 +1,52 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
+<tr>
+    <td>
+        <table align="center">
+    	<tr>
+    	    <td><h3>Id</h3></td>
+    	    <td><h3>Username</h3></td>
+     	    <td><h3>Vorname</h3></td>
+    	    <td><h3>Nachname</h3></td>
+    	    <td><h3>Type</h3></td>
+   	    <td><h3>Status</h3></td>
+	</tr>
+        <TMPL_LOOP USERLOOP>
+    	<tr>
+	    <td>
+		<TMPL_VAR ID>
+            </td>
+            <td>
+    		<a href="<TMPL_VAR FORM>&method=edit&user=<TMPL_VAR ID>"><TMPL_VAR USERNAME></a>
+            </td>
+            <td>
+		<TMPL_VAR FIRSTNAME>
+            </td>
+            <td>
+		<TMPL_VAR LASTNAME>
+            </td>
+            <td>
+		<TMPL_VAR TYPE>
+            </td>
+            <td>
+		<TMPL_IF AKTIV>
+		    <a href="<TMPL_VAR FORM>&method=inaktiv&user=<TMPL_VAR ID>">aktiv</a>
+		</TMPL_IF>
+		<TMPL_IF INAKTIV>
+		    <a href="<TMPL_VAR FORM>&method=aktiv&user=<TMPL_VAR ID>">inaktiv</a>
+		</TMPL_IF>
+            </td>
+        </tr>
+        </TMPL_LOOP>
+	</table>
+    </td>
+</tr>
+</table>
+</form>
+<TMPL_INCLUDE footer.tmpl>
