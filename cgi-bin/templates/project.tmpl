@@ -34,12 +34,31 @@
 </tr>
 </TMPL_IF>
 <tr>
-	<td align="left">
+	<td align="left" valign="top">
 		<b>Projektsuche:</b>
 	</td>
 	<td align="left">
 	<TMPL_IF PROJECTS>
-		<input type="submit" name="search" value="suchen">
+		<TMPL_IF TYPE_AB>
+			<b>Projektname:</b>
+			<input type="text" name="project_name" value="">
+			<br>
+			<b>Kategorie:</b>
+			<select name="project_category">
+					<option value="0">Aus allen Kategorien
+				<TMPL_LOOP KATEGORIEN>
+                        		<option value="<TMPL_VAR KID>"><TMPL_VAR KNAME></option>
+                        	</TMPL_LOOP>
+			</select>
+			<br>
+			<input type="submit" name="search" value="suchen">
+		<TMPL_ELSE>
+			<b>Projekte:</b><br>
+			<TMPL_LOOP TYPE_C_PROJECTS>
+				<TMPL_VAR TYPE_C_START_DT> - <TMPL_VAR TYPE_C_END_DT><br>
+				<TMPL_VAR TYPE_C_NAME>
+			</TMPL_LOOP>
+		</TMPL_IF>	
 	<TMPL_ELSE>
 		<font color="#ff0000">
 		Es sind keine Projekte vorhanden. 

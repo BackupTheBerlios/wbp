@@ -163,7 +163,7 @@ sub get_and_set_projects {
 
 	my $sql = qq{SELECT id, name, cat_id, start_dt, end_dt, status, mode FROM $mgr->{ProTable} };
 
-	$sql .= qq{WHERE cat_id = '$cat'} if ($cat != 0);
+	$sql .= qq{WHERE cat_id = '$cat'} if (defined $cat && $cat != 0);
 
 	if ($mode == 1) {
 		if ($cat != 0) {
@@ -207,9 +207,8 @@ sub get_and_set_projects {
 
 	$mgr->{Template}           = $self->{C_TMPL}->{ProjectShow};
 	$mgr->{TmplData}{PROJECTS} = \@tmpldata;
-	$mgr->fill(sprintf($self->{C_MSG}->{CountProjects}, $count));
 
-	return 1;
+	return $count;
 }
 
 sub set_project_data {
@@ -257,18 +256,25 @@ sub set_project_data {
 	
 	$sth->finish;
 
-	my ($status, $modus);
+	my ($status, $status_link, $modus, $mode_link);
+
+	$status_link = $link."change_status&to=";
+	$mode_link   = $link."change_mode&to=";
 
 	if ($project[5] == 0) {
-		$status = $self->{C_MSG}->{Inaktive};
+		$status       = $self->{C_MSG}->{Inaktive};
+		$status_link .= 1; 
 	} else {
-		$status = $self->{C_MSG}->{Aktive};
+		$status       = $self->{C_MSG}->{Aktive};
+		$status_link .= 0; 
 	}
 
 	if ($project[6] == 0) {
-		$modus = $self->{C_MSG}->{Private};
+		$modus      = $self->{C_MSG}->{Private};
+		$mode_link .= 1;
 	} else {
-		$modus = $self->{C_MSG}->{Public};
+		$modus      = $self->{C_MSG}->{Public};
+		$mode_link .= 0;
 	}
 
 	$tmpldata{START_DT}       = $mgr->format_date($project[3]);
@@ -276,9 +282,85 @@ sub set_project_data {
 	$tmpldata{NAME}           = $mgr->decode_all($project[1]);
 	$tmpldata{CHANGE_PROJECT} = $link."show_project";
 	$tmpldata{STATUS}         = $mgr->decode_all($status);
-	$tmpldata{MODUS}          = $mgr->decode_all($modus); 	
+	$tmpldata{CHANGE_STATUS}  = $status_link;
+	$tmpldata{MODUS}          = $mgr->decode_all($modus);
+	$tmpldata{CHANGE_MODE}    = $mode_link; 	
 
 	return %tmpldata;	
+}
+
+sub change_status {
+
+	my $self = shift;
+	my $mode = shift;
+	my $pid  = shift;
+
+	my $mgr = $self->{MGR};
+	my $new_status;
+
+	if ($mode == 0) {
+		$new_status = "0";
+	} else {
+		$new_status = "1";
+	}
+	
+	my $dbh = $mgr->connect;
+	
+	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProTable}, $dbh->ersstr);
+        }
+	
+	my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET Status = ? WHERE id = ?});
+	
+	unless ($sth->execute($new_status, $pid)) {
+                warn sprintf("[Error]: Trouble updating status in [%s]. Reason: [%s].",
+                        $mgr->{ProTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+
+	return 1;
+}
+
+sub change_mode {
+
+	my $self = shift;
+        my $mode = shift;
+	my $pid  = shift;
+ 
+        my $mgr = $self->{MGR};
+	my $new_mode;
+ 
+        if ($mode == 0) {
+                $new_mode = "0";
+        } else {
+                $new_mode = "1";
+        }
+ 
+        my $dbh = $mgr->connect;
+ 
+        unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProTable}, $dbh->ersstr);
+        }
+ 
+        my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET Mode = ? WHERE id = ?});
+ 
+        unless ($sth->execute($new_mode, $pid)) {
+                warn sprintf("[Error]: Trouble updating mode in [%s]. Reason: [%s].",
+                        $mgr->{ProTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $sth->finish;
+        $dbh->do("UNLOCK TABLES");	
+
+	return 1;
 }
 
 1;

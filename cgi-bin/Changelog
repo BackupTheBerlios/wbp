@@ -1,4 +1,13 @@
 #====================================================================================================#
+*** 07.06.2001 ***
+Sören Wurch
+
+- project.pm, project_base.pm und project_config.pm geaendert
+	* in der Adminübersicht der Projekte koennen jetzt der Status und der Modus veraendert werden
+- project_show.tmpl geaendert
+- tables.sql geaendert
+	* in wbp_project, status nur noch 0 oder 1
+#====================================================================================================#
 *** 06.06.2001 ***
 Sören Wurch
 

@@ -7,7 +7,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -43,13 +43,19 @@ sub parameter {
 
 		} elsif ($method eq "show_phase") {
 
+		} elsif ($method eq "change_status") {
+			$self->change_status();
+			return 1;
+		} elsif ($method eq "change_mode") {
+			$self->change_mode();
+			return 1;
 		} elsif ($method eq "change_user_ab") {
 
 		} elsif ($method eq "change_user_c") {
 
 		} elsif ($method eq "change_user_d") {
 
-		} 
+		}  
 	} else {
 		if (defined $cgi->param('new')) {
 			$self->menue_new();
@@ -233,6 +239,7 @@ sub show_projects {
 
 	my $self  = shift;
 	my $check = shift || undef;
+	my $msg   = shift || "";
  
         my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
@@ -255,9 +262,41 @@ sub show_projects {
 	my $mode = 0; 
 	$mode = 1 if ($name);
 
-	$self->{BASE}->get_and_set_projects($mode, $cat, $name);
-	
+	my $count = $self->{BASE}->get_and_set_projects($mode, $cat, $name);
+
+	$mgr->fill(sprintf($C_MSG->{CountProjects}, $count)." ".$msg);
+
 	return 1;	
+}
+
+sub change_status {
+
+	my $self = shift;
+
+	my $mgr = $self->{MGR};
+        my $cgi = $self->{MGR}->{CGI};
+
+	my $mode = $cgi->param('to');
+	my $pid  = $cgi->param('pid');
+
+	$self->{BASE}->change_status($mode, $pid);
+
+	$self->show_projects(1, $C_MSG->{ChangeStatus});	
+}
+
+sub change_mode {
+
+	my $self = shift;
+	
+	my $mgr = $self->{MGR};
+        my $cgi = $self->{MGR}->{CGI};
+
+	my $mode = $cgi->param('to');
+	my $pid  = $cgi->param('pid');
+ 
+	$self->{BASE}->change_mode($mode, $pid);
+
+	$self->show_projects(1, $C_MSG->{ChangeMode});	
 }
 
 1;
