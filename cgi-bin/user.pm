@@ -6,7 +6,7 @@ use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -20,8 +20,7 @@ sub parameter {
 	
 	# kick D-Users
 	if ($mgr->{UserType} eq 'D') {
-	    $mgr->{Template} = $C_TMPL->{WeiterZmpl};
-	    $mgr->{TmplData}{OUTPUT} = "Leider kein Zutritt f&uuml;r Sie";
+	    1;
 	} else {
 	
             # Post-Parameter ============================================
@@ -72,7 +71,7 @@ sub parameter {
 }
 
 #=============================================================================
-# SYNOPSIS: user_start($mgr);
+# SYNOPSIS: user_start($mgr, $type);
 # PURPOSE:  displays the User-Startscreen to search or add users
 # RETURN: 1;
 #=============================================================================
@@ -80,11 +79,12 @@ sub user_start {
 
     my $self = shift;
     my $mgr  = shift;    
+    my $type = $mgr->{UserType};
     
     # to distinguish User-Classes for add new user
-    if ($mgr->{UserType} eq 'A') {
+    if ($type eq 'A') {
 	$mgr->{TmplData}{A_USER} = "A";
-    } elsif ($mgr->{UserType} eq 'B') {
+    } elsif ($type eq 'B') {
 	$mgr->{TmplData}{A_USER} = "B";
     }
 
@@ -757,7 +757,6 @@ sub user_add {
 	my $lastname = $cgi->param('last_name');
 	my $email = $cgi->param('email');
 	my $desc = $cgi->param('desc') || " ";
-	my $type = $cgi->param('type');
 	my $upd_dt = $mgr->now();
 	my $upd_id = $mgr->{UserId};
     
@@ -777,6 +776,14 @@ sub user_add {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 	
+        # to distinguish User-Classes for add new user
+	# ( needed for UserStartTmpl )
+	if ($mgr->{UserType} eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+        } elsif ($mgr->{UserType} eq 'B') {
+    	    $mgr->{TmplData}{A_USER} = "B";
+	}
+
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 
 	$mgr->fill("neuen Benutzer angelegt");
