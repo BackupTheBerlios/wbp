@@ -2,7 +2,7 @@ package project_config;
  
 use vars qw($VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
  
 $MSG = {
 	NotAllowed     => "Das Skript wurde mit einer falschen Methode aufgerufen.",
@@ -32,6 +32,9 @@ $MSG = {
 	NoProjects     => "Sie sind in keinem Projekt Projektleiter.",
 	NoChanges      => "Keine Änderungen vorgenommen.",
 	DelPhaOk       => "Die Projetphase wurde gelöscht.",
+	NoUserSelected => "Sie haben keinen User ausgewählt.",
+	UserAddOk      => "Der User wurde erfolgreich hinzufegügt.",
+	UserDelOk      => "Der User wurde aus dem Projekt gelöscht."
 };
 
 $TMPL = {
@@ -42,7 +45,10 @@ $TMPL = {
 	ProjectChange => "project_change.tmpl",
 	ProPhaStart   => "project_phase.tmpl",
 	ProPhaNew     => "project_phase_new.tmpl",
-	ProPhaChange  => "project_phase_change.tmpl"
+	ProPhaChange  => "project_phase_change.tmpl",
+	ProUserAB     => "project_user_ab.tmpl",
+	ProUserC      => "project_user_c.tmpl",
+	ProUserCD     => "project_user_cd.tmpl"
 };
 
 1;

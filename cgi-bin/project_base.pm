@@ -1208,6 +1208,7 @@ sub change_phase {
                 unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
                         warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                                 $mgr->{PhaTable}, $dbh->errstr);
+			$mgr->fatal_error($self->{C_MSG}->{DbError});
                 }
                 my $sth = $dbh->prepare(qq{UPDATE $mgr->{PhaTable} SET name = ?, desc_phase = ?,
                                                         start_dt = ?, end_dt = ?,
@@ -1250,6 +1251,460 @@ sub set_phasen_data {
 					 $cgi->param('pid')."&method=show_phase";
 
 	$mgr->fill($msg);
+}
+
+#
+# Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen. Aber hier nur A und B User.
+#
+sub show_change_user_ab {
+	my ($self, $pid, $msg) = @_;
+	my $mgr               = $self->{MGR}; 
+	my (@user_data, @in_data, @tmpl_user, @tmpl_in, $count);
+
+	my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{UserTable} READ, $mgr->{ProUserTable} READ")) {
+        	warn sprintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
+        		$mgr->{UserTable}, $mgr->{ProUserTable}, $dbh->errstr);
+		$dbh->do("UNLOCK TABLES");
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{SELECT id, firstname, lastname, username, type FROM $mgr->{UserTable} WHERE type = 'A' OR type ='B'});
+        unless ($sth->execute()) {
+        	warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+        		$mgr->{UserTable}, $dbh->errstr);
+        	$dbh->do("UNLOCK TABLES");
+        	$mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+
+	while (my (@tmp) = $sth->fetchrow_array()) {
+		push (@user_data, @tmp);
+	}
+	$sth->finish;
+
+	$sth = $dbh->prepare(qq{SELECT id, user_id, project_id FROM $mgr->{ProUserTable} WHERE position = '0' AND project_id = ?});
+	unless ($sth->execute($pid)) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+                        $mgr->{UserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+	while (my (@tmp) = $sth->fetchrow_array()) {
+                push (@in_data, @tmp);
+        }
+	$dbh->do("UNLOCK TABLES");
+        $sth->finish; 
+
+	my ($tmp_1, $tmp_2) = $self->merge_user_data(\@user_data, \@in_data);	
+	undef @user_data;
+	undef @in_data;
+	@user_data = @$tmp_1;
+	@in_data   = @$tmp_2;
+
+	$count = 0;
+	for (my $i = 0, $count = 0; $i <= $#user_data; $i += 5, $count++) {
+		$tmpl_user[$count]{USER_ID}  = $user_data[$i];
+		$tmpl_user[$count]{VORNAME}  = $mgr->decode_all($user_data[$i+1]);
+		$tmpl_user[$count]{NACHNAME} = $mgr->decode_all($user_data[$i+2]);
+		$tmpl_user[$count]{USERNAME} = $mgr->decode_all($user_data[$i+3]);
+		$tmpl_user[$count]{USERTYP}  = $user_data[$i+4];	
+	}
+
+	for (my $i = 0, $count = 0; $i <= $#in_data; $i += 5, $count++) {
+		$tmpl_in[$count]{VORNAME}  = $mgr->decode_all($in_data[$i+1]);
+		$tmpl_in[$count]{NACHNAME} = $mgr->decode_all($in_data[$i+2]);
+		$tmpl_in[$count]{USERNAME} = $mgr->decode_all($in_data[$i+3]);
+                $tmpl_in[$count]{USERTYP}  = $in_data[$i+4]; 
+		$tmpl_in[$count]{DEL_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                             "&method=del_user_ab&uid=".$in_data[$i];
+	}
+
+	$mgr->{TmplData}{L_USER_AB} = \@tmpl_user if (@tmpl_user);
+
+	if (@in_data) {
+		$mgr->{TmplData}{I_USER_AB} = 1;
+		$mgr->{TmplData}{L_USER}    = \@tmpl_in;
+	}
+
+	$mgr->{TmplData}{FORM}      = $mgr->my_url();
+	$mgr->{TmplData}{PID}       = $pid;
+	$mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                      "&method=back_change"; 
+	$mgr->{Template} = $self->{C_TMPL}->{ProUserAB};
+	$msg = "" if (!$msg);  
+	$mgr->fill($msg);
+}
+
+#
+# Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen. Aber hier nur C User.
+#
+sub show_change_user_c {
+        my ($self, $pid, $msg) = @_;
+        my $mgr                = $self->{MGR};
+        my (@user_data, @in_data, @tmpl_user, @tmpl_in, $count);
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{UserTable} READ, $mgr->{ProUserTable} READ")) {
+                warn sprintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
+                        $mgr->{UserTable}, $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{SELECT id, firstname, lastname, username, type FROM $mgr->{UserTable} WHERE type = 'C'});
+        unless ($sth->execute()) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+                        $mgr->{UserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        while (my (@tmp) = $sth->fetchrow_array()) {
+                push (@user_data, @tmp);
+        }
+        $sth->finish;
+ 
+        $sth = $dbh->prepare(qq{SELECT id, user_id, project_id FROM $mgr->{ProUserTable} WHERE position = '1' AND project_id = ?});
+        unless ($sth->execute($pid)) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+                        $mgr->{UserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        while (my (@tmp) = $sth->fetchrow_array()) {
+                push (@in_data, @tmp);
+        }
+        $dbh->do("UNLOCK TABLES");
+        $sth->finish;
+ 
+        my ($tmp_1, $tmp_2) = $self->merge_user_data(\@user_data, \@in_data);
+        undef @user_data;
+        undef @in_data;
+        @user_data = @$tmp_1;
+        @in_data   = @$tmp_2;
+ 
+        $count = 0;
+        for (my $i = 0, $count = 0; $i <= $#user_data; $i += 5, $count++) {
+                $tmpl_user[$count]{USER_ID}  = $user_data[$i];
+                $tmpl_user[$count]{VORNAME}  = $mgr->decode_all($user_data[$i+1]);
+                $tmpl_user[$count]{NACHNAME} = $mgr->decode_all($user_data[$i+2]);
+                $tmpl_user[$count]{USERNAME} = $mgr->decode_all($user_data[$i+3]);
+                $tmpl_user[$count]{USERTYP}  = $user_data[$i+4];
+	}
+ 
+        for (my $i = 0, $count = 0; $i <= $#in_data; $i += 5, $count++) {
+		$tmpl_in[$count]{VORNAME}  = $mgr->decode_all($in_data[$i+1]);
+                $tmpl_in[$count]{NACHNAME} = $mgr->decode_all($in_data[$i+2]);
+                $tmpl_in[$count]{USERNAME} = $mgr->decode_all($in_data[$i+3]);
+                $tmpl_in[$count]{USERTYP}  = $in_data[$i+4];
+                $tmpl_in[$count]{DEL_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                             "&method=del_user_c&uid=".$in_data[$i];   
+        }
+ 
+        $mgr->{TmplData}{L_USER_C} = \@tmpl_user if (@tmpl_user);
+
+	if (@in_data) {
+                $mgr->{TmplData}{I_USER_C} = 1;
+                $mgr->{TmplData}{L_USER}   = \@tmpl_in;
+        }
+
+	$mgr->{TmplData}{FORM}      = $mgr->my_url(); 
+	$mgr->{TmplData}{PID}       = $pid;  
+        $mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                      "&method=back_change";
+        $mgr->{Template} = $self->{C_TMPL}->{ProUserC};
+	$msg = "" if (!$msg);
+	$mgr->fill($msg); 
+}           
+
+#
+# Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen. Aber hier nur C und D User.
+#
+sub show_change_user_cd {
+        my ($self, $pid, $msg) = @_;
+        my $mgr                = $self->{MGR};
+        my (@user_data, @in_data, @tmpl_user, @tmpl_in, $count);
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{UserTable} READ, $mgr->{ProUserTable} READ")) {
+                warn sprintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
+                        $mgr->{UserTable}, $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{SELECT id, firstname, lastname, username, type FROM $mgr->{UserTable} WHERE type = 'C'
+				   OR type = 'D' ORDER by type});
+        unless ($sth->execute()) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+                        $mgr->{UserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        while (my (@tmp) = $sth->fetchrow_array()) {
+                push (@user_data, @tmp);
+        }
+        $sth->finish;
+ 
+        $sth = $dbh->prepare(qq{SELECT id, user_id, project_id FROM $mgr->{ProUserTable} WHERE position = '2' AND project_id = ?});
+        unless ($sth->execute($pid)) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+                        $mgr->{UserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        while (my (@tmp) = $sth->fetchrow_array()) {
+                push (@in_data, @tmp);
+        }
+        $dbh->do("UNLOCK TABLES");
+        $sth->finish;
+ 
+        my ($tmp_1, $tmp_2) = $self->merge_user_data(\@user_data, \@in_data);
+        undef @user_data;
+        undef @in_data;
+        @user_data = @$tmp_1;
+        @in_data   = @$tmp_2;
+ 
+        $count = 0;
+        for (my $i = 0, $count = 0; $i <= $#user_data; $i += 5, $count++) {
+                $tmpl_user[$count]{USER_ID}  = $user_data[$i];
+                $tmpl_user[$count]{VORNAME}  = $mgr->decode_all($user_data[$i+1]);
+                $tmpl_user[$count]{NACHNAME} = $mgr->decode_all($user_data[$i+2]);
+                $tmpl_user[$count]{USERNAME} = $mgr->decode_all($user_data[$i+3]);
+                $tmpl_user[$count]{USERTYP}  = $user_data[$i+4]; 
+	}
+ 
+        for (my $i = 0, $count = 0; $i <= $#in_data; $i += 5, $count++) {
+                $tmpl_in[$count]{VORNAME}  = $mgr->decode_all($in_data[$i+1]);
+                $tmpl_in[$count]{NACHNAME} = $mgr->decode_all($in_data[$i+2]);
+                $tmpl_in[$count]{USERNAME} = $mgr->decode_all($in_data[$i+3]);
+                $tmpl_in[$count]{USERTYP}  = $in_data[$i+4];
+                $tmpl_in[$count]{DEL_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                             "&method=del_user_cd&uid=".$in_data[$i];
+        }
+ 
+        $mgr->{TmplData}{L_USER_CD} = \@tmpl_user if (@tmpl_user);
+ 
+        if (@in_data) {
+                $mgr->{TmplData}{I_USER_CD} = 1;
+                $mgr->{TmplData}{L_USER}   = \@tmpl_in;
+        }
+
+	$mgr->{TmplData}{FORM}      = $mgr->my_url(); 
+	$mgr->{TmplData}{PID}       = $pid; 	 
+        $mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                      "&method=back_change";
+        $mgr->{Template} = $self->{C_TMPL}->{ProUserCD};
+        $msg = "" if (!$msg);
+	$mgr->fill($msg);
+}           
+
+#
+# Hinzufuegen von einem Typ A/B User zu einem gewaehlten Projekt.
+#
+sub add_user_ab {
+	my ($self, $pid) = @_;
+	my $mgr = $self->{MGR};
+	my $uid = $mgr->{CGI}->param('user_ab');
+
+	if ($uid == 0) {
+		$self->show_change_user_ab($pid, $self->{C_MSG}->{NoUserSelected});
+	}
+
+	my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{ProUserTable} WRITE")) {
+                warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProUserTable} (user_id, project_id, position) values (?, ?, ?)});
+        unless ($sth->execute($uid, $pid, "0")) {
+                warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+
+	$self->show_change_user_ab($pid, $self->{C_MSG}->{UserAddOk});	
+}
+
+#
+# Hinzufuegen von einem Typ C User zu einem gewaehlten Projekt.
+#
+sub add_user_c {
+        my ($self, $pid) = @_;
+        my $mgr = $self->{MGR};
+        my $uid = $mgr->{CGI}->param('user_c');
+ 
+        if ($uid == 0) {
+                $self->show_change_user_c($pid, $self->{C_MSG}->{NoUserSelected});
+        }
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{ProUserTable} WRITE")) {
+                warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProUserTable} (user_id, project_id, position) values (?, ?, ?)});
+        unless ($sth->execute($uid, $pid, "1")) {
+                warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $self->show_change_user_c($pid, $self->{C_MSG}->{UserAddOk});
+}     
+
+#
+# Hinzufuegen von einem Typ C/D User zu einem gewaehlten Projekt.
+#
+sub add_user_cd {
+        my ($self, $pid) = @_;
+        my $mgr = $self->{MGR};
+        my $uid = $mgr->{CGI}->param('user_cd');
+ 
+        if ($uid == 0) {
+                $self->show_change_user_cd($pid, $self->{C_MSG}->{NoUserSelected});
+        }
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{ProUserTable} WRITE")) {
+                warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProUserTable} (user_id, project_id, position) values (?, ?, ?)});
+        unless ($sth->execute($uid, $pid, "2")) {
+                warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $self->show_change_user_cd($pid, $self->{C_MSG}->{UserAddOk});
+}     
+
+#
+# Loeschen eines User aus einem Project.
+#
+sub del_user_ab {
+	my ($self, $pid, $uid) = @_;
+	my $mgr                = $self->{MGR};
+
+	my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{ProUserTable} WRITE")) {
+                warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{ProUserTable} WHERE user_id = ? AND project_id = ? AND position = ?});
+        unless ($sth->execute($uid, $pid, "0")) {
+                warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $self->show_change_user_ab($pid, $self->{C_MSG}->{UserDelOk});
+}
+
+#
+# Loeschen eines User aus einem Project.
+#
+sub del_user_c {
+	my ($self, $pid, $uid) = @_;
+	my $mgr                = $self->{MGR};
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{ProUserTable} WRITE")) {
+                warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{ProUserTable} WHERE user_id = ? AND project_id = ? AND position = ?});
+        unless ($sth->execute($uid, $pid, "1")) {
+                warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $self->show_change_user_c($pid, $self->{C_MSG}->{UserDelOk}); 
+}  
+
+#
+# Loeschen eines User aus einem Project.
+#
+sub del_user_cd {
+	my ($self, $pid, $uid) = @_;
+	my $mgr                = $self->{MGR};
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{ProUserTable} WRITE")) {
+                warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{ProUserTable} WHERE user_id = ? AND project_id = ? AND position = ?});
+        unless ($sth->execute($uid, $pid, "2")) {
+                warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $self->show_change_user_cd($pid, $self->{C_MSG}->{UserDelOk}); 
+}  
+
+#
+# Wichtige Funktion, um sicher zu stellen, das die User die zur Auswahl stehen nicht mit den eingetragenen
+# uebereinstimmen nud anders herum. Auch wichtig um die restlichen Userdaten zu bekommen, zu den Usern
+# die in der wbp_user_project Tabelle sind.
+#
+sub merge_user_data {
+	my ($self, $tmp_1, $tmp_2) = @_;
+	my @user_data = @$tmp_1;
+	my @in_data   = @$tmp_2;
+	my (@tmp_user, @tmp_in, @tmp_id, $check);
+	my $count = 0;
+
+	for (my $i = 0; $i <= $#in_data; $i += 3) {
+		for (my $j = 0; $j <= $#user_data; $j += 5) {
+			if ($in_data[$i+1] == $user_data[$j]) {
+				$tmp_in[$count]   = $user_data[$j];
+				$tmp_in[$count+1] = $user_data[$j+1];
+				$tmp_in[$count+2] = $user_data[$j+2];
+				$tmp_in[$count+3] = $user_data[$j+3];
+				$tmp_in[$count+4] = $user_data[$j+4];
+				push (@tmp_id, $user_data[$j]);
+				$j = $#user_data;
+				$count += 5; 
+			}
+		}
+	}
+
+	$count = 0;
+	for (my $i = 0; $i <= $#user_data; $i += 5) {
+		$check = 0;
+
+		for (my $j = 0; $j <= $#tmp_id; $j++) {
+			if ($user_data[$i] == $tmp_id[$j]) {
+				$check++;
+				$j = $#tmp_id;
+			}		
+		}
+
+		if ($check == 0) {
+			$tmp_user[$count]   = $user_data[$i];
+			$tmp_user[$count+1] = $user_data[$i+1];
+			$tmp_user[$count+2] = $user_data[$i+2];
+			$tmp_user[$count+3] = $user_data[$i+3];
+			$tmp_user[$count+4] = $user_data[$i+4];
+			$count += 5;
+		}
+	}
+
+	return (\@tmp_user, \@tmp_in);
 }
 
 1;

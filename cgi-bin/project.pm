@@ -8,13 +8,12 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
 
 sub parameter {
-
 	my $self = shift;
 	my $mgr  = shift;
 
@@ -59,11 +58,23 @@ sub parameter {
 			$self->change_mode();
 			return 1;
 		} elsif ($method eq "change_user_ab") {
-
+			$self->show_change_user_ab();
+			return 1;
 		} elsif ($method eq "change_user_c") {
-
+			$self->show_change_user_c();
+			return 1;
 		} elsif ($method eq "change_user_d") {
-
+			$self->show_change_user_cd();
+			return 1;
+		} elsif ($method eq "del_user_ab") {
+			$self->del_user_ab();
+			return 1;
+		} elsif ($method eq "del_user_c") {
+			$self->del_user_c();
+			return 1;
+		} elsif ($method eq "del_user_cd") {
+			$self->del_user_cd();
+			return 1;
 		} elsif ($method eq "back_change") {
 			$self->tmp_show_projects();
 			return 1;
@@ -93,12 +104,15 @@ sub parameter {
 		} elsif (defined $cgi->param('change_phase')) {
 			$self->change_phase();
 			return 1;
-		} elsif (defined $cgi->param('change_user_ab')) {
-
-		} elsif (defined $cgi->param('change_user_c')) {
-
-		} elsif (defined $cgi->param('change_user_d')) {
-
+		} elsif (defined $cgi->param('add_user_ab')) {
+			$self->add_user_ab();
+			return 1;
+		} elsif (defined $cgi->param('add_user_c')) {
+			$self->add_user_c();
+			return 1;
+		} elsif (defined $cgi->param('add_user_cd')) {
+			$self->add_user_cd();
+			return 1;
 		}
 	}
 
@@ -106,11 +120,9 @@ sub parameter {
 }
 
 sub menue {
- 
         my $self = shift;
         my $msg  = shift || undef;
- 
-        my $mgr = $self->{MGR};
+        my $mgr  = $self->{MGR};
  
         $mgr->{TmplData}{PROJECTS} = 1 if ($self->{BASE}->check_for_projects != 0);
  
@@ -149,12 +161,10 @@ sub menue {
 }
  
 sub menue_new {
- 
         my $self = shift;
         my $msg  = shift || undef;
- 
-        my $mgr = $self->{MGR};
-        my $cgi = $self->{MGR}->{CGI};
+        my $mgr  = $self->{MGR};
+        my $cgi  = $self->{MGR}->{CGI};
 
 	$mgr->{TmplData}{KID}   = $cgi->param('kid');
 
@@ -179,11 +189,9 @@ sub menue_new {
 }                            
 
 sub add_project {
- 
         my $self = shift;
- 
-        my $mgr = $self->{MGR};
-        my $cgi = $self->{MGR}->{CGI};
+        my $mgr  = $self->{MGR};
+        my $cgi  = $self->{MGR}->{CGI};
 
 	$self->{BASE}->check_user();
 
@@ -278,7 +286,6 @@ sub add_project {
 }
 
 sub change_project {
-	
 	my $self = shift;
 	my $msg  = $self->{BASE}->change_project() || undef;
 
@@ -288,13 +295,11 @@ sub change_project {
 }
 
 sub show_projects {
-
-	my $self     = shift;
-	my $check    = shift || undef;
-	my $msg      = shift || "";
- 
-        my $mgr = $self->{MGR};
-        my $cgi = $self->{MGR}->{CGI};
+	my $self  = shift;
+	my $check = shift || undef;
+	my $msg   = shift || "";
+        my $mgr   = $self->{MGR};
+        my $cgi   = $self->{MGR}->{CGI};
 
 	$self->{BASE}->check_user(); 
 
@@ -330,13 +335,11 @@ sub show_projects {
 }
 
 sub show_phase {
-
 	my $self = shift;
-	
-	my $mgr = $self->{MGR};
-        my $cgi = $mgr->{CGI};
-        my $pid = shift || $cgi->param('pid');
-	my $msg = shift || undef;
+	my $mgr  = $self->{MGR};
+        my $cgi  = $mgr->{CGI};
+        my $pid  = shift || $cgi->param('pid');
+	my $msg  = shift || undef;
  
         unless ($pid) {
                 warn "[Error]: Wrong script parameters.";
@@ -361,13 +364,11 @@ sub show_phase {
 }
 
 sub add_phase_menu {
-	
 	my $self = shift;
         my $msg  = shift || undef;
- 
-        my $mgr = $self->{MGR};
-        my $cgi = $self->{MGR}->{CGI};
-	my $pid = $cgi->param('pid');
+        my $mgr  = $self->{MGR};
+        my $cgi  = $self->{MGR}->{CGI};
+	my $pid  = $cgi->param('pid');
 
 	$mgr->{TmplData}{PID} = $pid;
  
@@ -391,10 +392,8 @@ sub add_phase_menu {
 }
 
 sub add_phase {
-
-	my $self = shift;
-	my $pid  = $self->{MGR}->{CGI}->param('pid');
-	
+	my $self  = shift;
+	my $pid   = $self->{MGR}->{CGI}->param('pid');
 	my $check = $self->{BASE}->add_phase();
 
 	if ($check eq "-1") {
@@ -406,19 +405,16 @@ sub add_phase {
 }
 
 sub tmp_show_projects {
-	
 	my $self = shift;
 	
 	$self->show_projects(1);
 }
 
 sub show_one_project {
-	
 	my $self = shift;
-	
-	my $mgr = $self->{MGR};
-        my $cgi = $mgr->{CGI};
-	my $pid = $cgi->param('pid');
+	my $mgr  = $self->{MGR};
+        my $cgi  = $mgr->{CGI};
+	my $pid  = $cgi->param('pid');
 
 	unless ($pid) {
 		warn "[Error]: Wrong script parameters.";
@@ -438,11 +434,8 @@ sub show_one_project {
 }
 
 sub change_status {
-
 	my $self = shift;
-
-        my $cgi = $self->{MGR}->{CGI};
-
+        my $cgi  = $self->{MGR}->{CGI};
 	my $mode = $cgi->param('to');
 	my $pid  = $cgi->param('pid');
 
@@ -452,7 +445,6 @@ sub change_status {
 }
 
 sub change_mode {
-
 	my $self = shift;
         my $cgi = $self->{MGR}->{CGI};
 
@@ -465,7 +457,6 @@ sub change_mode {
 }
 
 sub change_pha_status {
-
 	my $self   = shift;
 	my $pha_id = $self->{MGR}->{CGI}->param('pha_id');
 	my $to     = $self->{MGR}->{CGI}->param('to');
@@ -482,7 +473,6 @@ sub change_pha_status {
 }
 
 sub del_phase {
-
 	my $self   = shift;
 	my $mgr    = $self->{MGR};
 	my $pid    = $mgr->{CGI}->param('pid')    || "";
@@ -499,7 +489,6 @@ sub del_phase {
 }
 
 sub show_one_phase {
-	
 	my $self   = shift;
         my $mgr    = $self->{MGR};
         my $pid    = $mgr->{CGI}->param('pid')    || "";
@@ -518,10 +507,9 @@ sub show_one_phase {
 }
 
 sub change_phase {
-
 	my $self = shift;
 	my $mgr  = $self->{MGR};
-	my $pid  = $self->{MGR}->{CGI}->param('pid');
+	my $pid  = $self->{MGR}->{CGI}->param('pid') || "";
 
 	my $check = $self->{BASE}->change_phase() || "";
 	if ($check eq "-1") {
@@ -529,6 +517,126 @@ sub change_phase {
 	}
 	
 	$self->show_phase($pid, $C_MSG->{UpdatePhaOk});
+}
+
+sub show_change_user_ab {
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+	my $pid  = $mgr->{CGI}->param('pid') || "";
+
+	unless ($pid) {
+		warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+	}
+
+	$self->{BASE}->show_change_user_ab($pid);
+}
+
+sub show_change_user_c {
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+	my $pid  = $mgr->{CGI}->param('pid') || "";
+ 
+        unless ($pid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+
+	$self->{BASE}->show_change_user_c($pid);
+}
+
+sub show_change_user_cd {
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+	my $pid  = $mgr->{CGI}->param('pid') || "";
+ 
+        unless ($pid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+
+	$self->{BASE}->show_change_user_cd($pid);	
+}
+
+sub add_user_ab {
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+        my $pid  = $mgr->{CGI}->param('pid') || "";
+
+	unless ($pid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+	
+	$self->{BASE}->add_user_ab($pid); 
+}
+
+sub add_user_c {
+        my $self = shift;
+        my $mgr  = $self->{MGR};
+        my $pid  = $mgr->{CGI}->param('pid') || "";
+ 
+        unless ($pid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+ 
+        $self->{BASE}->add_user_c($pid);
+} 
+
+sub add_user_cd {
+        my $self = shift;
+        my $mgr  = $self->{MGR};
+        my $pid  = $mgr->{CGI}->param('pid') || "";
+ 
+        unless ($pid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+ 
+        $self->{BASE}->add_user_cd($pid);
+} 
+
+sub del_user_ab {
+	my $self = shift;
+        my $mgr  = $self->{MGR};
+	my $pid  = $mgr->{CGI}->param('pid') || "";
+	my $uid  = $mgr->{CGI}->param('uid') || "";
+	
+	unless ($pid && $uid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+
+	$self->{BASE}->del_user_ab($pid, $uid);
+}
+
+sub del_user_c {
+	my $self = shift;
+        my $mgr  = $self->{MGR};
+	my $pid  = $mgr->{CGI}->param('pid') || "";
+        my $uid  = $mgr->{CGI}->param('uid') || "";
+ 
+        unless ($pid && $uid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+ 
+        $self->{BASE}->del_user_c($pid, $uid);
+}
+
+sub del_user_cd {
+	my $self = shift;
+        my $mgr  = $self->{MGR};
+	my $pid  = $mgr->{CGI}->param('pid') || "";
+        my $uid  = $mgr->{CGI}->param('uid') || "";
+ 
+        unless ($pid && $uid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+ 
+        $self->{BASE}->del_user_cd($pid, $uid);
 }
 
 1;

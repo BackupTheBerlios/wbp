@@ -1,0 +1,90 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade width="80%">
+
+<input type="hidden" name="pid" value="<TMPL_VAR PID>">
+
+<table cellspacing="2" cellpadding="2" border="0" align="center" width="80%">
+<TMPL_IF I_USER_CD>
+<tr>
+	<td>
+		<b>Vorname:</b>
+	</td>
+	<td>
+		<b>Nachname:</b>
+	</td>
+	<td>
+		<b>Username:</b>
+	</td>
+	<td>
+		<b>Typ:</b>
+	</td>
+	<td>
+		&nbsp;
+	</td>
+	
+</tr>	
+<TMPL_LOOP L_USER>
+<tr valign="top">
+	<td>
+		<TMPL_VAR VORNAME>	
+	</td>
+	<td>
+		<TMPL_VAR NACHNAME>
+	</td>
+	<td>
+		<TMPL_VAR USERNAME>
+	</td>
+	<td>
+		<TMPL_VAR USERTYP>
+	</td>
+	<td>
+		<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a>
+	</td>
+</tr>
+</TMPL_LOOP>
+<TMPL_ELSE>
+<tr>
+	<td>
+		&nbsp;
+	</td>
+	<td colspan="3">
+	<center><font color="#ff0000">Es sind keine User in diesem Projekt vorhanden.</font></center>
+	</td>
+</tr>
+<tr>
+        <td colspan="4">
+                <hr>
+        </td>
+</tr>
+</TMPL_IF>
+</tr>
+<tr>
+	<td>
+		<TMPL_IF BACK_LINK>
+		<a href="<TMPL_VAR BACK_LINK>">zur&uuml;ck</a>
+		</TMPL_IF>
+	</td>
+	<td colspan="3" align="center">
+		<select name="user_cd">
+			<option value="0">Typ C/D ausw&auml;hlen</option>
+			<TMPL_LOOP L_USER_CD>
+			<option value="<TMPL_VAR USER_ID>">
+				<TMPL_VAR VORNAME> <TMPL_VAR NACHNAME> (<TMPL_VAR USERNAME> <TMPL_VAR USERTYP>)
+			</option>
+			</TMPL_LOOP>
+		</select>
+		<b>Neuen User:</b> <input type="submit" name="add_user_cd" value="hinzuf&uuml;gen">
+	</td>
+</tr>
+</table>
+
+<hr size="1" noshade width="80%">
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

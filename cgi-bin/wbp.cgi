@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -130,6 +130,10 @@ sub handler {
 		} elsif ($param eq ('categories')) {
 			require categories; 
 		} else {
+			# So lange es noch keine Konfiguation gibt.
+			$self->{Action} = "start";
+			$param = "start";
+			
 			require start;
 		}
 	} else {
