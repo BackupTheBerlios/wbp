@@ -300,8 +300,8 @@ sub fetch_receiver {
 	$mgr->fatal_error($self->{C_MSG}->{DbError});
     }
     
-    while (my @id = $sth->fetchrow_array()) {
-	push (@uid, \@id);
+    while (my $id = $sth->fetchrow_array()) {
+	push (@uid, $id);
     }
     
     $sth->finish;

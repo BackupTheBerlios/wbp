@@ -8,7 +8,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -110,7 +110,7 @@ sub view_messages {
 	    my @message_loop;
 	    my @user;
 	    my $link = $mgr->my_url;
-	    $link .= "&&mid=%s";
+	    $link .= "&method=%s&mid=%s";
 
 	    for (my $i = 0; $i <= $#received; $i++) {
 		# Namen des Absenders bestimmen
@@ -182,21 +182,19 @@ sub view_send_messages {
 	# Es wurden Nachrichten gefunden
 	if (@send) {
 	    my @message_loop;
-	    my @user;
-	    my @uid;
 	    my $link = $mgr->my_url;
 	    $link .= "&method=%s&mid=%s";
 
 	    for (my $i = 0; $i <= $#send; $i++) {
 		# Alle Empfaenger bestimmen
-		@uid = $self->{BASE}->fetch_receiver($send[$i][0]);
+		my @uid = $self->{BASE}->fetch_receiver($send[$i][0]);
 		# Name des ersten Empfaengers ermitteln
-		@user = $self->{BASE}->get_user($uid[0]);
+		my @user = $self->{BASE}->get_user($uid[0]);
 		$message_loop[$i]{MESSAGE_1ST_RECEIVER}  =
-		    $mgr->decode_all(sprintf("%s %s (%d)", $user[0], $user[1], $user[2]));
+		    $mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
 
-		if($#send > 0) {
-		    $message_loop[$i]{MESSAGE_RECEIVER_COUNT} = $mgr->decode_all(sprintf("[1/%d]",$#send+1));
+		if($#uid > 0) {
+		    $message_loop[$i]{MESSAGE_RECEIVER_COUNT} = $mgr->decode_all(sprintf("[1/%d]",$#uid+1));
 		}
 		$message_loop[$i]{MESSAGE_LINK}    = $mgr->decode_all(sprintf($link, "show_send_message",$send[$i][0]));
 		$message_loop[$i]{MESSAGE_SUBJECT} = $mgr->decode_all($send[$i][2]);
@@ -256,7 +254,15 @@ sub show_message {
     # Message bezieht sich auf eine Parent-Message
     unless ($message[3] == 0) {
 	$link .= "&method=%s&mid=%s";
-	$mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show", $message[3]);
+	my @parent_send = $self->{BASE}->get_send_message($message[3]);
+	my @parent = $self->{BASE}->get_message($message[3]);
+	if (@parent_send) {
+	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_send_message", $message[3]);
+	    $mgr->{TmplData}{PARENT_SUBJECT} =  $mgr->decode_all($parent_send[3]);
+	} elsif (@parent) {
+	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_message", $message[3]);
+	    $mgr->{TmplData}{PARENT_SUBJECT} =  $mgr->decode_all($parent[6]);
+	} 
     }
 
     $mgr->{TmplData}{MESSAGE_DATE} = $mgr->format_date($message[5]);
@@ -303,9 +309,19 @@ sub show_send_message {
     $mgr->{Template} = $C_TMPL->{MessageShow};
     
     # Message bezieht sich auf eine Parent-Message
+
+    # Message bezieht sich auf eine Parent-Message
     unless ($message[1] == 0) {
 	$link .= "&method=%s&mid=%s";
-	$mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show", $message[1]);
+	my @parent_send = $self->{BASE}->get_send_message($message[1]);
+	my @parent = $self->{BASE}->get_message($message[1]);
+	if (@parent_send) {
+	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_send_message", $message[3]);
+	    $mgr->{TmplData}{PARENT_SUBJECT} =  $mgr->decode_all($parent_send[3]);
+	} elsif (@parent) {
+	    $mgr->{TmplData}{PARENT_LINK} = sprintf($link, "show_message", $message[3]);
+	    $mgr->{TmplData}{PARENT_SUBJECT} =  $mgr->decode_all($parent[6]);
+	} 
     }
 
     $mgr->{TmplData}{MESSAGE_DATE} = $mgr->format_date($message[2]);
