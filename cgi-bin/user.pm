@@ -7,7 +7,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 # use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -255,7 +255,7 @@ sub user_search {
         $mgr->{Template} = $C_TMPL->{UserListTmpl};
 	if (defined($mgr->{Session}->get("edit"))) {
 	    $mgr->{Session}->del("edit");
-    	    $mgr->fill("Benutzerdaten aktualisiert ...");
+    	    $mgr->fill($C_MSG->{geaendert});
 	} else {
 	    $mgr->fill;
 	}
@@ -272,7 +272,7 @@ sub user_search {
 	} elsif ($type eq 'B') {
 	    $mgr->{TmplData}{A_USER} = "B";
 	}
-	$mgr->fill("keine Entsprechungen gefunden");
+	$mgr->fill($C_MSG->{nix_gefunden});
     }	
 	
     $sth->finish;
@@ -338,7 +338,7 @@ sub user_aktiv {
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
-    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+    	    $mgr->fill($C_MSG->{nicht_erlaubt});
 	}
     } elsif ($mgr->{UserType} eq "C") {
 	# C-Benutzer duerfen nur D-Benutzer veraendern
@@ -360,7 +360,7 @@ sub user_aktiv {
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
-    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+    	    $mgr->fill($C_MSG->{nicht_erlaubt});
 	}    
     } else {}
     
@@ -398,7 +398,7 @@ sub user_inaktiv {
 	$dbh->do("UNLOCK TABLES");
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	$mgr->{TmplData} {FORM} = $mgr->my_url;
-	$mgr->fill("der Admin kann nicht deaktiviert werden !!!");
+	$mgr->fill($C_MSG->{admin_aktiv});
 
     } else {
     
@@ -435,7 +435,7 @@ sub user_inaktiv {
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
-    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+    	    $mgr->fill($C_MSG->{nicht_erlaubt});
 	}
     } elsif ($mgr->{UserType} eq "C") {
 	# hier duerfen nur D-Benutzer veraendert werden
@@ -459,7 +459,7 @@ sub user_inaktiv {
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
-    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+    	    $mgr->fill($C_MSG->{nicht_erlaubt});
 	}    
     } else {
     }
@@ -502,10 +502,9 @@ sub user_edit {
     # es duerfen keine hoeheren Benutzertypen editiert werden
     # wieder nur fuer URL-Hacker
     
-	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
-	$mgr->{TmplData} {FORM} = $mgr->my_url;
-	$mgr->fill;
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+    	$mgr->{TmplData} {FORM} = $mgr->my_url;
+    	$mgr->fill($C_MSG->{nicht_erlaubt});
 	return 1;
     }
     
@@ -518,7 +517,7 @@ sub user_edit {
     $mgr->{TmplData} {LAST_NAME} = $ref->[4];
     $mgr->{TmplData} {EMAIL} = $ref->[5];
     $mgr->{TmplData} {DESC} = $ref->[8];
-    $mgr->{TmplData} {OUTPUT} = "User editieren: ID = ";
+    $mgr->{TmplData} {OUTPUT} = $C_MSG->{edit_id};
     
     # Unterscheiden der Benutzertypen -> Auswahl angepasst
     if ($type eq "A") {
@@ -756,10 +755,10 @@ sub user_add0 {
     
     $mgr->{TmplData}{FORM} = $mgr->my_url;
     $mgr->{TmplData}{TYPE} = $mgr->{CGI}->param('type');
-    $mgr->{TmplData}{OUTPUT} = sprintf("neuen User vom Typ %s hinzuf&uuml;gen", $type);
+    $mgr->{TmplData}{OUTPUT} = $C_MSG->{anlegen1}.$type.$C_MSG->{anlegen2};
     $mgr->{Template} = $C_TMPL->{UserAdd0Tmpl};
     
-    $mgr->fill;
+    $mgr->fill();
     1;
 }
 
@@ -869,7 +868,7 @@ sub user_add {
 	$mgr->{TmplData}{EMAIL} = $cgi->param('email');
 	$mgr->{TmplData}{TYPE} = $cgi->param('type');
 	$mgr->{TmplData}{DESC} = $cgi->param('desc');
-	$mgr->{TmplData}{OUTPUT} = sprintf("neuen User vom Typ %s hinzuf&uuml;gen", $type);
+	$mgr->{TmplData}{OUTPUT} = $C_MSG->{anlegen1}.$type.$C_MSG->{anlegen2};
 	$mgr->{Template} = $C_TMPL->{UserAddTmpl};
 
 	$mgr->fill;
@@ -914,7 +913,7 @@ sub user_add {
 
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	
-	$mgr->fill("neuen Benutzer angelegt");
+	$mgr->fill($C_MSG->{angelegt});
     }
     
     
