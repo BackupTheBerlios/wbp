@@ -4,12 +4,13 @@ use Digest::MD5;
 use fields (
 	'ExpTime',
         'SessDir',
-	'SessFile'
+	'SessFile',
+	'Sid'
 );
 use strict;
 use vars qw(%FIELDS $VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
 
 sub new {
  
@@ -29,8 +30,6 @@ sub new {
                 }
         }
 
-	$self->{SessFile} = "sessions" unless ($self->{SessFile});
- 
         $self;
 }
 
@@ -38,8 +37,9 @@ sub start_session {
 
 	my ($self, %par) = @_;
 
-	my $sid  = $self->_create_sid();
-	my $time = $self->_get_expires();
+	my $sid      = $self->_create_sid();
+	$self->{Sid} = $sid;
+	my $time     = $self->_get_expires();
 
 	my (%sessions, %sid);
 
@@ -61,16 +61,15 @@ sub start_session {
 sub kill_session {
 
 	my $self = shift;
-	my $sid  = shift;
 
 	my (%sessions, $dir_file, $pag_file);
 
-	$dir_file = sprintf("%s/%s.dir", $self->{SessDir}, $sid);
-	$pag_file = sprintf("%s/%s.pag", $self->{SessDir}, $sid);
+	$dir_file = sprintf("%s/%s.dir", $self->{SessDir}, $self->{Sid});
+	$pag_file = sprintf("%s/%s.pag", $self->{SessDir}, $self->{Sid});
 
 	dbmopen %sessions, sprintf("%s/%s", $self->{SessDir}, $self->{SessFile}), 0644 
 	or die "Can't open session file. Reason: $!";
-		delete $sessions{$sid};
+		delete $sessions{$self->{Sid}};
 	dbmclose %sessions;
 
 	unlink $dir_file if (-e $dir_file);
@@ -82,14 +81,15 @@ sub kill_session {
 sub check_sid {
 
 	my $self = shift;
-	my $sid  = shift;
 
-	my (%sessions);
+	return undef unless ($self->{Sid});
+
+	my %sessions;
 
 	dbmopen %sessions, sprintf("%s/%s", $self->{SessDir}, $self->{SessFile}), 0644
 	or die "Can't open session file. Reason: $!";
 		foreach (keys %sessions) {
-			if ($_ eq "$sid") {
+			if ($_ eq $self->{Sid}) {
 				dbmclose %sessions;
 				return 1;
 			}
@@ -102,12 +102,11 @@ sub check_sid {
 sub set {
 
 	my $self = shift;
-	my $sid  = shift;
 	my %par  = @_;
 
 	my %sid;
 
-	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $sid), 0644 
+	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $self->{Sid}), 0644 
 	or die "Can't open session file. Reason: $!";
 		foreach (keys %par) {
 			$sid{$_} = $par{$_};
@@ -120,12 +119,11 @@ sub set {
 sub get {
 
 	my $self = shift;
-	my $sid  = shift;
 	my $key  = shift;
 
 	my (%sid, $value);
 
-	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $sid), 0644 
+	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $self->{Sid}), 0644 
 	or die "Can't open session file. Reason: $!";
 		$value = $sid{$key};
 	dbmclose %sid;
@@ -136,17 +134,33 @@ sub get {
 sub del {
 
 	my $self = shift;
-	my $sid  = shift;
 	my $key  = shift;
 
 	my %sid;
 
-	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $sid), 0644 
+	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $self->{Sid}), 0644 
 	or die "Can't open session file. Reason: $!";
 		delete $sid{$key};
 	dbmclose %sid;
 	
 	1;	
+}
+
+sub set_sid {
+
+	my $self = shift;
+	my $sid  = shift || undef;
+
+	$self->{Sid} = $sid;
+
+	1;
+}
+
+sub get_sid {
+
+	my $self = shift;
+	
+	$self->{Sid} || undef;
 }
 
 sub check_sessions {

@@ -17,7 +17,6 @@ use fields (
 	'ErrorTmpl',     # error template
 	'LoginTmpl',     # login template
 	'NewsTable',     # "news" table
-	'MainTmpl',      # main template
 	'MReceiveTable', # "message receive" table
 	'MSendTable',    # "message send" table
 	'MToUserTable',  # "message to user" table
@@ -31,16 +30,20 @@ use fields (
 	'Session',       # session object
 	'ScriptName',    # name of this script
 	'Sid',           # current sid
+	'StartTmpl',     # start template
 	'Template',      # template file
 	'TmplData',      # data for the template
 	'TmplDir',       # directory for the templates
+	'UserFirstName', # first name of the user
+	'UserId',        # id of the user
+	'UserLastName',  # last name of the user
 	'UserTable',     # "benutzer" table
 	'UserType'       # type of the user
 );
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -63,7 +66,6 @@ sub handler {
 		ErrorTmpl     => $wbp_config::CONFIG->{ErrorTmpl},
 		LoginTmpl     => $wbp_config::CONFIG->{LoginTmpl},
 		NewsTable     => $wbp_config::CONFIG->{NewsTable},
-		MainTmpl      => $wbp_config::CONFIG->{MainTmpl},
 		MReceiveTable => $wbp_config::CONFIG->{MReceiveTable},
 		MSendTable    => $wbp_config::CONFIG->{MSendTable},
 		MToUserTable  => $wbp_config::CONFIG->{MToUserTable},
@@ -77,16 +79,21 @@ sub handler {
 		Session       => undef,
 		ScriptName    => $ENV{SCRIPT_NAME},
 		Sid           => undef,
+		StartTmpl     => $wbp_config::CONFIG->{StartTmpl},
 		Template      => undef,
 		TmplData      => undef,
 		TmplDir       => $wbp_config::CONFIG->{TmplDir},
+		UserFirstName => undef,
+		UserId        => undef,
+		UserLastName  => undef,
 		UserTable     => $wbp_config::CONFIG->{UserTable},
 		UserType      => undef
 	);
 	
 	$self->{Session} = Session->new(SessDir  => $self->{SessDir}, 
 					SessFile => $self->{SessFile},
-					ExpTime  => "3600");
+					ExpTime  => "3600",
+					Sid      => undef);
 
 	my ($check, $class, $param, $sid);
 
@@ -95,24 +102,33 @@ sub handler {
 	$self->{Action} = $param;
 	$self->{Sid}    = $sid;
 
-	eval { $check = $self->{Session}->check_sid($sid); };
+	$self->{Session}->set_sid($sid);
+
+	eval { $check = $self->{Session}->check_sid(); };
 	if ($@) {
 		warn "Trouble checking session id [$sid]";
 		warn "[Error] $@";
 		$self->fatal_error;
 	}
 
-	if ($check) {	
-		if ($param eq ('message')) {
+	if ($check) {
+		$self->{UserFirstName} = $self->{Session}->get("FIRSTNAME");
+		$self->{UserLastName}  = $self->{Session}->get("LASTNAME");
+		$self->{UserId}        = $self->{Session}->get("USERID");
+		$self->{UserType}      = $self->{Session}->get("USERTYPE");
+	
+		if ($param eq ('project')) {
+			require project;
+		} elsif ($param eq ('message')) {
 			require message; 
 		} else {
-			require login;
+			require start;
 		}
 	} else {
 		$param          = $self->{DefaultMode};
 		$self->{Action} = $self->{DefaultMode};
 		$self->{Sid}    = undef;
-		require login;
+		require start;
 	}
 
 	eval { $class = $param->instance(); };
@@ -181,7 +197,7 @@ sub _output {
 		$self->_template_error($self->{Template});
 	}
 
-	my $tmpl = HTML::Template->new(filename => $self->{Template},path => $self->{TmplDir});
+	my $tmpl = HTML::Template->new(filename => $self->{Template}, path => $self->{TmplDir});
 
 	$self->{TmplData}{ACTION} = $self->{Action};
 	$self->{TmplData}{SID}    = $self->{Sid};
@@ -217,11 +233,9 @@ sub _template_error {
 	my $tmpl = shift;
 
 	print <<EOT;
-<html>
-<body>
+<html><body>
 	<h1>Template [$tmpl] konnte nicht gelesen werden.</h1>
-</body>
-</html>
+</body></html>
 EOT
 
 	exit;
@@ -241,7 +255,7 @@ sub connect {
 		$self->{DbUser},
 		$self->{DbPassWord},
 		{RaiseError => 1}
-	) or die "Can't connect to database";
+	) or die "Can't connect to databse.";
 }
 
 #====================================================================================================#
@@ -255,9 +269,14 @@ sub my_url {
 
 	return $self->{MyUrl} if $self->{MyUrl};
 	if ($self->{Sid}) {
-		$self->{MyUrl} = sprintf("%s?action=%s&sid=%s", $self->{ScriptName}, $self->{Action}, $self->{Sid});
+		$self->{MyUrl} = sprintf("%s?action=%s&sid=%s", 
+					$self->{ScriptName}, 
+					$self->{Action}, 
+					$self->{Sid});
 	} else {
-		$self->{MyUrl} = sprintf("%s?action=%s", $self->{ScriptName}, $self->{Action});
+		$self->{MyUrl} = sprintf("%s?action=%s", 
+					$self->{ScriptName}, 
+					$self->{Action});
 	}
 	return $self->{MyUrl};
 } 
@@ -273,7 +292,19 @@ sub decode_all {
 	my $value = shift;
 
 	return unless (defined $value);
-# hier noch was hin ...
+
+	$value =~ s/&/&amp;/g;
+	$value =~ s/\"/&quot;/g;
+	$value =~ s/</&lt;/g;
+	$value =~ s/>/&gt;/g;
+	$value =~ s/ä/&auml;/g;
+	$value =~ s/Ä/&Auml;/g;
+	$value =~ s/ö/&ouml;/g;
+	$value =~ s/Ö/&Ouml;/g;
+	$value =~ s/ü/&uuml;/g;
+	$value =~ s/Ü/&Uuml;/g;
+	$value =~ s/ß/&szlig;/g;
+
 	return $value;
 }
 
@@ -288,7 +319,11 @@ sub decode_some {
 	my $value = shift;
 
 	return unless (defined $value);
-# hier noch was hin ...
+	
+	$value =~ s/\"/&quot;/g;
+	$value =~ s/</&lt;/g;
+	$value =~ s/>/&gt;/g;
+
 	return $value;
 }
 

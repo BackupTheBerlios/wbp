@@ -1,4 +1,38 @@
 #====================================================================================================#
+*** 17.05.2001 ***
+Sören Wurch
+
+- project.pm angelgt
+	* Funktion parameter angelegt
+- start.pm erweitert
+	* greift jetzt bei Messages auf start_config.pm zu
+- start_config angelegt
+	* MSG Hash angelegt
+- wbp.cgi geaendert
+	* Funktion decode_all erweitert
+	* Funktion decode_some erweitert
+	* einige Klassenvariablen erneuert
+	* auslesen von einigen Werten und Speichern dieser
+	  in die Session
+#====================================================================================================#
+*** 16.05.2001 ***
+Sören Wurch
+
+- Session.pm geaendert
+	* Globale Sid hinzugeueft und aus den Aufrufen weggenommen
+	* Funktion set_sid angelegt
+	* Funktion get_sid angelegt
+- login.pm in start.pm umbenannt
+	* dazu alle Aufrufparameter von login in start umbenannt
+	* Funktion parameter geaendert
+- wbp.pm geaendert
+	* login Aufrufe in start Aufrufe umbenannt
+	* Sessionerkennung geaendert
+	* Userfelder hinzugeueft
+- wbp_config.pm geaendert
+	* CONFIG Hash erweitert
+- login Template in start Template umbenannt und geaendert
+#====================================================================================================#
 *** 13.05.2001 ***
 Sören Wurch 
 
