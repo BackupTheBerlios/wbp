@@ -31,6 +31,42 @@ insert into wbp_user (username, password, firstname, lastname, email, type, stat
 insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt, ins_id) values
                      ('testd', 'test', 'bla4', 'blabla4', 'bla4@bla4.de', 'D', '1', '2001-03-14 12:15:20', '1');
 
+create table wbp_project (
+	id           int(10) unsigned  not null auto_increment,
+	name         varchar(255)      not null,
+	desc_project text default '',
+	start_dt     datetime          not null,
+	end_dt       datetime          not null,
+	status	     enum('0','1','2') not null     default '0',
+	ins_dt       datetime                       default '0', 
+	ins_id       int(10) unsigned               default '0',
+	upd_dt       datetime                       default '0',
+	upd_id       int(10) unsigned               default '0',
+	primary key (id)
+);
+
+create table wbp_phase (
+	id           int(10) unsigned  not null auto_increment,
+	name         varchar(255)      not null,
+        desc_phase   text default '',
+	project_id   int(10) unsigned  not null,
+	start_dt     datetime          not null,
+        end_dt       datetime          not null,
+	status       enum('0','1')     not null     default '0',
+	ins_dt       datetime                       default '0',
+        ins_id       int(10) unsigned               default '0',
+        upd_dt       datetime                       default '0',
+        upd_id       int(10) unsigned               default '0',
+	primary key (id)
+);
+
+create table wbp_user_project (
+	id           int(10) unsigned  not null auto_increment,
+	user_id      int(10) unsigned  not null,
+	project_id   int(10) unsigned  not null,
+	primary key(id)
+);
+
 CREATE TABLE wbp_send (
         id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         from_uid INT(10) UNSIGNED NOT NULL,
