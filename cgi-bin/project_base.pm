@@ -44,6 +44,7 @@ sub check_for_projects {
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ")) {
 		warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 			$mgr->{ProTable}, $dbh->ersstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
         my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{ProTable}});
  
@@ -71,6 +72,7 @@ sub check_for_categories {
 	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{CatTable}, $dbh->ersstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
         my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{CatTable}});
  
@@ -101,6 +103,7 @@ sub get_cat_name {
 	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{CatTable}, $dbh->ersstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
         my $sth = $dbh->prepare(qq{SELECT name FROM $mgr->{CatTable} WHERE id = ?});
  
@@ -132,6 +135,7 @@ sub check_project_name {
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->ersstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ? AND cat_id = ?});
 
@@ -179,13 +183,15 @@ sub get_and_set_projects {
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{ProUserTable} READ, $mgr->{PhaTable} READ")) {
                 warn srpintf("[Error]: Trouble locking tables [%s, %s, %s]. Reason: [%s].",
                         $mgr->{ProTable}, $mgr->{ProUserTable}, $mgr->{PhaTable}, $dbh->ersstr);
+		$dbh->do("UNLOCK TABLES");
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	my $sth = $dbh->prepare($sql);
 
 	unless ($sth->execute()) {
 		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
-                        $dbh->do("UNLOCK TABLES");
+                $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
 	}	
 
@@ -247,7 +253,7 @@ sub set_project_data {
 	if ($check) {
 		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{ProUserTable}, $dbh->errstr);
-                        $dbh->do("UNLOCK TABLES");
+                $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
 
@@ -265,7 +271,7 @@ sub set_project_data {
 	unless ($sth->execute($project[0])) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{PhaTable}, $dbh->errstr);
-                        $dbh->do("UNLOCK TABLES");
+                $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
@@ -327,12 +333,13 @@ sub change_status {
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->ersstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	
 	unless ($sth->execute($status, $mgr->now(), $mgr->{UserId}, $pid)) {
                 warn sprintf("[Error]: Trouble updating status in [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
-                        $dbh->do("UNLOCK TABLES");
+                $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
 
@@ -362,6 +369,7 @@ sub change_mode {
         unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->ersstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
  
         my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET mode = ?, upd_dt = ?, upd_id = ? WHERE id = ?});
@@ -369,7 +377,7 @@ sub change_mode {
         unless ($sth->execute($new_mode, $mgr->now(), $mgr->{UserId}, $pid)) {
                 warn sprintf("[Error]: Trouble updating mode in [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
-                        $dbh->do("UNLOCK TABLES");
+                $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
  
@@ -377,6 +385,151 @@ sub change_mode {
         $dbh->do("UNLOCK TABLES");	
 
 	return 1;
+}
+
+sub get_and_set_for_c {
+
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+	my $dbh  = $mgr->connect;
+
+	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{ProUserTable} READ, ".
+			 "$mgr->{CatTable} READ, $mgr->{PhaTable} READ")) {
+		warn sprintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
+			$mgr->{ProTable}, $mgr->{ProUserTable}, $dbh->errstr);
+		$dbh->do("UNLOCK TABLES");
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	# Als ersten suchen wir alle Projekte, wo unser Typ C User Projektleiter ist, also Position = 1 hat.
+	my $sth = $dbh->prepare(qq{SELECT project_id FROM $mgr->{ProUserTable} WHERE user_id = ? AND position = '1'});
+
+	unless ($sth->execute($mgr->{UserId})) {
+		warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s].",
+			$mgr->{ProUserTable}, $dbh->errstr);
+		$dbh->do("UNLOCK TABLES");	
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	my (@tmpldata, @data, $check);
+
+	# Alle Projektids in ein Array pushen.
+        while (my ($data) = $sth->fetchrow_array()) {
+        	push (@data, $data);
+        }
+        $sth->finish;
+
+	# Wenn wir hier eien Wert groesser 0 erhalten, ist unserer User mindestens in einem Projekt 
+	# Projektleiter.
+	if ($sth->rows != 0) {
+		$sth = $dbh->prepare(qq{SELECT id, name, cat_id, start_dt, end_dt, status, mode FROM $mgr->{ProTable} WHERE id = ?});
+
+		my $i = 0;
+
+		# Alle Projekte selecten, wo der User Projektleiter ist und das Templatehash fuellen.
+		foreach (@data) {
+			unless ($sth->execute($_)) {
+                                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s].",
+                                                $mgr->{ProTable}, $dbh->errstr);
+                                $dbh->do("UNLOCK TABLES");
+                                $mgr->fatal_error($self->{C_MSG}->{DbError});
+                        }
+
+			my (@tmpdata) = $sth->fetchrow_array(); 
+
+			# Den richtigen Status einfuegen.
+			if ($tmpdata[5] == 1) {
+				$tmpldata[$i]{STATUS} = $mgr->decode_all($self->{C_MSG}->{Aktive});
+			} elsif ($tmpdata[5] == 0) {
+				$tmpldata[$i]{STATUS} = $mgr->decode_all($self->{C_MSG}->{Inaktive});
+			} else {
+				$tmpldata[$i]{STATUS} = $mgr->decode_all($self->{C_MSG}->{Closed});
+			}
+
+			# Analog zum status auch den Modus richtig einfuegen.
+			if ($tmpdata[6] == 0) {
+				$tmpldata[$i]{MODUS} = $mgr->decode_all($self->{C_MSG}->{Private});
+			} elsif ($tmpdata[6] == 1) {
+				$tmpldata[$i]{MODUS} = $mgr->decode_all($self->{C_MSG}->{Public});
+			}
+
+			# Die restlichen Daten des Projekts setzen.
+			$tmpldata[$i]{START_DT}       = $mgr->format_date($tmpdata[3]);
+			$tmpldata[$i]{ENDE_DT}        = $mgr->format_date($tmpdata[4]);
+			$tmpldata[$i]{CHANGE_PROJECT} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+							$_."&method=show_project";
+			$tmpldata[$i]{NAME}           = $mgr->decode_all($tmpdata[1]);
+
+			$i++;
+		}
+		$sth->finish;
+
+		$sth = $dbh->prepare(qq{SELECT COUNT(*) FROM $mgr->{ProUserTable} WHERE project_id = ? AND position = ?});
+
+		$i = 0;
+
+		# Hier werden noch die fehlenden und passenden Mengen von User in einem Projekt mit angeben.
+		foreach (@data) {
+			unless ($sth->execute($_, "0")) {
+                		$check++;
+        		}
+        		$tmpldata[$i]{USER_AB} = $sth->fetchrow_array;
+
+        		unless ($sth->execute($_, "1")) {
+                		$check++;
+        		}
+        		$tmpldata[$i]{USER_C} = $sth->fetchrow_array;
+
+        		unless ($sth->execute($_, "2")) {
+                		$check++;
+        		}
+        		$tmpldata[$i]{USER_D}        = $sth->fetchrow_array;
+			$tmpldata[$i]{CHANGE_USER_D} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+                                                        $_."&method=change_user_d";
+
+			if ($check) {
+                		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+                        		$mgr->{ProUserTable}, $dbh->errstr);
+                			$dbh->do("UNLOCK TABLES");
+                		$mgr->fatal_error($self->{C_MSG}->{DbError});
+        		}
+
+			$i++;
+
+			$check = 0;
+		}
+		$sth->finish;
+
+		$i = 0;
+
+		# Und fuer die Phasen nochmal.
+		$sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE project_id = ?});
+
+		foreach (@data) {
+        		unless ($sth->execute($_)) {
+                		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+                        		$mgr->{PhaTable}, $dbh->errstr);
+                		$dbh->do("UNLOCK TABLES");
+                		$mgr->fatal_error($self->{C_MSG}->{DbError});
+        		}
+
+        		$tmpldata[$i]{PHASES}        = $sth->rows;
+        		$tmpldata[$i]{CHANGE_PHASES} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+                                                        $_."&method=show_phase"; 
+        
+			$i++;
+		}
+		$sth->finish;
+
+		$mgr->{TmplData}{PROJECTS} = \@tmpldata; 
+		
+		$dbh->do("UNLOCK TABLES");
+		return 1;
+
+	} else {
+		$dbh->do("UNLOCK TABLES");
+		return 0;
+	}	
 }
 
 1;

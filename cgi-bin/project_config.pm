@@ -2,7 +2,7 @@ package project_config;
  
 use vars qw($VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
  
 $MSG = {
 	NotAllowed    => "Das Skript wurde mit einer falschen Methode aufgerufen.",
@@ -22,12 +22,14 @@ $MSG = {
 	Public        => "öffentlich",
 	ChangeStatus  => "Der Status wurde geändert.",
 	ChangeMode    => "Der Modus wurde geändert.",
-	StartEndDate  => "Das Startdatum muß vor dem Endedatum liegen."
+	StartEndDate  => "Das Startdatum muß vor dem Endedatum liegen.",
+	NoProjects    => "Sie sind in keinem Projekt Projektleiter."
 	      
 };
 
 $TMPL = {
-	Project     => "project.tmpl",
+	ProjectAB   => "project_ab.tmpl",
+	ProjectC    => "project_c.tmpl",
 	ProjectNew  => "project_new.tmpl",
 	ProjectShow => "project_show.tmpl"
 };

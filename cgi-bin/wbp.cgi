@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -109,8 +109,7 @@ sub handler {
 
 	eval { $check = $self->{Session}->check_sid(); };
 	if ($@) {
-		warn "Trouble checking session id [$sid]";
-		warn "[Error] $@";
+		warn "Trouble checking session id [$sid].\n[Error]: $@";
 		$self->fatal_error;
 	}
 
@@ -142,21 +141,18 @@ sub handler {
 
 	eval { $class = $param->instance(); };
 	if ($@) {
-		warn "Can't create class [$param]";
-		warn "[Error] $@";
+		warn "Can't create class [$param].\n[Error]: $@";
 		$self->fatal_error;
 	}
 
 	if ($class->can("parameter")) {
 		eval { $class->parameter($self); };
 		if ($@) {
-			warn "Can't execute method parameter in class [$param]";
-			warn "[Error] $@";
+			warn "Can't execute method parameter in class [$param].\n[Error]: $@";
 			$self->fatal_error;
 		}
 	} else {
-		warn "No parameter method in class [$param]";
-		warn "[Error] $@";
+		warn "No parameter method in class [$param].\n[Error]: $@";
 		$self->fatal_error;
 	}
 
@@ -225,13 +221,16 @@ sub fatal_error {
 	my $self = shift;
 	my $msg  = shift;
 	
-	$self->{Template}      = $self->{ErrorTmpl}; 
+	$self->{Template} = $self->{ErrorTmpl}; 
+	delete $self->{TmplData};
 	
 	if (defined $msg) {
 		$self->{TmplData}{MSG} = $self->decode_all($msg);
 	} else {
 		$self->{TmplData}{MSG} = $self->decode_all("Es ist ein unbekannter Fehler aufgetreten.");
 	}
+
+	warn "[Time]: ".$self->now();
 
 	$self->_output;
 	exit;

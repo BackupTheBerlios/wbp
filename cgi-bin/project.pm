@@ -8,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -95,9 +95,8 @@ sub menue {
         $mgr->{TmplData}{PROJECTS} = 1 if ($self->{BASE}->check_for_projects != 0);
  
         if ($mgr->{UserType} ne "C") {
-                $mgr->{TmplData}{USER_AB} = 1;
-		$mgr->{TmplData}{TYPE_AB} = 1;
-		
+		$mgr->{Template} = $C_TMPL->{ProjectAB};
+	
 		my @kategorien = $self->{BASE}->check_for_categories;
 
 		if (@kategorien) {
@@ -110,10 +109,19 @@ sub menue {
 
 			$mgr->{TmplData}{KATEGORIEN} = \@tmp;
 		}
-        }
- 
-        $mgr->{Template}       = $C_TMPL->{Project};
-        $mgr->{TmplData}{FORM} = $mgr->my_url;
+        } else {
+        	$mgr->{Template} = $C_TMPL->{ProjectC};
+
+		my $check = $self->{BASE}->get_and_set_for_c();
+		
+		if ($check) {
+			$mgr->{TmplData}{IF_PROJECTS} = 1;
+		} else {
+			$mgr->{TmplData}{NO_PROJECTS} = $mgr->decode_all($C_MSG->{NoProjects});
+		}
+	}        
+
+	$mgr->{TmplData}{FORM} = $mgr->my_url;
  
         $mgr->fill($msg);
 

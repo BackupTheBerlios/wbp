@@ -7,6 +7,7 @@
 <hr size="1" noshade width="80%">
 
 <table cellspacing="2" cellpadding="2" border="0" align="center" width="80%">
+<TMPL_IF IF_PROJECTS>
 <tr>
 	<td>
 		<b>Datum (Start/Ende)</b>	
@@ -47,35 +48,19 @@
 		<a href="<TMPL_VAR CHANGE_PROJECT>"><TMPL_VAR NAME></a> 
 	</td>
 	<td>
-		<TMPL_IF STATUS_AKTIV_LINK>
-			<a href="<TMPL_VAR STATUS_AKTIV_LINK>"><TMPL_VAR STATUS_AKTIV></a>
-		<TMPL_ELSE>
-			<TMPL_VAR STATUS_AKTIV>
-		</TMPL_IF>
-		<br>
-		<TMPL_IF STATUS_INAKTIV_LINK>
-			<a href="<TMPL_VAR STATUS_INAKTIV_LINK>"><TMPL_VAR STATUS_INAKTIV></a>
-		<TMPL_ELSE>
-			<TMPL_VAR STATUS_INAKTIV>
-		</TMPL_IF>
-		<br>
-		<TMPL_IF STATUS_CLOSED_LINK>
-			<a href="<TMPL_VAR STATUS_CLOSED_LINK>"><TMPL_VAR STATUS_CLOSED></a>
-		<TMPL_ELSE>
-			<TMPL_VAR STATUS_CLOSED>
-		</TMPL_IF>
+		<TMPL_VAR STATUS>
 	</td>
 	<td>
-		<a href="<TMPL_VAR CHANGE_MODE>"><TMPL_VAR MODUS></a>
+		<TMPL_VAR MODUS>
 	</td>
 	<td>
 		<a href="<TMPL_VAR CHANGE_PHASES>"><TMPL_VAR PHASES></a>
 	</td>
 	<td>
-		<a href="<TMPL_VAR CHANGE_USER_AB>"><TMPL_VAR USER_AB></a>
+		<TMPL_VAR USER_AB>
 	</td>
 	<td>
-		<a href="<TMPL_VAR CHANGE_USER_C>"><TMPL_VAR USER_C></a>
+		<TMPL_VAR USER_C>
 	</td>
 	<td>
 		<a href="<TMPL_VAR CHANGE_USER_D>"><TMPL_VAR USER_D></a>
@@ -87,6 +72,9 @@
 	</td>
 </tr>
 </TMPL_LOOP>
+<TMPL_ELSE>
+	<font color="red"><TMPL_VAR NO_PROJECTS></font>
+</TMPL_IF>
 </table>
 
 <hr size="1" noshade width="80%">
