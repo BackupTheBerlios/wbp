@@ -6,7 +6,7 @@ use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -131,7 +131,6 @@ sub user_search {
     if ($flag == 0) {
 	$search_name = $mgr->{Session}->get("SearchName") || "";
 	$search_id = $mgr->{Session}->get("SearchId") || "0";	
-	$mgr->{Session}->del("edit");
     }
         
     $mgr->{Session}->set(SearchName => $search_name);
@@ -254,7 +253,13 @@ sub user_search {
     }	
 	
     $mgr->{TmplData} {FORM} = $mgr->my_url;    
-    $mgr->fill;
+    
+    if (defined($mgr->{Session}->get("edit"))) {
+	$mgr->{Session}->del("edit");
+        $mgr->fill("Benutzerdaten aktualisiert ...");
+    } else {
+	$mgr->fill;
+    }
     
     $sth->finish;
     $dbh->do("UNLOCK TABLES");
@@ -285,30 +290,49 @@ sub user_aktiv {
     
     my $ref = $sth->fetchrow_arrayref();
     
-    if ($ref->[6] lt $mgr->{UserType}) {
-    
-	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
-	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!<br>Dieser Fehler wurde protokolliert !!!";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
-	$mgr->{TmplData} {FORM} = $mgr->my_url;
-	$mgr->fill;
-    
-    } else {
-    
+    if ($mgr->{UserType} eq "A") {
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
-    
 	unless ($sth->execute()) {
 	}
-    
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
     
         $self -> user_search($mgr, 0);
-    }
+    } elsif ($mgr->{UserType} eq "B") {
+	if ($ref->[6] gt "A") {
+	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
+	    unless ($sth->execute()) {
+	    }
+	    $sth->finish;
+	    $dbh->do("UNLOCK TABLES");
     
-    1;
+    	    $self -> user_search($mgr, 0);
+	} else {
+	    $sth->finish;
+    	    $dbh->do("UNLOCK TABLES");
+    	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+    	    $mgr->{TmplData} {FORM} = $mgr->my_url;
+    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+	}
+    } elsif ($mgr->{UserType} eq "C") {
+	if ($ref->[6] eq "D") {
+	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
+	    unless ($sth->execute()) {
+	    }
+	    $sth->finish;
+	    $dbh->do("UNLOCK TABLES");
+	    
+	    $self -> user_search($mgr, 0);
+	} else {
+	    $sth->finish;
+    	    $dbh->do("UNLOCK TABLES");
+    	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+    	    $mgr->{TmplData} {FORM} = $mgr->my_url;
+    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+	}    
+    } else {}
     
+    1;    
 }
 
 #=============================================================================
@@ -343,26 +367,51 @@ sub user_inaktiv {
 	$mgr->{TmplData} {FORM} = $mgr->my_url;
 	$mgr->fill;
 
-    } elsif ($ref->[6] lt $mgr->{UserType}) {
-    
-	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
-	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!<br>Dieser Fehler wurde protokolliert !!!";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
-	$mgr->{TmplData} {FORM} = $mgr->my_url;
-	$mgr->fill;
-    
     } else {
-	
-    	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
     
+    if ($mgr->{UserType} eq "A") {
+	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
 	unless ($sth->execute()) {
 	}
-
-        $sth->finish;
+	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
     
-	$self -> user_search($mgr, 0);
+        $self -> user_search($mgr, 0);
+    } elsif ($mgr->{UserType} eq "B") {
+	if ($ref->[6] gt "A") {
+	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
+	    unless ($sth->execute()) {
+	    }
+	    $sth->finish;
+	    $dbh->do("UNLOCK TABLES");
+    
+    	    $self -> user_search($mgr, 0);
+	} else {
+	    $sth->finish;
+    	    $dbh->do("UNLOCK TABLES");
+    	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+    	    $mgr->{TmplData} {FORM} = $mgr->my_url;
+    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+	}
+    } elsif ($mgr->{UserType} eq "C") {
+	if ($ref->[6] eq "D") {
+	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
+	    unless ($sth->execute()) {
+	    }
+	    $sth->finish;
+	    $dbh->do("UNLOCK TABLES");
+	    
+	    $self -> user_search($mgr, 0);
+	} else {
+	    $sth->finish;
+    	    $dbh->do("UNLOCK TABLES");
+    	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+    	    $mgr->{TmplData} {FORM} = $mgr->my_url;
+    	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
+	}    
+    } else {
+    }
+    
     }
         
     1;
@@ -588,13 +637,10 @@ sub user_ok {
 	
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
-    
-	$mgr->{TmplData}{OUTPUT} = "neue Userdaten &uuml;bernommen";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
-	
-	$mgr->fill;
 	
 	$mgr->{Session}->set("edit" => "1");
+	
+	$self -> user_search($mgr, 0);
 	
     }
     
@@ -731,10 +777,9 @@ sub user_add {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 	
-	$mgr->{TmplData}{OUTPUT} = "neuen User angelegt";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 
-	$mgr->fill;
+	$mgr->fill("neuen Benutzer angelegt");
     }
     
     
