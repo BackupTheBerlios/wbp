@@ -1,4 +1,15 @@
 #====================================================================================================#
+*** 04.06.2001 ***
+Michael Krüger
+- message.pm geändert, in Anlehnung an project.pm
+- message_config.pm erweitert, um Templates
+- message_base.pm angelegt,
+        * fetch_{users,projects,project_members,received_messages} und insert_new_messages
+- message_new.tmpl angelegt
+- messages_read.tmpl abgelegt
+- message_form.tmpl gelöscht
+- message_confirm.tmpl gelöscht
+#====================================================================================================#
 *** 03.05.2001 ***
 Sören Wurch
 
