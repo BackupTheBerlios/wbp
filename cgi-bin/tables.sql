@@ -1,5 +1,3 @@
-# drop table wbp_user;
-
 create table wbp_user (
 	id        int(10) unsigned      not null auto_increment,
 	username  varchar(8)            not null,
@@ -57,4 +55,28 @@ CREATE TABLE wbp_to_user (
         id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         mid INT(10) UNSIGNED NOT NULL,
         uid INT(10) UNSIGNED NOT NULL
-);    
+);
+
+CREATE TABLE wbp_category ( 
+  id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  desc_category TEXT NOT NULL DEFAULT "",
+  status ENUM('0','1') NOT NULL DEFAULT 1,
+  ins_dt DATETIME NOT NULL,
+  ins_id INT(10) UNSIGNED DEFAULT 0,
+  upd_dt DATETIME NOT NULL DEFAULT 0,
+  upd_id VARCHAR(8) NOT NULL DEFAULT ""
+);
+ 
+CREATE TABLE wbp_news ( 
+  id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  subject VARCHAR(100) NOT NULL,
+  text TEXT NOT NULL DEFAULT "",
+  start_dt DATETIME NOT NULL,
+  project_id INT(10) UNSIGNED,
+  status ENUM('0','1') NOT NULL DEFAULT 0,
+  ins_dt DATETIME NOT NULL,
+  ins_id INT(10) UNSIGNED DEFAULT 0,
+  upd_dt DATETIME NOT NULL DEFAULT 0,
+  upd_id VARCHAR(8) NOT NULL DEFAULT ""
+);     
