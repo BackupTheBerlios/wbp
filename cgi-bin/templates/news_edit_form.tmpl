@@ -1,0 +1,80 @@
+<TMPL_INCLUDE header.tmpl>
+ 
+<form action="<TMPL_VAR FORM>" method="post">
+ 
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="proid" value="<TMPL_VAR PROID>">
+<input type="hidden" name="newsid" value="<TMPL_VAR NEWSID>">
+<input type="hidden" name="pos" value="<TMPL_VAR POS>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> 
+  <tr> <td align="center" valign="center" height=100%>
+<br>
+<table> 
+<tr>
+  <td colspan=2>
+    <b>Betreff:</b>
+    <TMPL_IF SUBJECT_ERROR>
+      <font color=red> Bitte geben sie ein Betreff ein! </font>
+    </TMPL_IF>
+  </td>
+</tr>
+<tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+    <input type="text" name="subject" size="40" value="<TMPL_VAR SUBJECT>">
+  </td>
+</tr>
+<tr>
+  <td colspan=2>
+    <b>Text:</b>
+    <TMPL_IF TEXT_ERROR>
+      <font color=red> Bitte geben sie einen Text ein! </font>
+    </TMPL_IF>
+  </td>
+</tr>
+<tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+    <textarea name="text" rows=10 cols=60 wrap=virtual><TMPL_VAR TEXT></textarea>
+  </td>
+</tr>
+<tr>
+  <td colspan=2>
+    <b>Ver&ouml;ffentlichungsdatum:</b>
+  </td>
+</tr>
+<tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+    <input type="text" name="day" size="2" value="<TMPL_VAR DAY>"> - 
+    <input type="text" name="month" size="2" value="<TMPL_VAR MONTH>"> - 
+    <input type="text" name="year" size="4" value="<TMPL_VAR YEAR>">
+    ( Format: TT - MM - JJJJ )
+    <TMPL_IF DATE_ERROR>
+      <font color=red> Datum nicht korrekt! </font>
+    </TMPL_IF>
+    <br>
+    <TMPL_IF ATONCE>
+      <input type=checkbox name="atonce" value="atonce" checked> Sofort
+    <TMPL_ELSE>
+      <input type=checkbox name="atonce" value="atonce"> Sofort
+    </TMPL_IF>
+  </td>
+</tr>
+
+<tr>
+  <td colspan=2 align=center>
+    <input type="submit" name="edit" value="&Auml;ndern">
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <input type="submit" name="break" value="Abbrechen">
+  </td>
+</tr>
+</table>
+
+</td> </tr> </table>
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

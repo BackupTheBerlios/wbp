@@ -7,9 +7,6 @@
 # Author: Alexander Vipach (avipach@cs.tu-berlin.de)                            #
 #                                                                               #
 # ToDo:   - Startdatum beachten                                                 #
-#         - News löschen                                                        #
-#         - News editieren                                                      #
-#         - Returns in den News nicht verlieren                                 #
 #                                                                               #
 #################################################################################
 
@@ -23,7 +20,7 @@ use message_base;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $news_config::MSG;
 $C_TMPL = $news_config::TMPL;
@@ -58,6 +55,12 @@ sub parameter {
       $self->release_news( $mgr , $mgr->{CGI}->param('newsid') , $mgr->{CGI}->param('projectid') , '1' );
     } elsif ($method eq 'stop_news') {
       $self->release_news( $mgr , $mgr->{CGI}->param('newsid') , $mgr->{CGI}->param('projectid') , '0' );
+    } elsif ($method eq 'edit_news') {
+      $self->news_edit_form( $mgr , $mgr->{CGI}->param('newsid') , $mgr->{CGI}->param('projectid') ,
+                             $mgr->{CGI}->param('pos') );
+    } elsif ($method eq 'del_news') {
+      $self->news_del_form( $mgr , $mgr->{CGI}->param('newsid') , $mgr->{CGI}->param('projectid') ,
+                            $mgr->{CGI}->param('pos') );
     };
   } else {
     if (defined $mgr->{CGI}->param('create')) {
@@ -65,6 +68,12 @@ sub parameter {
       return 1;
     } elsif (defined $mgr->{CGI}->param('show_projects')) {
       $self->news_show_projects($mgr);
+      return 1;
+    } elsif (defined $mgr->{CGI}->param('delete')) {
+      $self->news_del($mgr);
+      return 1;
+    } elsif (defined $mgr->{CGI}->param('edit')) {
+      $self->news_edit($mgr);
       return 1;
     } elsif (($mgr->{UserType} eq "A") || ($mgr->{UserType} eq "B")) {
       $self->news_user_type_AB($mgr);
@@ -188,6 +197,257 @@ sub news_user_type_D {
 
 #################################################################################
 #                                                                               #
+# Name:   news_edit( $mgr );                                                    #
+#                                                                               #
+# Descr.: Wertet die im News_Edit_Form gemachten Eingaben aus und schreibt sie  #
+#         in die Datenbank.                                                     #
+#                                                                               #
+# Bugs:                                                                         #
+#                                                                               #
+#################################################################################
+
+sub news_edit {
+
+  my $self      = shift;
+  my $mgr       = shift;
+
+  if (($mgr->{CGI}->param('subject') eq '') ||
+      ($mgr->{CGI}->param('text') eq '') ||
+
+      ((($mgr->{CGI}->param('day') eq '') ||
+        ($mgr->{CGI}->param('month') eq '') ||
+        ($mgr->{CGI}->param('year') eq '')) &&
+       ($mgr->{CGI}->param('atonce') ne 'atonce'))
+     ) {
+    # Eine Eingabe ist fehlerhaft
+    $mgr->{Template} = $C_TMPL->{NewsEditForm};
+
+    $mgr->{TmplData}{PROID} = $mgr->{CGI}->param('proid');
+    $mgr->{TmplData}{NEWSID} = $mgr->{CGI}->param('newsid');
+    $mgr->{TmplData}{POS}   = $mgr->{CGI}->param('pos');
+    $mgr->{TmplData}{FORM}  = $mgr->my_url;
+
+    $mgr->{TmplData}{SUBJECT} = $mgr->{CGI}->param('subject');
+    $mgr->{TmplData}{TEXT}    = $mgr->{CGI}->param('text');
+    $mgr->{TmplData}{DAY}     = $mgr->{CGI}->param('day');
+    $mgr->{TmplData}{MONTH}   = $mgr->{CGI}->param('month');
+    $mgr->{TmplData}{YEAR}    = $mgr->{CGI}->param('year');
+    if (defined $mgr->{CGI}->param('atonce')) {
+      $mgr->{TmplData}{ATONCE} = 1;
+    };
+
+    if ($mgr->{CGI}->param('subject') eq '') { $mgr->{TmplData}{SUBJECT_ERROR} = 1; };
+    if ($mgr->{CGI}->param('text') eq '') { $mgr->{TmplData}{TEXT_ERROR} = 1; };
+    if ((($mgr->{CGI}->param('day') eq '') ||
+         ($mgr->{CGI}->param('month') eq '') ||
+         ($mgr->{CGI}->param('year') eq '')) &&
+        ($mgr->{CGI}->param('atonce') ne 'atonce')) {
+      $mgr->{TmplData}{DATE_ERROR} = 1;
+    };
+
+    $mgr->fill;
+  } else {
+    # alle Eingaben scheinen korrekt zu sein
+
+    my $startdate;
+    if (defined $mgr->{CGI}->param('atonce')) {
+      $startdate = $mgr->now;
+    } else {
+      $startdate = date [$mgr->{CGI}->param('year'), $mgr->{CGI}->param('month'), $mgr->{CGI}->param('day'), 00, 00, 00];
+    };
+    my $release;
+    if ($mgr->{CGI}->param('pos') == $Mitarbeiter) {
+      $release = 0;
+    } else {
+      $release = 1;
+    };
+    my $dbh = $mgr->connect;
+    unless ($dbh->do("LOCK TABLES $mgr->{NewsTable} WRITE")) {
+      warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
+    };
+    my $sth = $dbh->prepare(qq{UPDATE $mgr->{NewsTable} SET subject=?, text=?, start_dt=?, project_id=?, status=?,
+                               upd_dt=?, upd_id=? WHERE ID=?});
+    unless ($sth->execute($mgr->{CGI}->param('subject'), $mgr->{CGI}->param('text'), $startdate,
+                          $mgr->{CGI}->param('proid'), "$release", $mgr->now, $mgr->{UserId},
+                          $mgr->{CGI}->param('newsid'))) {
+      warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->errstr);
+      $dbh->do("UNLOCK TABLES");
+      $mgr->fatal_error($self->{C_MSG}->{DbError});
+    };
+
+    $dbh->do("UNLOCK TABLES");
+
+    $sth->finish;
+
+    if ($mgr->{CGI}->param('pos') == $Mitarbeiter) {
+      $self->show_member_messages($mgr, $mgr->{CGI}->param('proid'))
+    } else {
+      $self->show_leader_messages($mgr, $mgr->{CGI}->param('proid'))
+    };
+
+  };
+
+  return 1;
+};
+
+#################################################################################
+#                                                                               #
+# Name:   news_edit_form( $mgr , $news_id , $project_id , $pos );               #
+#                                                                               #
+# Descr.: Zeigt das Formular zum Bearbeiten von Newsbeiträgen an                #
+#                                                                               #
+# Bugs:                                                                         #
+#                                                                               #
+#################################################################################
+
+sub news_edit_form {
+
+  my $self       = shift;
+  my $mgr        = shift;
+  my $news_id    = shift;
+  my $project_id = shift;
+  my $pos        = shift;
+
+  my $dbh = $mgr->connect;
+  unless ($dbh->do("LOCK TABLES $mgr->{NewsTable} READ")) {
+    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
+  };
+
+  my $sth = $dbh->prepare(qq{ SELECT id, subject, text, start_dt, status, ins_id, upd_dt, upd_id FROM $mgr->{NewsTable} WHERE id = $news_id });
+
+  unless ($sth->execute()) {
+    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{NewsTable}, $dbh->errstr);
+    $mgr->fatal_error($C_MSG->{db_error});
+  };
+
+  my @news;
+  while (my ($id, $subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id ) = $sth->fetchrow_array()) {
+    push (@news, [$id, $subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id ]);
+  }
+  $sth->finish;
+  $dbh->do("UNLOCK TABLES");
+
+  my $start_dt = date $news[0][3];
+
+  $mgr->{Template} = $C_TMPL->{NewsEditForm};
+
+  $mgr->{TmplData}{PROID} = $project_id;
+  $mgr->{TmplData}{NEWSID} = $news_id;
+  $mgr->{TmplData}{POS}   = $pos;
+  $mgr->{TmplData}{FORM}  = $mgr->my_url;
+
+  $mgr->{TmplData}{SUBJECT} = $news[0][1];
+  $mgr->{TmplData}{TEXT}    = $news[0][2];
+  $mgr->{TmplData}{DAY}     = $start_dt->day;
+  $mgr->{TmplData}{MONTH}   = $start_dt->month;
+  $mgr->{TmplData}{YEAR}    = $start_dt->year;
+
+  $mgr->fill;
+
+  return(1);
+};
+
+#################################################################################
+#                                                                               #
+# Name:   news_del( $mgr );                                                     #
+#                                                                               #
+# Descr.: Löscht den Newsbeitrag aus der Datenbank.                             #
+#                                                                               #
+# Bugs:                                                                         #
+#                                                                               #
+#################################################################################
+
+sub news_del {
+
+  my $self       = shift;
+  my $mgr        = shift;
+
+  my $dbh = $mgr->connect;
+  unless ($dbh->do("LOCK TABLES $mgr->{NewsTable} WRITE")) {
+    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
+  };
+
+  my $test = $mgr->{CGI}->param('newsid');
+  my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{NewsTable} WHERE id = $test });
+
+  unless ($sth->execute()) {
+    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{NewsTable}, $dbh->errstr);
+    $mgr->fatal_error($C_MSG->{db_error});
+  };
+
+  $sth->finish;
+  $dbh->do("UNLOCK TABLES");
+
+  if ($mgr->{CGI}->param('pos') == $Mitarbeiter) {
+    $self->show_member_messages( $mgr , $mgr->{CGI}->param('proid') );
+  } else {
+    $self->show_leader_messages( $mgr , $mgr->{CGI}->param('proid') );
+  };
+
+  return(1);
+};
+
+#################################################################################
+#                                                                               #
+# Name:   news_del_form( $mgr , $news_id , $project_id , $pos );                #
+#                                                                               #
+# Descr.: Fragt nach, ob ausgewählter News-Beitrag wirklich gelöscht werden     #
+#         soll.                                                                 #
+#                                                                               #
+# Bugs:                                                                         #
+#                                                                               #
+#################################################################################
+
+sub news_del_form {
+
+  my $self       = shift;
+  my $mgr        = shift;
+  my $news_id    = shift;
+  my $project_id = shift;
+
+  my $dbh = $mgr->connect;
+  unless ($dbh->do("LOCK TABLES $mgr->{NewsTable} READ")) {
+    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
+  };
+
+  my $sth = $dbh->prepare(qq{ SELECT id, subject, text, start_dt, status, ins_id, upd_dt, upd_id FROM $mgr->{NewsTable} WHERE id = $news_id });
+
+  unless ($sth->execute()) {
+    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{NewsTable}, $dbh->errstr);
+    $mgr->fatal_error($C_MSG->{db_error});
+  };
+
+  my @news;
+  while (my ($id, $subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id ) = $sth->fetchrow_array()) {
+    push (@news, [$id, $subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id ]);
+  }
+  $sth->finish;
+  $dbh->do("UNLOCK TABLES");
+
+  $mgr->{Template} = $C_TMPL->{NewsDelForm};
+
+  $mgr->{TmplData}{PROID} = $project_id;
+  $mgr->{TmplData}{NEWSID} = $news_id;
+  $mgr->{TmplData}{POS} = $news_id;
+  $mgr->{TmplData}{FORM}  = $mgr->my_url;
+
+  $mgr->{TmplData}{STATUS} = $news[0][4];
+  $mgr->{TmplData}{SUBJECT} =  $mgr->decode_all($news[0][1]);
+  $mgr->{TmplData}{TEXT} =  $mgr->decode_all($news[0][2]);
+  $mgr->{TmplData}{AUTHOR} = $mgr->decode_all($self->news_intern_get_user($mgr, $news[0][5]));
+  $mgr->{TmplData}{STDATE} = $mgr->format_date($news[0][3]);
+  if ($news[0][5] ne $news[0][7]) {
+    $mgr->{TmplData}{CHANGE_AUTHOR}    = $mgr->decode_all($self->news_intern_get_user($mgr, $news[0][7]));
+    $mgr->{TmplData}{CHANGE_DATE}  = $mgr->format_date($news[0][6]);
+  };
+
+  $mgr->fill( $C_MSG->{ask_del} );
+
+  return(1);
+};
+
+#################################################################################
+#                                                                               #
 # Name:   news_show_projects( $mgr )                                            #
 #                                                                               #
 # Descr.: Zeigt die Projekte an, die den Suchkriterien entsprechen.             #
@@ -209,7 +469,6 @@ sub news_show_projects {
     warn srpintf("[Error]: Trouble locking tables [%s, %s]. Reason: [%s].",
                  $mgr->{ProTable}, $mgr->{ProUserTable}, $dbh->ersstr);
   };
-
 
   if ($mgr->{CGI}->param('project_art') eq 'all') {
     my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{ProTable} WHERE name LIKE '%$proname%'});
@@ -327,7 +586,7 @@ sub news_create {
     $mgr->{TmplData}{SUBJECT} = $mgr->{CGI}->param('subject');
     $mgr->{TmplData}{TEXT}    = $mgr->{CGI}->param('text');
     $mgr->{TmplData}{DAY}     = $mgr->{CGI}->param('day');
-    $mgr->{TmplData}{MONTH}    = $mgr->{CGI}->param('month');
+    $mgr->{TmplData}{MONTH}   = $mgr->{CGI}->param('month');
     $mgr->{TmplData}{YEAR}    = $mgr->{CGI}->param('year');
     if (defined $mgr->{CGI}->param('atonce')) {
       $mgr->{TmplData}{ATONCE} = 1;
@@ -347,7 +606,7 @@ sub news_create {
     # alle Eingaben scheinen korrekt zu sein
 
     my $startdate;
-    if ($mgr->{CGI}->param('atonce') ne 'atonce') {
+    if ($mgr->{CGI}->param('atonce') eq 'atonce') {
       $startdate = $mgr->now;
     } else {
       $startdate = date [$mgr->{CGI}->param('year'), $mgr->{CGI}->param('month'), $mgr->{CGI}->param('day'), 00, 00, 00];
@@ -377,7 +636,7 @@ sub news_create {
 
     if ($mgr->{CGI}->param('pos') == $Mitarbeiter) {
       $self->show_member_messages($mgr, $mgr->{CGI}->param('proid'))
-    } elsif ($mgr->{CGI}->param('pos') == $ProLeiter) {
+    } else {
       $self->show_leader_messages($mgr, $mgr->{CGI}->param('proid'))
     };
 
@@ -388,7 +647,7 @@ sub news_create {
 
 #################################################################################
 #                                                                               #
-# Name:   show_member_messages( $mgr , $pro_id )                                #
+# Name:   show_member_messages( $mgr , $pro_id );                               #
 #                                                                               #
 # Descr.: Zeigt die News vom Projekt mit der ID $pro_id an!                     #
 #                                                                               #
@@ -410,28 +669,38 @@ sub show_member_messages {
     warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
   };
 
-  my $sth = $dbh->prepare(qq{ SELECT subject, text, start_dt, status, ins_id FROM $mgr->{NewsTable} WHERE project_id = $projectid });
+  my $sth = $dbh->prepare(qq{ SELECT subject, text, start_dt, status, ins_id, upd_dt, upd_id, id FROM $mgr->{NewsTable} WHERE project_id = $projectid ORDER BY start_dt DESC });
 
   unless ($sth->execute()) {
-    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{CatTable}, $dbh->errstr);
+    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{NewsTable}, $dbh->errstr);
     $mgr->fatal_error($C_MSG->{db_error});
   };
 
   my @news;
-  while (my ($subject, $text, $start_dt, $status, $ins_id) = $sth->fetchrow_array()) {
-    push (@news, [$subject, $text, $start_dt, $status, $ins_id]);
+  while (my ($subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id, $id ) = $sth->fetchrow_array()) {
+    push (@news, [$subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id, $id]);
   }
   $sth->finish;
   $dbh->do("UNLOCK TABLES");
 
   my @tmp;
   # start_dt muss beachtet werden!
+  # && (date($news[$i][2]) <= date($mgr->now))
   for (my $i = 0; $i <= $#news; $i++) {
-    if ( ($news[$i][3] eq '1') || ($news[$i][4] == $mgr->{UserId}) ) {
+    if ( (($news[$i][3] eq '1') || ($news[$i][4] == $mgr->{UserId})) ) {
+      if ($news[$i][4] == $mgr->{UserId}) {
+        $tmp[$i]{EDIT_LINK} = $mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=edit_news&newsid=".$news[$i][7]."&projectid=".$projectid."&pos=".$Mitarbeiter;
+        $tmp[$i]{DELETE_LINK} = $mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=del_news&newsid=".$news[$i][7]."&projectid=".$projectid."&pos=".$Mitarbeiter;
+      };
       $tmp[$i]{STATUS}  = $news[$i][3];
       $tmp[$i]{SUBJECT} = $mgr->decode_all($news[$i][0]);
+      $tmp[$i]{STDATE} = $mgr->format_date($news[$i][2]);
       $tmp[$i]{TEXT}    = $mgr->decode_all($news[$i][1]);
       $tmp[$i]{AUTHOR}  = $mgr->decode_all($self->news_intern_get_user($mgr, $news[$i][4]));
+      if ($news[$i][4] ne $news[$i][6]) {
+        $tmp[$i]{CHANGE_AUTHOR}    = $mgr->decode_all($self->news_intern_get_user($mgr, $news[$i][6]));
+        $tmp[$i]{CHANGE_DATE}  = $mgr->format_date($news[$i][5]);
+      };
     };
   };
   $mgr->{TmplData}{NEWS_LOOP} = \@tmp;
@@ -464,39 +733,47 @@ sub show_leader_messages {
     warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
   };
 
-  my $sth = $dbh->prepare(qq{ SELECT id, subject, text, start_dt, status, ins_id FROM $mgr->{NewsTable} WHERE project_id = $projectid });
+  my $sth = $dbh->prepare(qq{ SELECT subject, text, start_dt, status, ins_id, upd_dt, upd_id, id FROM $mgr->{NewsTable} WHERE project_id = $projectid ORDER BY start_dt DESC });
 
   unless ($sth->execute()) {
-    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{CatTable}, $dbh->errstr);
+    warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{NewsTable}, $dbh->errstr);
     $mgr->fatal_error($C_MSG->{db_error});
   };
 
   my @news;
-  while (my ($id, $subject, $text, $start_dt, $status, $ins_id) = $sth->fetchrow_array()) {
-    push (@news, [$id, $subject, $text, $start_dt, $status, $ins_id]);
+  while (my ($subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id, $id ) = $sth->fetchrow_array()) {
+    push (@news, [$subject, $text, $start_dt, $status, $ins_id, $upd_dt, $upd_id, $id]);
   }
   $sth->finish;
   $dbh->do("UNLOCK TABLES");
 
   my @tmp;
   # start_dt muss beachtet werden!
+  # && (date($news[$i][2]) <= date($mgr->now))
   for (my $i = 0; $i <= $#news; $i++) {
-    $tmp[$i]{STATUS}  = $news[$i][4];
-    if ($news[$i][4] == 0) {
-      $tmp[$i]{RELEASE_LINK}=$mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=release_news&newsid=".$news[$i][0]."&projectid=".$projectid;
+    $tmp[$i]{EDIT_LINK} = $mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=edit_news&newsid=".$news[$i][7]."&projectid=".$projectid."&pos=".$ProLeiter;
+    $tmp[$i]{DELETE_LINK} = $mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=del_news&newsid=".$news[$i][7]."&projectid=".$projectid."&pos=".$ProLeiter;
+    if ($news[$i][3] == '1') {
+      $tmp[$i]{RELEASE_LINK} = $mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=stop_news&newsid=".$news[$i][7]."&projectid=".$projectid;
     } else {
-      $tmp[$i]{RELEASE_LINK}=$mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=stop_news&newsid=".$news[$i][0]."&projectid=".$projectid;
+      $tmp[$i]{RELEASE_LINK} = $mgr->{ScriptName}."?action=news&sid=".$mgr->{Sid}."&method=release_news&newsid=".$news[$i][7]."&projectid=".$projectid;
     };
-    $tmp[$i]{SUBJECT} = $mgr->decode_all($news[$i][1]);
-    $tmp[$i]{TEXT}    = $mgr->decode_all($news[$i][2]);
-    $tmp[$i]{AUTHOR}  = $mgr->decode_all($self->news_intern_get_user($mgr, $news[$i][5]));
+    $tmp[$i]{STATUS}  = $news[$i][3];
+    $tmp[$i]{SUBJECT} = $mgr->decode_all($news[$i][0]);
+    $tmp[$i]{STDATE} = $mgr->format_date($news[$i][2]);
+    $tmp[$i]{TEXT}    = $mgr->decode_all($news[$i][1]);
+    $tmp[$i]{AUTHOR}  = $mgr->decode_all($self->news_intern_get_user($mgr, $news[$i][4]));
+    if ($news[$i][4] ne $news[$i][6]) {
+      $tmp[$i]{CHANGE_AUTHOR}    = $mgr->decode_all($self->news_intern_get_user($mgr, $news[$i][6]));
+      $tmp[$i]{CHANGE_DATE}  = $mgr->format_date($news[$i][5]);
+    };
   };
-
   $mgr->{TmplData}{NEWS_LOOP} = \@tmp;
   $mgr->fill;
 
   return 1;
 };
+
 
 #################################################################################
 #                                                                               #
@@ -546,12 +823,12 @@ sub release_news {
 
   my $dbh = $mgr->connect;
   unless ($dbh->do("LOCK TABLES $mgr->{NewsTable} WRITE")) {
-    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{CatTable}, $dbh->ersstr);
+    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{NewsTable}, $dbh->ersstr);
   };
 
-  my $sth = $dbh->prepare(qq{UPDATE $mgr->{NewsTable} SET STATUS=?, UPD_ID=?, UPD_DT=? WHERE ID=?});
+  my $sth = $dbh->prepare(qq{UPDATE $mgr->{NewsTable} SET STATUS=? WHERE ID=?});
 
-  unless ($sth->execute( $status , $mgr->{UserId} , $mgr->now , $news_id )) {
+  unless ($sth->execute( $status, $news_id )) {
     warn sprintf("[Error]: Trouble updating status in [%s]. Reason: [%s].",
                   $mgr->{NewsTable}, $dbh->errstr);
                   $dbh->do("UNLOCK TABLES");

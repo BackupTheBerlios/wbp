@@ -11,21 +11,81 @@
 
   <tr> <td> <table cellspacing=0 border=0 width=100%>
 
+<TMPL_IF NEWS_LOOP>
+  <tr>
+    <td align=center colspan=2>
+      <br>
+      <a href='<TMPL_VAR NEWS_NEW_LINK>'>Neue News schreiben</a>
+      <br><br>
+    </td>
+  </tr>
+</TMPL_IF>
+
 <TMPL_LOOP NEWS_LOOP>
 
-  <tr>
-    <TMPL_IF STATUS>
-      <td bgcolor=blue colspan=2> <TMPL_VAR SUBJECT> </td>
+  <TMPL_IF STATUS>
+    <tr>
+      <td bgcolor="#80FB92" rowspan="4" valign="center"> <TMPL_VAR SUBJECT> </td>
+      <td bgcolor="#80FB92" align="right"> (freigegeben) </td>
+    </tr>
+    <TMPL_IF EDIT_LINK>
+      <tr>
+        <td bgcolor="#80FB92" align="right"> (<a href="<TMPL_VAR EDITLINK>">editieren</a>) </td>
+      </tr>
     <TMPL_ELSE>
-      <td bgcolor=red> <TMPL_VAR SUBJECT> </td>
-      <td bgcolor=red align=right> (nicht freigegeben) </td>
+      <tr>
+        <td bgcolor="#80FB92" align="right"> &nbsp; </td>
+      </tr>
     </TMPL_IF>
-  </tr>
+    <TMPL_IF DELETE_LINK>
+      <tr>
+        <td bgcolor="#80FB92" align="right"> (<a href="<TMPL_VAR DELETE_LINK>">l&ouml;schen</a>) </td>
+      </tr>
+    <TMPL_ELSE>
+      <tr>
+        <td bgcolor="#80FB92" align="right"> &nbsp; </td>
+      </tr>
+    </TMPL_IF>
+    <tr>
+      <td bgcolor="#80FB92" align="right"> <TMPL_VAR STDATE> </td>
+    </tr>
+  <TMPL_ELSE>
+    <tr>
+      <td bgcolor="#FB8080" rowspan="4" valign="center"> <TMPL_VAR SUBJECT> </td>
+      <td bgcolor="#FB8080" align="right"> (nicht freigegeben) </td>
+    </tr>
+    <TMPL_IF EDIT_LINK>
+      <tr>
+        <td bgcolor="#FB8080" align="right"> (<a href="<TMPL_VAR EDIT_LINK>">editieren</a>) </td>
+      </tr>
+    <TMPL_ELSE>
+      <tr>
+        <td bgcolor="#FB8080" align="right"> &nbsp; </td>
+      </tr>
+    </TMPL_IF>
+    <TMPL_IF DELETE_LINK>
+      <tr>
+        <td bgcolor="#FB8080" align="right"> (<a href="<TMPL_VAR DELETE_LINK>">l&ouml;schen</a>) </td>
+      </tr>
+    <TMPL_ELSE>
+      <tr>
+        <td bgcolor="#FB8080" align="right"> &nbsp; </td>
+      </tr>
+    </TMPL_IF>
+    <tr>
+      <td bgcolor="#FB8080" align="right"> <TMPL_VAR STDATE> </td>
+    </tr>
+  </TMPL_IF>
   <tr>
     <td colspan=2 bgcolor=#cecece> <TMPL_VAR TEXT> </TD>
   </tr>
   <tr>
-    <td align=right colspan=2 bgcolor=#bfbfbf> <TMPL_VAR AUTHOR> </td>
+    <td align=right colspan=2 bgcolor=#bfbfbf>
+      <TMPL_VAR AUTHOR>
+      <TMPL_IF CHANGE_AUTHOR>
+        (ge&auml;ndert am <TMPL_VAR CHANGE_DATE> von <TMPL_VAR CHANGE_AUTHOR>)
+      </TMPL_IF>
+    </td>
   </tr>
   <tr> <td colspan=2> &nbsp; </td> </tr>
 
@@ -36,7 +96,6 @@
 
   <tr>
     <td align=center>
-      <br>
       <a href='<TMPL_VAR NEWS_NEW_LINK>'>Neue News schreiben</a>
     </td>
   </tr>
