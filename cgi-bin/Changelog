@@ -1,4 +1,17 @@
 #====================================================================================================#
+*** 31.05.2001 ***
+Sören Wurch
+
+- wbp.cgi geaendert
+	* Funktion now() hinzugefuegt sowie Aenderungen in fill_header
+- project.tmpl geaendert
+- project_new.tmpl angelegt
+- project.pm erweitert
+	* zahlreiche Funktionen fuer das anzeigen des Projectsmenues
+	  sowie fuer das anlegen eines Projects angelegt 
+- project_base erweitert
+- project_config erweitert
+#====================================================================================================#
 *** 28.05.2001 ***
 Sören Wurch
 

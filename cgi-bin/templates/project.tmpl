@@ -4,16 +4,21 @@
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
-<hr size="1" noshade>
+<hr size="1" noshade width="80%">
 
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
 <TMPL_IF USER_AB>
-<table cellspacing="0" cellpadding="0" border="0" align="center">
 <tr>
-	<td>
+	<td align="left">
 		<b>Neues Projekt:</b>
 	</td>
-	<td>
-	<TMPL_IF CATEGORIES>
+	<td align="left">
+	<TMPL_IF KATEGORIEN>
+		<select name="kid">
+			<TMPL_LOOP KATEGORIEN>
+			<option value="<TMPL_VAR KID>"><TMPL_VAR KNAME></option>
+			</TMPL_LOOP>
+		</select>
 		<input type="submit" name="new" value="anlegen">
 	<TMPL_ELSE>
 		<font color="#ff0000">
@@ -22,17 +27,17 @@
 	</TMPL_IF>
 	</td>
 </tr>
-</table>
-
-<hr size="1" noshade>
-</TMPL_IF>
-
-<table cellspacing="0" cellpadding="0" border="0" align="center">
 <tr>
-	<td>
+	<td colspan="2">
+		<hr size="1" noshade>
+	</td>
+</tr>
+</TMPL_IF>
+<tr>
+	<td align="left">
 		<b>Projektsuche:</b>
 	</td>
-	<td>
+	<td align="left">
 	<TMPL_IF PROJECTS>
 		<input type="submit" name="search" value="suchen">
 	<TMPL_ELSE>
@@ -44,7 +49,7 @@
 </tr>
 </table>
 
-<hr size="1" noshade>
+<hr size="1" noshade width="80%">
 
 </form>
 

@@ -14,11 +14,15 @@
 	</td>
 </tr>
 <tr bgcolor="#cecece">
-	<td align="left">
+	<td align="left" colspan="2">
 		<b>Meldungen:</b>
-	</td>
-	<td>
-		<TMPL_IF MSG><font color="#ff0000"><TMPL_VAR MSG></font><TMPL_ELSE>&nbsp;</TMPL_IF>
+		<TMPL_IF MSG>
+                        <font color="#ff0000">
+                        <TMPL_VAR MSG>
+                        </font>
+                <TMPL_ELSE>
+                        <i>keine</i>
+                </TMPL_IF>
 	</td>
 </tr>
 </table>

@@ -1,0 +1,83 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade width="80%">
+
+<input type="hidden" name="kid" value="<TMPL_VAR KID>">
+
+<table cellspacing="0" cellpadding="5" border="0" align="center" width="80%" bgcolor="#b0b0b0">
+<tr>
+	<td align="left" valign="top">
+		<b>Name:</b>
+	</td>
+	<td align="left">
+		<input type="text" name="name" value="<TMPL_VAR NAME>">
+		<br>
+		<TMPL_IF ERROR_NAME>
+                        <font color="#ff0000"><TMPL_VAR ERROR_NAME></font>
+                </TMPL_IF>
+	</td>
+</tr>
+<tr>
+	<td align="left" valign="top">
+		<b>Kategorie:</b>
+	</td>
+	<td align="left">
+		<TMPL_VAR KNAME>
+	</td>
+</tr>
+<tr>
+	<td align="left" valign="top">
+		<b>Datum (Start):</b>
+	</td>
+	<td>
+		<input type="text" name="start_tag" value="<TMPL_VAR START_TAG>" size="2">.
+		<input type="text" name="start_monat" value="<TMPL_VAR START_MONAT>" size="2">.
+		<input type="text" name="start_jahr" value="<TMPL_VAR START_JAHR>" size="4">
+		<br>
+		<TMPL_IF ERROR_START_DATUM>
+                        <font color="#ff0000"><TMPL_VAR ERROR_START_DATUM></font>
+		<TMPL_ELSE>
+			&nbsp;
+                </TMPL_IF>
+	</td>
+</tr>
+<tr>
+	<td align="left" valign="top">
+		<b>Datum (Ende):</b>
+	</td>
+	<td>
+		<input type="text" name="ende_tag" value="<TMPL_VAR ENDE_TAG>" size="2">.
+                <input type="text" name="ende_monat" value="<TMPL_VAR ENDE_MONAT>" size="2">.
+                <input type="text" name="ende_jahr" value="<TMPL_VAR ENDE_JAHR>" size="4">
+		<br>
+		<TMPL_IF ERROR_ENDE_DATUM>
+                        <font color="#ff0000"><TMPL_VAR ERROR_ENDE_DATUM></font>
+		<TMPL_ELSE>
+			&nbsp;
+                </TMPL_IF>
+	</td>
+</tr>
+<tr>
+        <td align="left" valign="top">
+                <b>Beschreibung:</b>
+        </td>
+        <td align="left">
+        	<textarea rows="10" cols="40" wrap="virtual" name="beschreibung"><TMPL_VAR BESCHREIBUNG></textarea>
+	</td>
+</tr>
+<tr>
+	<td colspan="2" align="center">
+		<input type="submit" name="add_project" value="Anlegen">
+	</td>
+</tr>
+</table>
+
+<hr size="1" noshade width="80%">
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

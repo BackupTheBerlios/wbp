@@ -42,7 +42,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -287,6 +287,17 @@ sub my_url {
 	}
 	
 	return $self->{MyUrl};
+}
+
+#====================================================================================================#
+# SYNOPSIS: $instance->now();
+# PURPOSE:  Reads and formats the localtime into mysql datetime format.
+# RETURN:   datetime.
+#====================================================================================================#
+sub now {
+ 
+        sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+                sub {($_[0]+1900, $_[1]+1),@_[2..5]}->((localtime)[5,4,3,2,1,0]));
 } 
 
 #====================================================================================================#
@@ -297,11 +308,13 @@ sub my_url {
 sub fill_header {
 
 	my $self = shift;
+	my $msg  = shift || undef;
 	
 	$self->{TmplData}{FIRSTNAME} = $self->decode_all($self->{UserFirstName});
 	$self->{TmplData}{LASTNAME}  = $self->decode_all($self->{UserLastName});
 	$self->{TmplData}{LOGOUT}    = sprintf($self->{ScriptName}."?action=%s&sid=%s&method=logout",
 						$self->{DefaultMode}, $self->{Sid});
+	$self->{TmplData}{MSG}       = $self->decode_all($msg) if $msg;
 
 	1;
 }
