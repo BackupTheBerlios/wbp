@@ -1,0 +1,82 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade width="80%">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
+<tr>
+	<td align="left">
+		<h3>Neues Projekt:</h3>
+	</td>
+	<td align="left">
+	<TMPL_IF KATEGORIEN>
+		<select name="kid">
+			<TMPL_LOOP KATEGORIEN>
+			<option value="<TMPL_VAR KID>"><TMPL_VAR KNAME></option>
+			</TMPL_LOOP>
+		</select>
+		<input type="submit" name="new" value="anlegen">
+	<TMPL_ELSE>
+		<font color="#ff0000">
+		Sie m&uuml;&szlig;en erst eine Kategorie anlegen.
+		</font>
+	</TMPL_IF>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<hr size="1" noshade>
+	</td>
+</tr>
+<tr>
+	<td align="left" valign="top">
+		<h3>Projektsuche:</h3>
+	</td>
+	<td align="left">
+	<TMPL_IF PROJECTS>
+			<table cellspacing="0" cellpadding="0" border="0">
+			<tr>
+				<td>
+				<b>Projektname:</b>
+				</td>
+				<td>
+				<input type="text" name="project_name" value="">
+				</td>
+			</tr>
+			<tr>
+				<td>
+				<b>Kategorie:</b>
+				</td>
+				<td>
+				<select name="project_category">
+					<option value="0">Aus allen Kategorien</option>
+					<TMPL_LOOP KATEGORIEN>
+                        		<option value="<TMPL_VAR KID>"><TMPL_VAR KNAME></option>
+                        		</TMPL_LOOP>
+				</select>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>
+				<input type="submit" name="search" value="suchen">
+				</td>
+			</tr>
+			</table>
+	<TMPL_ELSE>
+		<font color="#ff0000">
+		Es sind keine Projekte vorhanden. 
+		</font>
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+
+<hr size="1" noshade width="80%">
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

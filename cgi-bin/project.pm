@@ -8,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -41,7 +41,8 @@ sub parameter {
 
 	if (defined $method) {
 		if ($method eq "show_project") {
-
+			$self->show_one_project();
+			return 1;
 		} elsif ($method eq "show_phase") {
 
 		} elsif ($method eq "change_status") {
@@ -56,7 +57,10 @@ sub parameter {
 
 		} elsif ($method eq "change_user_d") {
 
-		}  
+		} elsif ($method eq "back_change") {
+			$self->tmp_show_projects();
+			return 1;
+		} 
 	} else {
 		if (defined $cgi->param('new')) {
 			$self->menue_new();
@@ -70,7 +74,8 @@ sub parameter {
 		} elsif (defined $cgi->param('add_phase')) {
 	
 		} elsif (defined $cgi->param('change_project')) {
-
+			$self->change_project();
+			return 1;
 		} elsif (defined $cgi->param('change_phase')) {	
 
 		} elsif (defined $cgi->param('change_user_ab')) {
@@ -238,8 +243,8 @@ sub add_project {
 
 		my $dbh = $mgr->connect;
 		unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
-                	warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        	$mgr->{ProTable}, $dbh->ersstr);
+                	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        	$mgr->{ProTable}, $dbh->errstr);
         	}
 		my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProTable} (name, desc_project, cat_id ,start_dt, end_dt, 
 					   ins_dt, ins_id) VALUES (?, ?, ?, ?, ?, ?, ?)});
@@ -257,11 +262,21 @@ sub add_project {
 	}
 }
 
+sub change_project {
+	
+	my $self = shift;
+	my $msg  = $self->{BASE}->change_project() || undef;
+
+	if ($msg) {
+		$self->show_projects(1, $msg);
+	}
+}
+
 sub show_projects {
 
-	my $self  = shift;
-	my $check = shift || undef;
-	my $msg   = shift || "";
+	my $self     = shift;
+	my $check    = shift || undef;
+	my $msg      = shift || "";
  
         my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
@@ -271,14 +286,18 @@ sub show_projects {
 	my ($name, $cat);
 
 	if ($check) {
-		$name = $mgr->{Session}->get("SearchProjectName") || undef;
+		$name = $mgr->{Session}->get("SearchProjectName") || "";
 		$cat  = $mgr->{Session}->get("SearchCatId");
 	} else {
-		$name = $cgi->param('project_name') || undef;
+		$name = $cgi->param('project_name') || "";
 		$cat  = $cgi->param('project_category');
 
-		$mgr->{Session}->set(SearchProjectName => $name,
-				     SearchCatId       => $cat);
+		$mgr->{Session}->del("SearchProjectName");
+		$mgr->{Session}->del("SearchCatId");       
+
+		$mgr->{Session}->set(SearchProjectName => $name);
+	        $mgr->{Session}->set(SearchCatId       => $cat);
+
 	}
 
 	my $mode = 0; 
@@ -295,11 +314,42 @@ sub show_projects {
 	return 1;	
 }
 
+sub tmp_show_projects {
+	
+	my $self = shift;
+	
+	$self->show_projects(1, $C_MSG->{NoChanges});
+}
+
+sub show_one_project {
+	
+	my $self = shift;
+	
+	my $mgr = $self->{MGR};
+        my $cgi = $mgr->{CGI};
+	my $pid = $cgi->param('pid');
+
+	unless ($pid) {
+		warn "[Error]: Wrong script parameters.";
+		$mgr->fatal_error($C_MSG->{NotAllowed});
+	}
+
+	$mgr->{Template} = $C_TMPL->{ProjectChange};	
+
+	$self->{BASE}->show_one_project($pid);
+
+	if ($mgr->{UserType} eq "A" || $mgr->{UserType} eq "B") {
+		$mgr->{TmplData}{IF_USER_AB}       = 1;
+		$mgr->{TmplData}{BACK_CHANGE_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&method=back_change";
+	}	
+
+	$mgr->fill;
+}
+
 sub change_status {
 
 	my $self = shift;
 
-	my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
 
 	my $mode = $cgi->param('to');
@@ -314,7 +364,6 @@ sub change_mode {
 
 	my $self = shift;
 	
-	my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
 
 	my $mode = $cgi->param('to');

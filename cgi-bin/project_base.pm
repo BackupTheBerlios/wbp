@@ -2,7 +2,11 @@ package project_base;
 
 use vars qw($VERSION);
 use strict;
+use Class::Date qw(date);
 
+#
+# Der Konstruktior der Klasse.
+#
 sub new {
 
 	my $proto = shift;
@@ -20,6 +24,9 @@ sub new {
 	$self;
 }
 
+#
+# Pruefen ob ein Typ C oder Typ D User Projekte an legen will etc.
+#
 sub check_user {
 
 	my $self = shift;
@@ -33,6 +40,9 @@ sub check_user {
 	return; 
 }
 
+#
+# Pruefen, ob es Projekte gibt.
+#
 sub check_for_projects {
  
         my $self = shift;
@@ -60,7 +70,10 @@ sub check_for_projects {
 	$dbh->do("UNLOCK TABLES");
         return $count;
 }
- 
+
+#
+# Pruefen ob es Kategorien gibt.
+# 
 sub check_for_categories {
  
         my $self = shift;
@@ -92,6 +105,9 @@ sub check_for_categories {
         return @kategorien;
 } 
 
+#
+# Auslesen des Namens einer Kategorie.
+#
 sub get_cat_name {
 
 	my $self = shift;
@@ -121,15 +137,19 @@ sub get_cat_name {
 	return $kname;
 }
 
+#
+# Ueberpruefen, ob ein Projektname schon vorhanden ist.
+#
 sub check_project_name {
 
 	my $self = shift;
 	my $name = shift;
 	my $kid  = shift;
+	my $pid  = shift;
 
 	my $mgr = $self->{MGR};
 	
-	my $check;
+	my ($error, $check);
 
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ")) {
@@ -137,13 +157,24 @@ sub check_project_name {
                         $mgr->{ProTable}, $dbh->ersstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
-	my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ? AND cat_id = ?});
+	my $sth;
+	unless ($pid) {
+		$sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ? AND cat_id = ?});
+		unless ($sth->execute($name, $kid)) {
+                	$error++;
+        	}
+	} else {
+		$sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ? AND cat_id = ? AND id <> ?});
+		unless ($sth->execute($name, $kid, $pid)) {
+                	$error++;
+        	}
+	}
 
-	unless ($sth->execute($name, $kid)) {
+	if ($error) {
 		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-			$mgr->{ProTable}, $dbh->errstr);
-			$dbh->do("UNLOCK TABLES");
-		$mgr->fatal_error($self->{C_MSG}->{DbError});
+                        $mgr->{ProTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
 
 	if ($sth->rows != 0) {
@@ -155,6 +186,9 @@ sub check_project_name {
 	return $check;
 }
 
+#
+# Hilfsfunktion zum setzen der Projektdaten.
+#
 sub get_and_set_projects {
 
 	my $self = shift;
@@ -204,6 +238,8 @@ sub get_and_set_projects {
 			$tmpldata[$i]{$_} = $tmp{$_};
 		}
 
+		$tmpldata[$i]{KAT_NAME} = $mgr->decode_all($self->get_cat_name($project[2]));
+
 		$i++;	
 
 	}
@@ -219,6 +255,9 @@ sub get_and_set_projects {
 	return $count;
 }
 
+#
+# Einfuegen der Projektdaten i die Projektliste nach einer Suche.
+#
 sub set_project_data {
 
 	my $self    = shift;
@@ -318,6 +357,9 @@ sub set_project_data {
 	return %tmpldata;	
 }
 
+#
+# Aendern des Status zu einem Projekt.
+#
 sub change_status {
 
 	my $self   = shift;
@@ -349,6 +391,9 @@ sub change_status {
 	return 1;
 }
 
+#
+# Aendern des Modues eines Projekts.
+#
 sub change_mode {
 
 	my $self = shift;
@@ -387,6 +432,9 @@ sub change_mode {
 	return 1;
 }
 
+#
+# Ausgeben der Projektliste fuer einen Typ C User.
+#
 sub get_and_set_for_c {
 
 	my $self = shift;
@@ -459,6 +507,7 @@ sub get_and_set_for_c {
 			$tmpldata[$i]{CHANGE_PROJECT} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
 							$_."&method=show_project";
 			$tmpldata[$i]{NAME}           = $mgr->decode_all($tmpdata[1]);
+			$tmpldata[$i]{KAT_NAME}       = $mgr->decode_all($self->get_cat_name($tmpdata[2]));
 
 			$i++;
 		}
@@ -530,6 +579,236 @@ sub get_and_set_for_c {
 		$dbh->do("UNLOCK TABLES");
 		return 0;
 	}	
+}
+
+#
+# Anzeigen der Projektdaten in einer Form zum aendern.
+#
+sub show_one_project {
+
+	my $self = shift;
+	my $pid  = shift;
+
+	my $mgr = $self->{MGR};
+	my $dbh = $mgr->connect;
+
+	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{CatTable} READ")) {
+		warn srpintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
+                        $mgr->{ProTable}, $dbh->{CatTable}, $dbh->ersstr);
+		$dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	my $sth = $dbh->prepare(qq{SELECT id, start_dt, end_dt, name, desc_project, cat_id FROM $mgr->{ProTable} WHERE id = ?});
+	unless ($sth->execute($pid)) {
+		warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
+			$mgr->{ProTable}, $dbh->ersstr);
+		$dbh->do("UNLOCK TABLES");
+		$mgr->fatal_error($self->{C_MSG}->{DbError}); 
+	}
+
+	my @project_data = $sth->fetchrow_array();
+
+	$mgr->{TmplData}{PID}          = $mgr->decode_some($project_data[0]);
+	$mgr->{TmplData}{NAME}         = $mgr->decode_some($project_data[3]);
+	$mgr->{TmplData}{START_TAG}    = substr($project_data[1], 8, 2);
+	$mgr->{TmplData}{START_MONAT}  = substr($project_data[1], 5, 2);
+	$mgr->{TmplData}{START_JAHR}   = substr($project_data[1], 0, 4);
+	$mgr->{TmplData}{ENDE_TAG}     = substr($project_data[2], 8, 2);
+	$mgr->{TmplData}{ENDE_MONAT}   = substr($project_data[2], 5, 2);
+	$mgr->{TmplData}{ENDE_JAHR}    = substr($project_data[2], 0, 4);
+	$mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($project_data[4]);
+
+	$sth->finish;
+
+	$sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{CatTable}});
+        unless ($sth->execute()) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
+                        $mgr->{CatTable}, $dbh->ersstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+	my @kat_tmpl;
+	my $i = 0;
+
+        while (my ($kid, $kname) = $sth->fetchrow_array()) {
+		$kat_tmpl[$i]{KID}   = $kid;
+		$kat_tmpl[$i]{KNAME} = $mgr->decode_all($kname);
+
+		if ($kid == $project_data[5]) {
+			$kat_tmpl[$i]{KSELECT} = 1;
+		}
+
+		$i++;
+	}
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+
+	$mgr->{TmplData}{FORM} = $mgr->my_url();
+	$mgr->{TmplData}{KATS} = \@kat_tmpl;
+}
+
+#
+# Aendern eines Projekts in der Datenbank.
+#
+sub change_project {
+	
+	my $self = shift;
+	my $mgr = $self->{MGR};
+	my $cgi = $mgr->{CGI};
+
+	my $pid          = $cgi->param('pid');
+	my $kid          = $cgi->param('kategorie');
+        my $name         = $cgi->param('name')         || "";
+        my $start_tag    = $cgi->param('start_tag')    || "";
+        my $start_monat  = $cgi->param('start_monat')  || "";
+        my $start_jahr   = $cgi->param('start_jahr')   || "";
+        my $ende_tag     = $cgi->param('ende_tag')     || "";
+        my $ende_monat   = $cgi->param('ende_monat')   || "";
+        my $ende_jahr    = $cgi->param('ende_jahr')    || "";
+        my $beschreibung = $cgi->param('beschreibung') || "";
+
+	my $check = 0;
+        my ($start_dt, $end_dt);
+ 
+        if (length($name) > 255) {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{LengthName});
+                $check++;
+        } elsif ($name eq "") {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{EmptyName});
+                $check++;
+        }
+ 
+        if (($start_tag eq "") || ($start_monat eq "") || ($start_jahr eq "")) {
+                $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+        }
+ 
+        if (($ende_tag eq "") || ($ende_monat eq "") || ($ende_jahr eq "")) {
+                $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+        }
+ 
+        my $check_start_dt = $start_jahr.$start_monat.$start_tag;
+        my $check_end_dt   = $ende_jahr.$ende_monat.$ende_tag;
+        my $date_check;
+
+	if ($check_start_dt =~ m/\D/) {
+                $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+                $date_check++;
+        } else {
+                $start_dt = date [$start_jahr, $start_monat, $start_tag, 00, 00, 00];
+        }
+ 
+        if ($check_end_dt =~ m/\D/) {
+                $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+                $date_check++;
+        } else {
+                $end_dt = date [$ende_jahr, $ende_monat, $ende_tag, 00, 00, 00];
+        }
+ 
+        unless ($date_check) {
+                if ($start_dt >= $end_dt) {
+                        $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{StartEndDate});
+                        $mgr->{TmplData}{ERROR_ENDE_DATUM}  = $mgr->decode_all($self->{C_MSG}->{StartEndDate});
+                        $check++;
+                }
+        }
+ 
+        if ($self->check_project_name($name, $kid, $pid)) {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{ExistName});
+                $check++;
+        }
+ 
+        if ($check) {
+                $self->set_change_data($self->{C_MSG}->{ErrorChangePro});
+		return;
+        } else {
+ 
+                my $dbh = $mgr->connect;
+                unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
+                        warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                                $mgr->{ProTable}, $dbh->errstr);
+                }
+                my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET name = ?, desc_project = ?, 
+							cat_id = ?, start_dt = ?, end_dt = ?,
+                                           		upd_dt = ?, upd_id = ? WHERE id = ?});
+ 
+                unless ($sth->execute($name, $beschreibung, $kid, $start_dt, $end_dt, $mgr->now, $mgr->{UserId}, $pid)) {
+                        warn sprintf("[Error]: Trouble updating project into [%s]. Reason [%s].",
+                                $mgr->{ProTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                        $mgr->fatal_error($self->{C_MSG}->{DbError});
+                }
+ 
+                $dbh->do("UNLOCK TABLES");
+                $sth->finish;
+                return ($self->{C_MSG}->{UpdateProOk});
+        }
+
+}
+
+#
+# Wenn ein Fehler beim aendern der Projektdaten aufgetreten ist, wird diese Funktion aufgerufen.
+#
+sub set_change_data {
+
+	my $self = shift;
+	my $msg  = shift;
+
+	my $mgr = $self->{MGR};
+	my $cgi = $mgr->{CGI};
+
+	$mgr->{Template} = $self->{C_TMPL}->{ProjectChange};
+
+	my $dbh = $mgr->connect;
+	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $dbh->{CatTable}, $dbh->ersstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+
+	my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{CatTable}});
+        unless ($sth->execute()) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
+                        $mgr->{CatTable}, $dbh->ersstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        my @kat_tmpl;
+        my $i       = 0;
+	my $old_kid = $cgi->param('kategorie');
+ 
+        while (my ($kid, $kname) = $sth->fetchrow_array()) {
+                $kat_tmpl[$i]{KID}   = $kid;
+                $kat_tmpl[$i]{KNAME} = $mgr->decode_all($kname);
+ 
+                if ($kid == $old_kid) {
+                        $kat_tmpl[$i]{KSELECT} = 1;
+                }
+ 
+                $i++;
+        }
+        $sth->finish;
+        $dbh->do("UNLOCK TABLES");
+ 
+        $mgr->{TmplData}{KATS}         = \@kat_tmpl; 
+	$mgr->{TmplData}{FORM}         = $mgr->my_url();
+	$mgr->{TmplData}{PID}          = $cgi->param('pid');
+        $mgr->{TmplData}{NAME}         = $mgr->decode_some($cgi->param('name'));
+        $mgr->{TmplData}{START_TAG}    = $mgr->decode_some($cgi->param('start_tag'));
+        $mgr->{TmplData}{START_MONAT}  = $mgr->decode_some($cgi->param('start_monat'));
+        $mgr->{TmplData}{START_JAHR}   = $mgr->decode_some($cgi->param('start_jahr'));
+        $mgr->{TmplData}{ENDE_TAG}     = $mgr->decode_some($cgi->param('ende_tag'));
+        $mgr->{TmplData}{ENDE_MONAT}   = $mgr->decode_some($cgi->param('ende_monat'));
+        $mgr->{TmplData}{ENDE_JAHR}    = $mgr->decode_some($cgi->param('ende_jahr'));
+        $mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($cgi->param('beschreibung'));
+	$mgr->fill($msg);
+
 }
 
 1;

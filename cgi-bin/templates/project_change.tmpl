@@ -6,7 +6,7 @@
 
 <hr size="1" noshade width="80%">
 
-<input type="hidden" name="kid" value="<TMPL_VAR KID>">
+<input type="hidden" name="pid" value="<TMPL_VAR PID>">
 
 <table cellspacing="0" cellpadding="5" border="0" align="center" width="80%" bgcolor="#b0b0b0">
 <tr>
@@ -26,7 +26,11 @@
 		<b>Kategorie:</b>
 	</td>
 	<td align="left">
-		<TMPL_VAR KNAME>
+		<select name="kategorie">
+			<TMPL_LOOP KATS>
+			<option value="<TMPL_VAR KID>" <TMPL_IF KSELECT>selected</TMPL_IF>><TMPL_VAR KNAME></option>		
+			</TMPL_LOOP>
+		</select>	
 	</td>
 </tr>
 <tr>
@@ -70,11 +74,15 @@
 	</td>
 </tr>
 <tr>
-	<td>
+	<td align="center">
+	<TMPL_IF IF_USER_AB>
+		<a href="<TMPL_VAR BACK_CHANGE_LINK>">Zur&uuml;ck</a>
+	<TMPL_ELSE>
 		&nbsp;
+	</TMPL_IF>
 	</td>
 	<td align="left">
-		<input type="submit" name="add_project" value="Anlegen">
+		<input type="submit" name="change_project" value="&Auml;ndern">
 	</td>
 </tr>
 </table>
