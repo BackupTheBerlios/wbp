@@ -1,0 +1,65 @@
+<TMPL_INCLUDE header.tmpl> 
+
+<h1>Messages - Read (dumped)</h1>
+
+sid=<TMPL_VAR SID><br>
+action=<TMPL_VAR ACTION><br>
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+	<td colspan="2" align="left">
+	<TMPL_IF MSG>
+		<font color="#ff0000"><TMPL_VAR MSG></font>
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+
+<h2>received</h2>
+
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<TMPL_LOOP RECV_LOOP>
+<tr>
+	<td>
+	<b>From:</b>
+	</td>
+	<td>
+	<TMPL_VAR UNAME>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+	<TMPL_VAR DATE>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+	Parent: <TMPL_VAR PARENT_MID>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+	<strong><TMPL_VAR SUBJECT></strong>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+	<TMPL_VAR CONTENT>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+	<hr>
+	</td>
+</tr>
+</TMPL_LOOP>
+</table>
+
+<TMPL_INCLUDE footer.tmpl>
+
+
+
+
+
+
+
+
