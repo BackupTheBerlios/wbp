@@ -21,19 +21,57 @@ sub new {
 }
 
 
-# --- fetcht (id, firstname, lastname, username) aller User ---
-# TODO Nach aktiv und inaktiv unterscheiden
+#====================================================================================================#
+# SYNOPSIS: fetch_users($status);
+# PURPOSE:  ermittelt alle existierenden User (status: 0=inaktiv, 1=aktiv)
+# RETURN:   array von hashref
+#====================================================================================================#
 sub fetch_users {
  
         my $self = shift;
- 
-        my $mgr = $self->{MGR};
-	my @users;
+	my $status = shift || 1;
 
+        my $mgr = $self->{MGR};
+
+	my @users;
 
  	# ### connect ###
         my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT id, firstname, lastname, username FROM $mgr->{UserTable}});
+        my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE status='$status'});
+
+        unless ($sth->execute()) {
+                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+                        $mgr->{UserTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+
+	my $user;
+	while ($user = $sth->fetchrow_hashref()) {
+		push (@users, $user);
+	}
+
+	$sth->finish;
+	# ### disconnect ###
+
+        return @users;
+} 
+
+
+
+
+
+# --- get_user ---
+# holt infos ueber user mit uid
+sub get_user {
+ 
+        my $self = shift;
+	my $uid = shift;
+
+        my $mgr = $self->{MGR};
+
+ 	# ### connect ###
+        my $dbh = $mgr->connect;
+        my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = $uid});
  
         unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
@@ -41,16 +79,47 @@ sub fetch_users {
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
-	while (my ($id, $firstname, $lastname, $username) = $sth->fetchrow_array()) {
-		push (@users, [$id, $firstname, $lastname, $username]);
-	}
+	my $user = $sth->fetchrow_hashref();
 
 	$sth->finish;
 	# ### disconnect ###
 
-
-        return @users;
+        return $user;
 } 
+
+#====================================================================================================#
+# SYNOPSIS: get_message($mid);
+# PURPOSE:  liefert die Message mit mid
+# RETURN:   hashref
+#====================================================================================================#
+# --- get_messge ---
+# holt message mit mid
+sub get_message {
+ 
+        my $self = shift;
+	my $mid = shift;
+
+        my $mgr = $self->{MGR};
+
+ 	# ### connect ###
+        my $dbh = $mgr->connect;
+        my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{MReceiveTable} WHERE mid=$mid});
+ 
+        unless ($sth->execute()) {
+                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+                        $mgr->{MReceiveTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+
+	my $message = $sth->fetchrow_hashref();
+
+	$sth->finish;
+	# ### disconnect ###
+
+        return $message;
+} 
+
+
 
 
 # --- fetcht (id, name) aller existierenden Projekte ---
@@ -138,15 +207,17 @@ sub fetch_project_members {
         return \@users;
 }
 
-
-# --- Neue Messages in die Send-Table des Empfaengers, in die Receive-Table fuer alle
-# --- Empfaenger, sowie die Verknuepfung ind die ToUser-Table einfuegen 
-# --- insert_new_messages(\@uid,$subject,$content);
-# TODO parent-id, datum
+#====================================================================================================#
+# SYNOPSIS: insert_new_messages($uids,$parent_id,$subject,$content);
+# PURPOSE:  Neue Messages in die entsprechenden Tables eintragen
+# RETURN:   ---
+#====================================================================================================#
 sub insert_new_messages {
 
         my $self = shift;
+
 	my $uids = shift;
+	my $parent_mid = shift;
 	my $subject = shift;
 	my $content = shift;
 
@@ -154,8 +225,7 @@ sub insert_new_messages {
 
 	my $to_uid;
 	my $from_uid = $mgr->{UserId};
-	my $parent_mid = 0; # TODO
-	my $date = "1001-01-01 01:01:01"; # TODO
+	my $date = "2001-06-11 14:16:32"; # TODO
 	my $mid = 0; # ist auto_increment, daher 'mysql_insertid'
 
 
@@ -165,7 +235,7 @@ sub insert_new_messages {
 	# Message in Send-Table einfuegen
         my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{MSendTable}
 				   (from_uid, parent_mid, date, subject, content) values
-				       ($from_uid, $parent_mid, "$date", "$subject", "$content");});
+				       ($from_uid, $parent_mid, '$date', '$subject', '$content');});
 
         unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
@@ -182,8 +252,8 @@ sub insert_new_messages {
 
 	# Message in Receive-Table einfuegen
 	    $sth = $dbh->prepare(qq{INSERT INTO $mgr->{MReceiveTable}
-				       (mid, from_uid, to_uid, parent_mid, date, subject, content) values
-					   ($mid, $from_uid, $to_uid, $parent_mid, "$date", "$subject", "$content");});
+				       (mid, from_uid, to_uid, parent_mid, status, date, subject, content) values
+					   ($mid, $from_uid, $to_uid, $parent_mid, '0','$date', '$subject', '$content');});
 
 	    unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
@@ -211,34 +281,38 @@ sub insert_new_messages {
 
 
 
-
-# --- fetcht (mid, from_uid, parent_mid, date, subject, content) aller erhaltenen Messages ---
+#====================================================================================================#
+# SYNOPSIS: fetch_received_messages($status);
+# PURPOSE:  ruft die empfangenen Nachrichten ab (status: 0=ungelesen, 1=gelesen)
+# RETURN:   array von hashref
+#====================================================================================================#
 sub fetch_received_messages{
  
         my $self = shift;
- 
+	my $status = shift || 0;
+
         my $mgr = $self->{MGR};
 
 	my @messages;
 	my $my_uid = $mgr->{UserId};
-	
+
 	# ### connect ###
         my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT mid, from_uid, parent_mid, date, subject, content FROM $mgr->{MReceiveTable} WHERE to_uid = $my_uid});
- 
+	my $sth;
+	$sth = $dbh->prepare(qq{SELECT * FROM $mgr->{MReceiveTable} WHERE to_uid=$my_uid AND status='$status'});
+
         unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{MReceiveTable}, $dbh->errstr);
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
-	while (my ($mid, $from_uid, $parent_mid, $date, $subject, $content) = $sth->fetchrow_array()) {
-		push (@messages, [$mid, $from_uid, $parent_mid, $date, $subject, $content]);
+	while (my $message = $sth->fetchrow_hashref()) {
+		push (@messages, $message);
 	}
 
 	$sth->finish;
 	# ### disconnect ###
-
 
         return @messages;
 } 

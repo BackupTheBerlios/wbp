@@ -1,0 +1,32 @@
+<table cellspacing="0" cellpadding="5" border="0" align="center">
+<tr>
+  	<td>
+	<TMPL_IF NAV_MSG_NEW>
+		<small><a href="<TMPL_VAR NAV_MSG_NEW>">Neue Nachrichten</a></small>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+  	<td>
+	<TMPL_IF NAV_MSG_OLD>
+		<small><a href="<TMPL_VAR NAV_MSG_OLD>">Alte Nachrichten</a></small>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+        <td>
+        <TMPL_IF NAV_MSG_SEND>
+                <small><a href="<TMPL_VAR NAV_MSG_SEND>">Abgeschickte Nachrichten</a></small>
+        <TMPL_ELSE>
+                &nbsp;
+        </TMPL_IF>
+        </td>
+	<td>
+	<TMPL_IF NAV_MSG_WRITE>
+		<small><a href="<TMPL_VAR NAV_MSG_WRITE>">Neue Nachricht verfassen</a></small>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+</tr>
+</table>

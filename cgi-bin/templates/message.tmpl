@@ -3,24 +3,28 @@
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center"
-<tr>
+<TMPL_INCLUDE message_nav.tmpl>
+<p><center><b><TMPL_VAR MSG_NOTIFY></b></center></p>
+<TMPL_IF MSG_LOOP>
+	<table cellspacing="0" cellpadding="0" border="0" align="center">
+	<TMPL_LOOP MSG_LOOP>
+	<tr>
 	<td>
-	<TMPL_IF NAV_MSG_READ>
-		<a href="<TMPL_VAR NAV_MSG_READ>">Lesen</a>
-	<TMPL_ELSE>
-		&nbsp;
-	</TMPL_IF>
+	<tt><TMPL_VAR DATE></tt>
 	</td>
-	<td>
-	<TMPL_IF NAV_MSG_NEW>
-		<a href="<TMPL_VAR NAV_MSG_NEW>">Verfassen</a>
-	<TMPL_ELSE>
-		&nbsp;
-	</TMPL_IF>
+        <td>
+	<a href="<TMPL_VAR MSG_LINK>"><TMPL_VAR SUBJECT></a>
 	</td>
-</tr>
-</table>
+        <td>
+	<i><TMPL_VAR FIRSTNAME> <TMPL_VAR LASTNAME> (<TMPL_VAR USERNAME>)</i>
+	</td>
+	</tr>
+	</TMPL_LOOP>
+	</table>
+<p>
+<TMPL_INCLUDE message_nav.tmpl>
+</p>
+</TMPL_IF>
 
 <TMPL_INCLUDE footer.tmpl>
 

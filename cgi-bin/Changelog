@@ -1,4 +1,21 @@
 #====================================================================================================#
+*** 10.06.2001 ***
+Michael Krüger
+
+- message.pm erweitert
+	* Message-Übersicht ungelesen/gelesen
+	* Einzelanzeige, Antworten
+	* Message verfassen
+- message_config.pm geändert
+- message_base.pm erweitert
+	* diverse DB-Zugriffe vereinfacht. LOCKING fehlt noch!
+- message_new.tmpl gelöscht, wg. nameclashing new()
+- message_form.tmpl angelegt, 
+- messages_read.tmpl gelöscht
+- message.tmpl erweitert um Messageübersicht ungelesen/gelesen
+- message_nav.tmpl angelegt
+- message_test.tmpl angelegt
+#====================================================================================================#
 *** 07.06.2001 ***
 Sören Wurch
 

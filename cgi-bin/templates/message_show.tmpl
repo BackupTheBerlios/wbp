@@ -1,0 +1,58 @@
+<TMPL_INCLUDE header.tmpl> 
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<TMPL_INCLUDE message_nav.tmpl>
+
+<p><center><b><TMPL_VAR MSG_NOTIFY></b></center></p>
+
+<table cellspacing="0" cellpadding="5" border="0" align="center">
+<tr>
+	<td>Status</td>
+	<td>
+	<TMPL_VAR STATUS>
+	</td>
+</tr>
+<TMPL_IF PARENT_LINK>
+<tr>	<td></td>
+	<td>
+	<small><a href="<TMPL_VAR PARENT_LINK>">parent-message</a></small>
+	</td>
+</tr>
+</TMPL_IF>
+<tr>
+	<td>Datum</td>
+	<td>
+	<tt><TMPL_VAR DATE></tt>
+	</td>
+</tr>
+<tr>
+	<td>Absender</td>
+	<td>
+	<i><TMPL_VAR FIRSTNAME> <TMPL_VAR LASTNAME> (<TMPL_VAR USERNAME>)</i>
+	</td>
+</tr>
+<tr>
+	<td>Betreff</td>
+	<td>
+	<b><TMPL_VAR SUBJECT></b>
+	</td>
+</tr>
+<tr>	<td></td>
+	<td>
+	<TMPL_VAR CONTENT>
+	</td>
+</tr>
+
+</table>
+<p>
+<p>
+<center><a href="<TMPL_VAR REPLY>">Antworten</a></center>
+</p>
+<TMPL_INCLUDE message_nav.tmpl>
+</p>
+
+<TMPL_INCLUDE footer.tmpl>
+
+
