@@ -1,0 +1,23 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> <tr> <td>
+
+<b> Rubriken: </b><br>
+ 
+<TMPL_LOOP CATS_LOOP>
+  &nbsp;&nbsp;&nbsp;-&nbsp;
+  <a href="<TMPL_VAR SHOW_LINK>"><TMPL_VAR CAT_NAME></a>
+  &nbsp;<a href="<TMPL_VAR EDIT_LINK>">editieren</a>
+  &nbsp;<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a> <br>
+</TMPL_LOOP>
+    
+
+</td> </tr> </table>
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

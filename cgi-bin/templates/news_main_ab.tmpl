@@ -1,0 +1,19 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> <tr> <td>
+
+<b> Projekte: </b><br>
+
+<TMPL_LOOP PROJECT_LOOP>
+  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR PR_LINK>"><TMPL_VAR PR_TEXT></a> <br>
+</TMPL_LOOP>
+
+</td> </tr> </table>
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>
