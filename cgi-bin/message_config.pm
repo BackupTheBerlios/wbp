@@ -2,7 +2,7 @@ package message_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
 
 $MSG = {
     NoMessages     => "Sie haben keine Nachrichten.", # unused
@@ -27,7 +27,7 @@ $TMPL = {
     MessageSend => "message_send.tmpl", # MessageSend Template, for send messages
     MessageForm => "message_form.tmpl", # Form Template, for composing a new message
     MessageShow => "message_show.tmpl", # Show template shows one detailed message
-    MessageTest => "message_test.tmpl"  # --- test output template ---
+    MessageChooseRecv => "message_choose.tmpl"  # Choose receivers
     };
 
 1;

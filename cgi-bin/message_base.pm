@@ -24,7 +24,7 @@ sub new {
 #====================================================================================================#
 # SYNOPSIS: get_user($uid);
 # PURPOSE:  Realname und Username des Benutzers mit der ID $uid bestimmen
-# RETURN:   arrayref (firstname,lastname,username)
+# RETURN:   @(firstname,lastname,username)
 #====================================================================================================#
 sub get_user {
 
@@ -317,7 +317,7 @@ sub fetch_receiver {
 # PURPOSE:  liefert die uids der angegebenen Usernamen
 # RETURN:   \@uid
 #====================================================================================================#
-sub fetch_uids(\@usernames){
+sub fetch_uids {
     
     my $self = shift;
     my $usernames = shift;
@@ -432,111 +432,53 @@ sub insert_new_messages {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #====================================================================================================#
-# SYNOPSIS: fetch_users($status);
-# PURPOSE:  ermittelt alle existierenden User (status: 0=inaktiv, 1=aktiv)
-# RETURN:   array von hashref
+# SYNOPSIS: fetch_projects();
+# PURPOSE:  holt alle Prokekte
+# RETURN:   @(id,name)
 #====================================================================================================#
-sub fetch_users {
- 
-        my $self = shift;
-	my $status = shift || 1;
-
-        my $mgr = $self->{MGR};
-
-	my @users;
-
- 	# ### connect ###
-        my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE status='$status'});
-
-        unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{UserTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
-
-	my $user;
-	while ($user = $sth->fetchrow_hashref()) {
-		push (@users, $user);
-	}
-
-	$sth->finish;
-	# ### disconnect ###
-
-        return @users;
-} 
-
-
-# --- fetcht (id, name) aller existierenden Projekte ---
-# TODO Nach aktiv und inaktiv unterscheiden?
 sub fetch_projects{
  
-        my $self = shift;
- 
-        my $mgr = $self->{MGR};
-	my @projects;
- 
+    my $self = shift;
+    
+    my $mgr = $self->{MGR};
+    my @projects;
+    
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{ProTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{ProTable}, $dbh->ersstr);
+    }
+    my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{ProTable}});
+    
+    unless ($sth->execute()) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{ProTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    while (my @project = $sth->fetchrow_array()) {
+	push (@projects, \@project);
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return @projects;
+}
 
-	# ### connect ###
-        my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{ProTable}});
- 
-        unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{ProTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
-
-	while (my ($id, $name) = $sth->fetchrow_array()) {
-		push (@projects, [$id, $name]);
-	}
-
-	$sth->finish;
-	# ### disconnect ###
 
 
-        return @projects;
-} 
-
-
-# --- fetcht (user_id) aller User aus den Projekten @pid ---
-# TODO Nach aktiv und inaktiv unterscheiden
-# fetch_project_members(\@pid)
+#====================================================================================================#
+# SYNOPSIS: fetch_project_members($pid);
+# PURPOSE:  holt die uid aller Projektmitglieder
+# RETURN:   \@(id)
+#====================================================================================================#
 sub fetch_project_members {
 
         my $self = shift;
@@ -544,42 +486,80 @@ sub fetch_project_members {
 
         my $mgr = $self->{MGR};
 
-	my @users;
 	my @fetched_ids;
-
 
 	# ### connect ###
         my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT user_id, project_id FROM $mgr->{ProUserTable}});
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{ProUserTable} READ})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{ProUserTable}, $dbh->ersstr);
+	}
+
+        my $sth = $dbh->prepare(qq{SELECT user_id FROM $mgr->{ProUserTable} WHERE project_id = ?});
  
-        unless ($sth->execute()) {
+        unless ($sth->execute($pid)) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{ProUserTable}, $dbh->errstr);
+		$dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
 	# Alle (user_id, project_id) nach fetched_ids fetchen
-	while (my ($user_id, $project_id) = $sth->fetchrow_array()) {
-		push (@fetched_ids, [$user_id, $project_id]);
+	while (my $user_id = $sth->fetchrow_array()) {
+		push (@fetched_ids, $user_id);
 	}
 
 	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
 	# ### disonnect ###
 
-
-	# Alle zu den Projekten passenden (uid) aus fetched_ids filtern
-	my $project_id;
-	my $ids;
-	foreach $project_id (@{$pid}) {
-	    foreach $ids (@fetched_ids) {
-		if ($ids->[1] eq $project_id) {
-		    push (@users, $ids->[0]);
-		}
-	    }
-	}
-
-        return \@users;
+        return \@fetched_ids;
 }
+
+
+
+
+
+#====================================================================================================#
+# SYNOPSIS: fetch_users($status);
+# PURPOSE:  ermittelt Ids aller existierenden User (status: 0=inaktiv, 1=aktiv)
+# RETURN:   \@(id)
+#====================================================================================================#
+sub fetch_users {
+    
+    my $self = shift;
+    my $status = shift || 1;
+    
+    my $mgr = $self->{MGR};
+    
+    my @uids;
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
+    }
+    my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{UserTable} WHERE status = ?});
+
+    unless ($sth->execute("$status")) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    while (my $id = $sth->fetchrow_array()) {
+	push (@uids, $id);
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return \@uids;
+} 
+
 
 1;
 # end of file

@@ -8,7 +8,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -68,8 +68,8 @@ sub parameter {
 	    $self->send_message();
 	    return 1;
 	} elsif (defined $cgi->param('choose_receivers')) {
-#	    $self->choose_receivers();
-#	    return 1;
+	    $self->choose_receivers();
+	    return 1;
 	} elsif (defined $cgi->param('spy_harddisk')) {
 
 	} elsif (defined $cgi->param('spread_virus')) {
@@ -110,7 +110,7 @@ sub view_messages {
 	    my @message_loop;
 	    my @user;
 	    my $link = $mgr->my_url;
-	    $link .= "&method=%s&mid=%s";
+	    $link .= "&&mid=%s";
 
 	    for (my $i = 0; $i <= $#received; $i++) {
 		# Namen des Absenders bestimmen
@@ -342,10 +342,10 @@ sub compose_message {
     my $cgi = $self->{MGR}->{CGI};
  
     my $uid = $cgi->param('uid');
-    my $parent_mid = $cgi->param('parent_mid') || 0;
+    my $parent_mid = $mgr->{Session}->get("ParentMid") || $cgi->param('parent_mid') || 0;
     my $to_usernames = $cgi->param('to_usernames') || "";
-    my $subject = $cgi->param('subject') || "";
-    my $content = $cgi->param('content') || "";
+    my $subject = $mgr->{Session}->get("Subject") || $cgi->param('subject') || "";
+    my $content = $mgr->{Session}->get("Content") || $cgi->param('content') || "";
 
     # MessageNew-Template (Formular) vorbereiten
     $mgr->{Template} = $C_TMPL->{MessageForm};
@@ -366,6 +366,116 @@ sub compose_message {
     return 1;
 
 }
+
+
+#====================================================================================================#
+# SYNOPSIS: choose_receivers();
+# PURPOSE:  Auswahl der Empfaenger
+# RETURN:   ---
+#====================================================================================================#
+sub choose_receivers {
+    my $self = shift;
+
+    my $mgr = $self->{MGR};
+    my $cgi = $self->{MGR}->{CGI};
+
+    my $grp = $cgi->param('grp') || 'textfield';
+    my $parent_mid = $cgi->param('parent_mid') || 0;
+    my $subject = $cgi->param('subject') || "";
+    my $content = $cgi->param('content') || "";
+
+    # Message in die Session schreiben
+    $mgr->{Session}->set(ParentMid => $parent_mid,
+			 Subject => $subject,
+			 Content => $content);
+
+    # MessageChooseRecv-Template vorbereiten
+    $mgr->{Template} = $C_TMPL->{MessageChooseRecv};
+
+    my @group_loop;
+    my @members_loop;
+
+    my $link = $mgr->my_url;
+    $link .= "&%s=&grp=%s";
+
+    # statische Gruppen, z.B. Textfield, Alle User, ... etc.
+    my @default_groups;
+    $default_groups[0] = ['textfield','Textfield'];
+    $default_groups[1] = ['all','All Users'];
+
+    foreach my $group (@default_groups) {
+	my %tmp;
+	$tmp{GROUP_LINK} = $mgr->decode_all(sprintf($link, "choose_receivers",$group->[0]));
+	$tmp{GROUP_NAME} = $mgr->decode_all($group->[1]);
+	push(@group_loop,\%tmp);
+	# diese Gruppe wurde angewaehlt
+	if ($grp eq $group->[0]) {
+	    $mgr->{TmplData}{GROUP} = $group->[1];
+	}
+    }	
+
+    # Projektgruppen kommen dazu
+    my @groups = $self->{BASE}->fetch_projects();
+    # Es wurden Projekte gefunden
+    if (@groups) {	
+	foreach my $group (@groups) {
+	    my %tmp;
+	    $tmp{GROUP_LINK} = $mgr->decode_all(sprintf($link, "choose_receivers",$group->[0]));
+	    $tmp{GROUP_NAME} = $mgr->decode_all($group->[1]);
+	    push(@group_loop,\%tmp);
+	    # diese Gruppe wurde angewaehlt
+	    if ($grp eq $group->[0]) {
+		$mgr->{TmplData}{GROUP} = $group->[1];
+	    }
+	}
+
+    }
+
+    # Gruppen zur Auswahl anbieten
+    $mgr->{TmplData}{GROUPS_LOOP} = \@group_loop;
+
+    # IDs der Gruppenmitglieder bestimmen
+    my $members = undef;
+
+    if ($grp eq 'textfield') {
+	# User aus dem Textfeld
+	my $to_usernames = $cgi->param('to_usernames') || "";
+	# Whitespaces entfernen, Kommaliste trennen
+	$to_usernames =~ s/\s+//gs;
+	my @usernames = split /,+/, $to_usernames;
+	$members = $self->{BASE}->fetch_uids(\@usernames);
+    } elsif ($grp eq 'all') {
+	$members = $self->{BASE}->fetch_users(1);
+    } else {
+	$members = $self->{BASE}->fetch_project_members($grp);
+    }
+
+    # Jedes Mitglied kommt in den Loop
+    if (@$members) {
+	foreach my $member (@$members) {
+	    my %tmp;
+	    # Namen des Mitglieds bestimmen
+	    my @user = $self->{BASE}->get_user($member);
+	    $tmp{MEMBER_NAME} =
+		$mgr->decode_all(sprintf("%s %s (%s)", $user[0], $user[1], $user[2]));
+	    $tmp{MEMBER_LINK} = $mgr->decode_all(sprintf($link, "add_receivers",$member));
+
+	    push(@members_loop,\%tmp);
+	}
+
+	# Gruppenmitglieder anzeigen
+	$mgr->{TmplData}{MEMBERS_LOOP} = \@members_loop;
+    }
+
+    $self->fill_nav;
+    
+    $mgr->fill;
+    
+    return 1;
+}
+
+
+
 
 
 #====================================================================================================#
