@@ -7,7 +7,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -55,7 +55,8 @@ sub parameter {
 			$self->menue_new();
 			return 1;
 		} elsif (defined $cgi->param('search')) {
-
+			$self->show_projects();
+			return 1;
 		} elsif (defined $cgi->param('add_project')) {
 			$self->add_project();
 			return 1;
@@ -87,7 +88,8 @@ sub menue {
         $mgr->{TmplData}{PROJECTS} = 1 if ($self->{BASE}->check_for_projects != 0);
  
         if ($mgr->{UserType} ne "C") {
-                $mgr->{TmplData}{USER_AB}    = 1;
+                $mgr->{TmplData}{USER_AB} = 1;
+		$mgr->{TmplData}{TYPE_AB} = 1;
 		
 		my @kategorien = $self->{BASE}->check_for_categories;
 
@@ -148,9 +150,7 @@ sub add_project {
         my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
 
-	if (($mgr->{UserType} ne "A") && ($mgr->{UserType} ne "B")) {
-		$mgr->fatal_error($C_MSG->{NotAllowed});
-	} 
+	$self->{BASE}->check_user();
 
         my $kid          = $cgi->param('kid');
 	my $kname        = $cgi->param('kname');
@@ -183,12 +183,12 @@ sub add_project {
                 $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($C_MSG->{ErrorDate});
                 $check++;
         }
-
+# XXX Hier noch pruefen, dass das Startdatum vor dem Endedatum liegt etc.
 # XXX Hier noch die beiden Datumsangaben auf Richtigkeit pruefen. 
 	$start_dt = sprintf("%04d.%02d.%02d 00:00:00", $start_jahr, $start_monat, $start_tag);
 	$end_dt   = sprintf("%04d.%02d.%02d 00:00:00", $ende_jahr, $ende_monat, $ende_tag);
 	
-	if ($self->{BASE}->check_project_name($name)) {
+	if ($self->{BASE}->check_project_name($name, $kid)) {
 		$mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($C_MSG->{ExistName});
 		$check++;
 	}
@@ -198,17 +198,66 @@ sub add_project {
         } else {
 
 		my $dbh = $mgr->connect;
-		my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProTable} (name, desc_project, start_dt, end_dt, 
-					   ins_dt, ins_id) VALUES (?, ?, ?, ?, ?, ?)});
+		unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE, $mgr->{CUserTable} WRITE")) {
+                	warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        	$mgr->{ProTable}, $dbh->ersstr);
+        	}
+		my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProTable} (name, desc_project, cat_id ,start_dt, end_dt, 
+					   ins_dt, ins_id) VALUES (?, ?, ?, ?, ?, ?, ?)});
 
-		unless ($sth->execute($name, $beschreibung, $start_dt, $end_dt, $mgr->now, $mgr->{UserId})) {
+		unless ($sth->execute($name, $beschreibung, $kid, $start_dt, $end_dt, $mgr->now, $mgr->{UserId})) {
 			warn sprintf("[Error]: Trouble inserting project into [%s]. Reason [%s].",
 				$mgr->{ProTable}, $dbh->errstr);
+			$dbh->do("UNLOCK TABLES");
 			$mgr->fatal_error($C_MSG->{DbError});
 		}
 
+		my $insertid = $dbh->{mysql_insertid};
+
+		$sth = $dbh->prepare(qq{INSERT INTO $mgr->{CUserTable} (project_id) VALUES (?)});
+
+		unless ($sth->execute($insertid)) {
+                        warn sprintf("[Error]: Trouble inserting user count into [%s]. Reason [%s].",
+                                $mgr->{CUserTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                        $mgr->fatal_error($C_MSG->{DbError});
+                } 
+
+		$dbh->do("UNLOCK TABLES");
+		$sth->finish;
 		$self->menue($C_MSG->{InsertProOk});
 	}
-} 
+}
+
+sub show_projects {
+
+	my $self  = shift;
+	my $check = shift || undef;
+ 
+        my $mgr = $self->{MGR};
+        my $cgi = $self->{MGR}->{CGI};
+
+	$self->{BASE}->check_user(); 
+
+	my ($name, $cat);
+
+	if ($check) {
+		$name = $mgr->{Session}->get("SearchProjectName") || undef;
+		$cat  = $mgr->{Session}->get("SearchCatId");
+	} else {
+		$name = $cgi->param('project_name') || undef;
+		$cat  = $cgi->param('project_category');
+
+		$mgr->{Session}->set(SearchProjectName => $name,
+				     SearchCatId       => $cat);
+	}
+
+	my $mode = 0; 
+	$mode = 1 if ($name);
+
+	$self->{BASE}->get_and_set_projects($mode, $cat, $name);
+	
+	return 1;	
+}
 
 1;

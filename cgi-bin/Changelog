@@ -1,6 +1,21 @@
 #====================================================================================================#
+*** 06.06.2001 ***
+Sören Wurch
+
+- Session geaendert
+- wbp.cgi erweitert
+	* Funktion format_date hinzugefuegt
+- prject_show.tmpl angelegt
+- project.pm, project_base.pm und project_config.pm erweitert
+	* einige Änderungen für das anlegen eines Projektes
+	* User A/B können nach Projekten suchen
+	* Anlegen von einem Projekt beachtet jetzt auch die Anzahl der User pro Projekt
+- Tabelle wbp_project geaendert
+- Tabelle wbp_count_user angelegt
+#====================================================================================================#
 *** 04.06.2001 ***
 Michael Krüger
+
 - message.pm geändert, in Anlehnung an project.pm
 - message_config.pm erweitert, um Templates
 - message_base.pm angelegt,

@@ -9,6 +9,7 @@ use fields (
 	'Action',        # action paramaeter
 	'CatTable',      # "categories" table
 	'CGI',           # cgi object
+	'CUserTable',    # "count user" table
 	'DataBase',      # database name
 	'DbHandle',      # database handle
 	'DbPassWord',    # database password
@@ -42,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -58,6 +59,7 @@ sub handler {
 		Action        => undef,
 		CatTable      => $wbp_config::CONFIG->{CatTable},
 		CGI           => $in,
+		CUserTable    => $wbp_config::CONFIG->{CUserTable},
 		DataBase      => $wbp_config::CONFIG->{DataBase},
 		DbHandle      => undef,
 		DbPassWord    => $wbp_config::CONFIG->{DbPassWord},
@@ -298,7 +300,22 @@ sub now {
  
         sprintf("%04d-%02d-%02d %02d:%02d:%02d",
                 sub {($_[0]+1900, $_[1]+1),@_[2..5]}->((localtime)[5,4,3,2,1,0]));
-} 
+}
+
+#====================================================================================================#
+# SYNOPSIS: $instance->format_date();
+# PURPOSE:  Formats an datetime from mysql style into normal style.
+# RETURN:   normal datetime.
+#====================================================================================================# 
+sub format_date {
+	
+	my $self = shift;
+	my $date = shift;
+
+	return undef unless ($date);
+
+	return (substr($date, 8, 2).".".substr($date, 5, 2).".".substr($date, 0, 4));
+}
 
 #====================================================================================================#
 # SYNOPSIS: $instance->fill();

@@ -1,0 +1,70 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade width="80%">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
+<tr>
+	<td>
+		<b>Datum (Start/Ende)</b>	
+	</td>
+	<td>
+		<b>Name</b>
+	</td>
+	<td>
+                <b>Status</b>
+        </td>
+        <td>
+                <b>Modus</b>
+        </td>
+	<td>
+		<b>Phasen</b>
+	</td>
+	<td>
+		<b>Betreuer</b>
+	</td>
+	<td>
+		<b>Leiter</b>
+	</td>
+	<td>
+		<b>Mitarbeiter</b>
+	</td>
+</tr>
+<TMPL_LOOP PROJECTS>
+<tr>
+	<td>
+		<TMPL_VAR START_DT> - <TMPL_VAR ENDE_DT>
+	</td>
+	<td>
+		<a href="<TMPL_VAR CHANGE_PROJECT>"><TMPL_VAR NAME></a> 
+	</td>
+	<td>
+		<TMPL_VAR STATUS>
+	</td>
+	<td>
+		<TMPL_VAR MODUS>
+	</td>
+	<td>
+		<a href="<TMPL_VAR CHANGE_PHASES>"><TMPL_VAR PHASES></a>
+	</td>
+	<td>
+		<a href="<TMPL_VAR CHANGE_USER_AB>"><TMPL_VAR USER_AB></a>
+	</td>
+	<td>
+		<a href="<TMPL_VAR CHANGE_USER_C>"><TMPL_VAR USER_C></a>
+	</td>
+	<td>
+		<a href="<TMPL_VAR CHANGE_USER_D>"><TMPL_VAR USER_D></a>
+	</td>
+</tr>
+</TMPL_LOOP>
+</table>
+
+<hr size="1" noshade width="80%">
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

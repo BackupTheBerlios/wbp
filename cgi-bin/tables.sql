@@ -35,13 +35,31 @@ create table wbp_project (
 	id           int(10) unsigned  not null auto_increment,
 	name         varchar(255)      not null,
 	desc_project text default '',
+	cat_id       int(10) unsigned  not null,
 	start_dt     datetime          not null,
 	end_dt       datetime          not null,
 	status	     enum('0','1','2') not null     default '0',
+	mode         enum('0','1')     not null     default '0',
 	ins_dt       datetime                       default '0', 
 	ins_id       int(10) unsigned               default '0',
 	upd_dt       datetime                       default '0',
 	upd_id       int(10) unsigned               default '0',
+	primary key (id)
+);
+
+create table wbp_user_project (
+        id           int(10) unsigned  not null auto_increment,
+        user_id      int(10) unsigned  not null,
+        project_id   int(10) unsigned  not null,
+        primary key(id)
+);
+
+create table wbp_count_user (
+	id         int(10) unsigned not null auto_increment,
+	project_id int(10) unsigned  not null,
+	count_ab   int(10) unsigned default '0',  
+	count_c    int(10) unsigned default '0',
+	count_d    int(10) unsigned default '0',
 	primary key (id)
 );
 
@@ -58,13 +76,6 @@ create table wbp_phase (
         upd_dt       datetime                       default '0',
         upd_id       int(10) unsigned               default '0',
 	primary key (id)
-);
-
-create table wbp_user_project (
-	id           int(10) unsigned  not null auto_increment,
-	user_id      int(10) unsigned  not null,
-	project_id   int(10) unsigned  not null,
-	primary key(id)
 );
 
 CREATE TABLE wbp_send (

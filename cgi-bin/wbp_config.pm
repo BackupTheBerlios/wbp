@@ -2,7 +2,7 @@ package wbp_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 $CONFIG = {
 	# Normal:
@@ -16,6 +16,7 @@ $CONFIG = {
 	
 	# Tables:
 	CatTable      => "wbp_category",     # Tablename for "Categories"
+	CUserTable    => "wbp_count_user",   # Tablename for "Count Users"
 	MReceiveTable => "wbp_receive",      # Tablename for "Message Receive"
         MSendTable    => "wbp_send",         # Tablename for "Message Send"
         MToUserTable  => "wbp_to_user",      # Tablename for "Message to User"

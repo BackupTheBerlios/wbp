@@ -10,7 +10,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 sub new {
  
@@ -112,6 +112,7 @@ sub set {
 	dbmopen %sid, sprintf("%s/%s", $self->{SessDir}, $self->{Sid}), 0644 
 	or die "Can't open session file. Reason: $!";
 		foreach (keys %par) {
+			next unless ($par{$_});
 			$sid{$_} = $par{$_};
 		}
 	dbmclose %sid;
