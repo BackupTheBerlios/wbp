@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -93,7 +93,7 @@ sub handler {
 	
 	$self->{Session} = Session->new(SessDir  => $self->{SessDir}, 
 					SessFile => $self->{SessFile},
-					ExpTime  => "3600",
+					ExpTime  => "36000",
 					Sid      => undef);
 
 	$self->{Session}->check_sessions();

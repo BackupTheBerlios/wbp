@@ -1,0 +1,76 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade width="80%">
+
+<input type="hidden" name="pid" value="<TMPL_VAR PID>">
+
+<table cellspacing="2" cellpadding="2" border="0" align="center" width="80%">
+<TMPL_IF IF_PHASE>
+<TMPL_LOOP PHASE>
+<tr valign="top">
+	<td>
+	<b>Datum (Startdatum/Endedatum):</b><br> <TMPL_VAR START_DT> - <TMPL_VAR ENDE_DT>	
+	</td>
+	<td>
+	<b>Name:</b> <a href="<TMPL_VAR CHANGE_LINK>"><TMPL_VAR NAME></a>
+	</td>
+	<td>
+	<b>Status:</b> <a href="<TMPL_VAR STATUS_LINK>"><TMPL_VAR STATUS></a>
+	</td>
+	<td>
+	<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a>	
+	</td>
+</tr>
+<tr>
+	<td valign="top">
+		<b>Beschreibung:</b>
+	</td>
+	<td colspan="3">
+		<TMPL_VAR BESCHREIBUNG>
+	</td>
+</tr>
+<tr>
+	<td colspan="4">
+		<hr>
+	</td>
+</tr>
+</TMPL_LOOP>
+<TMPL_ELSE>
+<tr>
+	<td>
+		&nbsp;
+	</td>
+	<td colspan="3">
+	<center><font color="#ff0000">Es sind keine Phasen zu diesem Projekt vorhanden.</font></center>
+	</td>
+</tr>
+<tr>
+        <td colspan="4">
+                <hr>
+        </td>
+</tr>
+</TMPL_IF>
+</tr>
+<tr>
+	<td>
+		<TMPL_IF BACK_CHANGE_LINK>
+		<a href="<TMPL_VAR BACK_CHANGE_LINK>">zur&uuml;ck</a>
+		<TMPL_ELSE>
+		&nbsp;
+		</TMPL_IF>
+	</td>
+	<td colspan="3" align="center">
+		<b>Neue Phase:</b> <input type="submit" name="add_phase_menu" value="anlegen">
+	</td>
+</tr>
+</table>
+
+<hr size="1" noshade width="80%">
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

@@ -53,7 +53,7 @@ sub check_for_projects {
         my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ")) {
 		warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-			$mgr->{ProTable}, $dbh->ersstr);
+			$mgr->{ProTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
         my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{ProTable}});
@@ -84,7 +84,7 @@ sub check_for_categories {
         my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $mgr->{CatTable}, $dbh->ersstr);
+                        $mgr->{CatTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
         my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{CatTable}});
@@ -118,7 +118,7 @@ sub get_cat_name {
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $mgr->{CatTable}, $dbh->ersstr);
+                        $mgr->{CatTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
         my $sth = $dbh->prepare(qq{SELECT name FROM $mgr->{CatTable} WHERE id = ?});
@@ -154,7 +154,7 @@ sub check_project_name {
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $mgr->{ProTable}, $dbh->ersstr);
+                        $mgr->{ProTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	my $sth;
@@ -216,7 +216,7 @@ sub get_and_set_projects {
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{ProUserTable} READ, $mgr->{PhaTable} READ")) {
                 warn srpintf("[Error]: Trouble locking tables [%s, %s, %s]. Reason: [%s].",
-                        $mgr->{ProTable}, $mgr->{ProUserTable}, $mgr->{PhaTable}, $dbh->ersstr);
+                        $mgr->{ProTable}, $mgr->{ProUserTable}, $mgr->{PhaTable}, $dbh->errstr);
 		$dbh->do("UNLOCK TABLES");
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
@@ -374,7 +374,7 @@ sub change_status {
 	
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $mgr->{ProTable}, $dbh->ersstr);
+                        $mgr->{ProTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	
@@ -413,7 +413,7 @@ sub change_mode {
  
         unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $mgr->{ProTable}, $dbh->ersstr);
+                        $mgr->{ProTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
  
@@ -594,7 +594,7 @@ sub show_one_project {
 
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{CatTable} READ")) {
 		warn srpintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
-                        $mgr->{ProTable}, $dbh->{CatTable}, $dbh->ersstr);
+                        $mgr->{ProTable}, $dbh->{CatTable}, $dbh->errstr);
 		$dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
@@ -602,7 +602,7 @@ sub show_one_project {
 	my $sth = $dbh->prepare(qq{SELECT id, start_dt, end_dt, name, desc_project, cat_id FROM $mgr->{ProTable} WHERE id = ?});
 	unless ($sth->execute($pid)) {
 		warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
-			$mgr->{ProTable}, $dbh->ersstr);
+			$mgr->{ProTable}, $dbh->errstr);
 		$dbh->do("UNLOCK TABLES");
 		$mgr->fatal_error($self->{C_MSG}->{DbError}); 
 	}
@@ -624,7 +624,7 @@ sub show_one_project {
 	$sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{CatTable}});
         unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
-                        $mgr->{CatTable}, $dbh->ersstr);
+                        $mgr->{CatTable}, $dbh->errstr);
                 $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
@@ -767,14 +767,14 @@ sub set_change_data {
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $dbh->{CatTable}, $dbh->ersstr);
+                        $dbh->{CatTable}, $dbh->errstr);
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
 	my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{CatTable}});
         unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
-                        $mgr->{CatTable}, $dbh->ersstr);
+                        $mgr->{CatTable}, $dbh->errstr);
                 $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
@@ -809,6 +809,247 @@ sub set_change_data {
         $mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($cgi->param('beschreibung'));
 	$mgr->fill($msg);
 
+}
+
+#
+# Anzeigen der Phasen zu einem Projekt.
+#
+sub show_phase {
+
+	my ($self, $pid) = @_;
+	
+	my $mgr = $self->{MGR};
+	my $dbh = $mgr->connect();
+	unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} READ")) {
+        	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                	$mgr->{PhaTable}, $dbh->errstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth = $dbh->prepare(qq{SELECT id, name, desc_phase, start_dt, end_dt, status FROM $mgr->{PhaTable} WHERE project_id = ?});
+ 
+        unless ($sth->execute($pid)) {
+        	warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
+                		$mgr->{PhaTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+	
+	my (@tmpl_data, $to);
+	my $i = 0;
+
+	while (my (@data) = $sth->fetchrow_array()) {
+		$tmpl_data[$i]{START_DT}     = $mgr->format_date($data[3]);
+		$tmpl_data[$i]{ENDE_DT}      = $mgr->format_date($data[4]);
+		$tmpl_data[$i]{NAME}         = $mgr->decode_all($data[1]);
+		$tmpl_data[$i]{BESCHREIBUNG} = $mgr->decode_all($data[2]);
+
+		if ($data[5] eq "0") {
+			$tmpl_data[$i]{STATUS} = $self->{C_MSG}->{Aktive};
+			$to = 1;
+		} else {
+			$tmpl_data[$i]{STATUS} = $self->{C_MSG}->{Closed};
+			$to = 0;
+		}
+
+		$tmpl_data[$i]{STATUS_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                              "&method=change_pha_status&pha_id=".$data[0]."&to=".$to;
+
+		$tmpl_data[$i]{DEL_LINK}    = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+                                               $pid."&method=del_phase&pha_id=".$data[0];
+
+		$tmpl_data[$i]{CHANGE_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+                                               $pid."&method=show_one_phase&pha_id=".$data[0];
+		
+		$i++;
+	}
+ 
+        $dbh->do("UNLOCK TABLES");
+        $sth->finish;
+
+	$mgr->{TmplData}{PHASE} = \@tmpl_data;
+	if (defined $tmpl_data[0]) {
+		$mgr->{TmplData}{IF_PHASE} = 1;
+	}	             
+	
+}
+
+#
+# Anlegen einer Phase zu einem Projekt.
+#
+sub add_phase {
+
+	my $self = shift;
+	my $mgr = $self->{MGR};
+        my $cgi = $mgr->{CGI};
+ 
+        my $pid          = $cgi->param('pid');
+        my $name         = $cgi->param('name')         || "";
+        my $start_tag    = $cgi->param('start_tag')    || "";
+        my $start_monat  = $cgi->param('start_monat')  || "";
+        my $start_jahr   = $cgi->param('start_jahr')   || "";
+        my $ende_tag     = $cgi->param('ende_tag')     || "";
+        my $ende_monat   = $cgi->param('ende_monat')   || "";
+        my $ende_jahr    = $cgi->param('ende_jahr')    || "";
+        my $beschreibung = $cgi->param('beschreibung') || "";
+ 
+        my $check = 0;
+        my ($start_dt, $end_dt);
+ 
+        if (length($name) > 255) {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{LengthName});
+                $check++;
+        } elsif ($name eq "") {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{EmptyName});
+                $check++;
+        }
+ 
+        if (($start_tag eq "") || ($start_monat eq "") || ($start_jahr eq "")) {
+                $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+        }
+ 
+        if (($ende_tag eq "") || ($ende_monat eq "") || ($ende_jahr eq "")) {
+                $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+        }
+ 
+        my $check_start_dt = $start_jahr.$start_monat.$start_tag;
+        my $check_end_dt   = $ende_jahr.$ende_monat.$ende_tag;
+        my $date_check;
+ 
+        if ($check_start_dt =~ m/\D/) {
+                $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+                $date_check++;
+        } else {
+                $start_dt = date [$start_jahr, $start_monat, $start_tag, 00, 00, 00];
+        }
+ 
+        if ($check_end_dt =~ m/\D/) {
+                $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+                $date_check++;
+        } else {
+                $end_dt = date [$ende_jahr, $ende_monat, $ende_tag, 00, 00, 00]; 
+	}
+ 
+        unless ($date_check) {
+                if ($start_dt >= $end_dt) {
+                        $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{StartEndDate});
+                        $mgr->{TmplData}{ERROR_ENDE_DATUM}  = $mgr->decode_all($self->{C_MSG}->{StartEndDate});
+                        $check++;
+                }
+        }
+	# Hier noch pruefen, ob das Anfangsdatum nicht vor dem Anfangsdatum des Projektes liegt. Analog mit dem
+	# Endedatum, das von der Phase auch nicht hinter dem Endedatum des Projektes liegen darf.
+ 
+        if ($self->check_phasen_name($name, $pid)) {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{ExistName});
+                $check++;
+        }
+ 
+        if ($check) {
+                return -1;
+        } else {
+ 
+                my $dbh = $mgr->connect;
+                unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
+                        warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                                $mgr->{PhaTable}, $dbh->errstr);
+                }
+                my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{PhaTable} (name, desc_phase, project_id, start_dt, end_dt, 
+						ins_dt, ins_id) VALUES (?, ?, ?, ?, ?, ?, ?)});
+ 
+                unless ($sth->execute($name, $beschreibung, $pid, $start_dt, $end_dt, $mgr->now, $mgr->{UserId})) {
+                        warn sprintf("[Error]: Trouble inserting data into [%s]. Reason [%s].",
+                                $mgr->{PhaTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                        $mgr->fatal_error($self->{C_MSG}->{DbError});
+                }
+ 
+                $dbh->do("UNLOCK TABLES");
+                $sth->finish;
+                return ($self->{C_MSG}->{InsertPhaOk});
+        }  	
+}
+
+#
+# Pruefen, ob der Name einer Phase schon existiert.
+#
+sub check_phasen_name {
+   	
+	my $self = shift;
+        my $name = shift;
+        my $pid  = shift;
+ 
+        my $mgr = $self->{MGR};
+ 
+        my ($error, $check);
+ 
+        my $dbh = $mgr->connect;
+        unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} READ")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+        my $sth;
+        unless ($pid) {
+                $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ?});
+                unless ($sth->execute($name)) {
+                        $error++;
+                }
+        } else {
+                $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ? AND id <> ?});
+                unless ($sth->execute($name, $pid)) {
+                        $error++;
+                }
+        }
+ 
+        if ($error) {
+                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        if ($sth->rows != 0) {
+                $check++;
+        }
+ 
+        $sth->finish;
+        $dbh->do("UNLOCK TABLES");
+        return $check;                    
+}
+
+sub set_pha_data {
+
+}
+
+#
+# Den Status einer Phase aendern.
+#
+sub change_pha_status {
+	
+	my ($self, $pha_id, $to) = @_;
+	my $mgr                  = $self->{MGR};
+	my $dbh                  = $mgr->connect();
+
+	unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+
+	my $sth = $dbh->prepare(qq{UPDATE $mgr->{PhaTable} SET status = ? WHERE id = ?}); 
+	unless ($sth->execute($to, $pha_id)) {
+		warn sprintf("[Error]: Trouble updating [%s]. Reason: [%s].",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
 }
 
 1;

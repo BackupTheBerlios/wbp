@@ -8,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -44,9 +44,16 @@ sub parameter {
 			$self->show_one_project();
 			return 1;
 		} elsif ($method eq "show_phase") {
-
+			$self->show_phase();
+			return 1;
+		} elsif ($method eq "show_one_phase") {
+			$self->show_one_phase();
+			return 1;
 		} elsif ($method eq "change_status") {
 			$self->change_status();
+			return 1;
+		} elsif ($method eq "change_pha_status") {
+			$self->change_pha_status();
 			return 1;
 		} elsif ($method eq "change_mode") {
 			$self->change_mode();
@@ -60,6 +67,9 @@ sub parameter {
 		} elsif ($method eq "back_change") {
 			$self->tmp_show_projects();
 			return 1;
+		} elsif ($method eq "del_phase") {
+			$self->del_phase();
+			return 1;
 		} 
 	} else {
 		if (defined $cgi->param('new')) {
@@ -71,8 +81,12 @@ sub parameter {
 		} elsif (defined $cgi->param('add_project')) {
 			$self->add_project();
 			return 1;
+		} elsif (defined $cgi->param('add_phase_menu')) {
+			$self->add_phase_menu();
+			return 1;
 		} elsif (defined $cgi->param('add_phase')) {
-	
+			$self->add_phase();
+			return 1;
 		} elsif (defined $cgi->param('change_project')) {
 			$self->change_project();
 			return 1;
@@ -314,11 +328,87 @@ sub show_projects {
 	return 1;	
 }
 
+sub show_phase {
+
+	my $self = shift;
+	
+	my $mgr = $self->{MGR};
+        my $cgi = $mgr->{CGI};
+        my $pid = shift || $cgi->param('pid');
+	my $msg = shift || undef;
+ 
+        unless ($pid) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+
+	$mgr->{Template}       = $C_TMPL->{ProPhaStart};
+	$mgr->{TmplData}{FORM} = $mgr->my_url;
+	$mgr->{TmplData}{PID}  = $pid;
+
+	$self->{BASE}->show_phase($pid);
+	
+	if ($mgr->{UserType} eq "A" || $mgr->{UserType} eq "B") {
+                $mgr->{TmplData}{BACK_CHANGE_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&method=back_change";
+        }
+
+	if ($msg) {
+		$mgr->fill($msg);
+	} else {
+		$mgr->fill();
+	}
+}
+
+sub add_phase_menu {
+	
+	my $self = shift;
+        my $msg  = shift || undef;
+ 
+        my $mgr = $self->{MGR};
+        my $cgi = $self->{MGR}->{CGI};
+	my $pid = $cgi->param('pid');
+
+	$mgr->{TmplData}{PID} = $pid;
+ 
+        if ($msg) {
+                $mgr->{TmplData}{NAME}         = $mgr->decode_some($cgi->param('name'));
+                $mgr->{TmplData}{START_TAG}    = $mgr->decode_some($cgi->param('start_tag'));
+                $mgr->{TmplData}{START_MONAT}  = $mgr->decode_some($cgi->param('start_monat'));
+                $mgr->{TmplData}{START_JAHR}   = $mgr->decode_some($cgi->param('start_jahr'));
+                $mgr->{TmplData}{ENDE_TAG}     = $mgr->decode_some($cgi->param('ende_tag'));
+                $mgr->{TmplData}{ENDE_MONAT}   = $mgr->decode_some($cgi->param('ende_monat'));
+                $mgr->{TmplData}{ENDE_JAHR}    = $mgr->decode_some($cgi->param('ende_jahr'));
+                $mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($cgi->param('beschreibung'));
+                $mgr->fill($msg);
+        } else {
+                $mgr->fill;
+        }
+ 
+        $mgr->{Template}            = $C_TMPL->{ProPhaNew};
+        $mgr->{TmplData}{FORM}      = $mgr->my_url;
+	$mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&method=show_phase&pid=".$pid;
+}
+
+sub add_phase {
+
+	my $self = shift;
+	my $pid  = $self->{MGR}->{CGI}->param('pid');
+	
+	my $check = $self->{BASE}->add_phase();
+
+	if ($check == -1) {
+		$self->add_phase_menu($C_MSG->{ErrorAddPha});
+		return;
+	}
+
+	$self->show_phase($pid, $C_MSG->{InsertPhaOk});
+}
+
 sub tmp_show_projects {
 	
 	my $self = shift;
 	
-	$self->show_projects(1, $C_MSG->{NoChanges});
+	$self->show_projects(1);
 }
 
 sub show_one_project {
@@ -363,7 +453,6 @@ sub change_status {
 sub change_mode {
 
 	my $self = shift;
-	
         my $cgi = $self->{MGR}->{CGI};
 
 	my $mode = $cgi->param('to');
@@ -372,6 +461,31 @@ sub change_mode {
 	$self->{BASE}->change_mode($mode, $pid);
 
 	$self->show_projects(1, $C_MSG->{ChangeMode});	
+}
+
+sub change_pha_status {
+
+	my $self   = shift;
+	my $pha_id = $self->{MGR}->{CGI}->param('pha_id');
+	my $to     = $self->{MGR}->{CGI}->param('to');
+	my $pid    = $self->{MGR}->{CGI}->param('pid');
+
+	unless ($pha_id) {
+                warn "[Error]: Wrong script parameters.";
+                $self->{MGR}->fatal_error($C_MSG->{NotAllowed});
+        } 	
+
+	$self->{BASE}->change_pha_status($pha_id, $to);
+
+	$self->show_phase($pid, $C_MSG->{ChangeStatus});
+}
+
+sub del_phase {
+
+}
+
+sub show_one_phase {
+
 }
 
 1;
