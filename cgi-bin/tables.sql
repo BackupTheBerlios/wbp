@@ -32,3 +32,29 @@ insert into wbp_user (username, password, firstname, lastname, email, type, stat
 
 insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt, ins_id) values
                      ('testd', 'test', 'bla4', 'blabla4', 'bla4@bla4.de', 'D', '1', '2001-03-14 12:15:20', '1');
+
+CREATE TABLE wbp_send (
+        id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        from_uid INT(10) UNSIGNED NOT NULL,
+        parent_mid INT(10) UNSIGNED NOT NULL DEFAULT 0,
+        date DATETIME NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL
+);
+ 
+CREATE TABLE wbp_receive (
+        id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        mid INT(10) UNSIGNED NOT NULL,
+        from_uid INT(10) UNSIGNED NOT NULL,
+        to_uid INT(10) UNSIGNED NOT NULL,
+        parent_mid INT(10) UNSIGNED NOT NULL DEFAULT 0,
+        date DATETIME NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL
+);
+ 
+CREATE TABLE wbp_to_user (
+        id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        mid INT(10) UNSIGNED NOT NULL,
+        uid INT(10) UNSIGNED NOT NULL
+);    
