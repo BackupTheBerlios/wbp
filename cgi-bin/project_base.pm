@@ -200,10 +200,10 @@ sub check_project_name {
 #====================================================================================================#  
 sub get_and_set_projects {
 
-	my $self = shift;
-	my $mode = shift;
-	my $cat  = shift;
-	my $name = shift || undef;
+	my $self  = shift;
+	my $mode  = shift;
+	my $cat   = shift;
+	my $name  = shift || undef;
 
 	my $mgr = $self->{MGR};
 	my ($count, @tmpldata);
@@ -351,9 +351,9 @@ sub set_project_data {
 	$tmpldata{START_DT}       = $mgr->format_date($project[3]);
 	$tmpldata{ENDE_DT}        = $mgr->format_date($project[4]);
 	$tmpldata{NAME}           = $mgr->decode_all($project[1]);
-	$tmpldata{CHANGE_PROJECT} = $link."show_project";
 	$tmpldata{MODUS}          = $mgr->decode_all($modus);
 	$tmpldata{CHANGE_MODE}    = $mode_link; 	
+       	$tmpldata{CHANGE_PROJECT} = $link."show_project";
 
 	$tmpldata{STATUS_AKTIV}   = $mgr->decode_all($self->{C_MSG}->{Aktive});
 	$tmpldata{STATUS_INAKTIV} = $mgr->decode_all($self->{C_MSG}->{Inaktive});
@@ -529,8 +529,8 @@ sub get_and_set_for_c {
 			# Die restlichen Daten des Projekts setzen.
 			$tmpldata[$i]{START_DT}       = $mgr->format_date($tmpdata[3]);
 			$tmpldata[$i]{ENDE_DT}        = $mgr->format_date($tmpdata[4]);
-			$tmpldata[$i]{CHANGE_PROJECT} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
-							$_."&method=show_project";
+			# $tmpldata[$i]{CHANGE_PROJECT} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+			#				$_."&method=show_project";
 			$tmpldata[$i]{NAME}           = $mgr->decode_all($tmpdata[1]);
 			$tmpldata[$i]{KAT_NAME}       = $mgr->decode_all($self->get_cat_name($tmpdata[2]));
 
@@ -1590,8 +1590,10 @@ sub show_change_user_cd {
 
 	$mgr->{TmplData}{FORM}      = $mgr->my_url(); 
 	$mgr->{TmplData}{PID}       = $pid; 	 
-        $mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
-                                      "&method=back_change";
+        if ($mgr->{Session}->get("USERTYPE") ne "C") {
+		$mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                	                      "&method=back_change";
+	}
         $mgr->{Template} = $self->{C_TMPL}->{ProUserCD};
         $msg = "" if (!$msg);
 	$mgr->fill($msg);

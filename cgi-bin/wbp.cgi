@@ -9,7 +9,7 @@ use fields (
 	'Action',        # action paramaeter
 	'CatTable',      # "categories" table
 	'CGI',           # cgi object
-	'CUserTable',    # "count user" table
+	 # 'CUserTable',    # "count user" table
 	'DataBase',      # database name
 	'DbHandle',      # database handle
 	'DbPassWord',    # database password
@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.19 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -58,7 +58,7 @@ sub handler {
 		Action        => undef,
 		CatTable      => $wbp_config::CONFIG->{CatTable},
 		CGI           => $in,
-		CUserTable    => $wbp_config::CONFIG->{CUserTable},
+		# CUserTable    => $wbp_config::CONFIG->{CUserTable},
 		DataBase      => $wbp_config::CONFIG->{DataBase},
 		DbHandle      => undef,
 		DbPassWord    => $wbp_config::CONFIG->{DbPassWord},

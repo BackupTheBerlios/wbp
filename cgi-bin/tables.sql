@@ -1,3 +1,13 @@
+drop table if exists wbp_user;
+drop table if exists wbp_project;
+drop table if exists wbp_user_project;
+drop table if exists wbp_phase;
+drop table if exists wbp_send;
+drop table if exists wbp_receive;
+drop table if exists wbp_to_user;
+drop table if exists wbp_news;
+drop table if exists wbp_category;  
+
 create table wbp_user (
 	id        int(10) unsigned      not null auto_increment,
 	username  varchar(8)            not null,
