@@ -37,6 +37,9 @@
 		<TMPL_VAR TYPE>
             </td>
             <td align="center">
+		<TMPL_IF ADMIN>
+		    aktiv
+		</TMPL_IF>
 		<TMPL_IF AKTIV>
 		    <a href="<TMPL_VAR FORM>&method=inaktiv&user=<TMPL_VAR ID>">aktiv</a>
 		</TMPL_IF>

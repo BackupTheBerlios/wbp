@@ -6,7 +6,7 @@ use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -26,7 +26,7 @@ sub parameter {
             # Post-Parameter ============================================
 	    # search user
 	    if (defined($cgi->param('search'))) {
-    		$self->user_search($mgr);
+    		$self->user_search($mgr, 1);
     	    }
 	    # confirm some changes
 	    elsif (defined($cgi->param('ok'))) {
@@ -107,7 +107,7 @@ sub user_search {
 
     my $self = shift;
     my $mgr  = shift;
-    my $cgi  = $mgr->{CGI};
+    my $flag = shift;
     my $type = $mgr->{UserType};
     my $loopdata;
     my $href;
@@ -115,14 +115,15 @@ sub user_search {
     my $ref;
     my $search_name;
     my $search_id;
-    my $flag = 0;
 
-    if (defined($cgi->param('search_username'))) {
-	$search_name = $cgi->param('search_username') || "";
-	$search_id = $cgi->param('search_id') || 0;
-	$mgr->{Session}->del("SearchName");
-	$mgr->{Session}->del("SearchId");
-	$flag = 1;
+    if ($flag == 1) {
+	my $cgi = $mgr->{CGI};
+        if (defined($cgi->param('search_username'))) {
+	    $search_name = $cgi->param('search_username') || "";
+	    $search_id = $cgi->param('search_id') || 0;
+	    $mgr->{Session}->del("SearchName");
+	    $mgr->{Session}->del("SearchId");
+	}
     }
     if ($flag == 0) {
 	$search_name = $mgr->{Session}->get("SearchName") || "";
@@ -176,6 +177,19 @@ sub user_search {
 	    
 	    if ($ref->[7] eq '1') {
 	    # if user-state is active
+	      if ($ref->[1] eq 'admin') {
+	        $href = {
+		    ID		=> $ref->[0],
+		    USERNAME	=> $ref->[1],
+		    FIRSTNAME   => $ref->[3],
+		    LASTNAME	=> $ref->[4],
+		    TYPE	=> $ref->[6],
+		#    UPD_DT	=> $date,
+		#    UPD_ID	=> $ref->[12],
+		    FORM	=> $mgr->my_url,
+		    ADMIN	=> sprintf(" ")
+		};
+	      } else {	# if not admin
 		$href = {
 		    ID		=> $ref->[0],
 		    USERNAME	=> $ref->[1],
@@ -186,8 +200,9 @@ sub user_search {
 		#    UPD_DT	=> $date,
 		#    UPD_ID	=> $ref->[12],
 		    FORM	=> $mgr->my_url
-		};
-	    } else {
+	        };
+	    } # end if admin
+	  } else {
 	        $href = {
 	    	ID		=> $ref->[0],
 	    	USERNAME	=> $ref->[1],
@@ -259,21 +274,35 @@ sub user_aktiv {
 	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 			 $mgr->{UserTable}, $dbh->ersstr);
     }
-    my $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = $id});
     
+    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = $id});
     unless ($sth->execute()) {
     }
     
-    $sth->finish;
-    $dbh->do("UNLOCK TABLES");
-        
-    $mgr->{Template} = $C_TMPL->{WeiterTmpl};
-    $mgr->{TmplData} {OUTPUT} = "Benutzer wurde aktiviert";
-    $mgr->{TmplData} {FORM} = $mgr->my_url;
-    $mgr->{TmplData} {SEARCH} = " ";
+    my $ref = $sth->fetchrow_arrayref();
     
-    $mgr->fill;
-
+    if ($ref->[6] lt $mgr->{UserType}) {
+    
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!<br>Dieser Fehler wurde protokolliert !!!";
+	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	$mgr->{TmplData} {FORM} = $mgr->my_url;
+	$mgr->fill;
+    
+    } else {
+    
+	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = $id});
+    
+	unless ($sth->execute()) {
+	}
+    
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+    
+        $self -> user_search($mgr, 0);
+    }
+    
     1;
     
 }
@@ -294,21 +323,44 @@ sub user_inaktiv {
 	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 			 $mgr->{UserTable}, $dbh->ersstr);
     }
-    my $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = $id});
     
+    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = $id});
     unless ($sth->execute()) {
     }
-     
-    $sth->finish;
-    $dbh->do("UNLOCK TABLES");
     
-    $mgr->{Template} = $C_TMPL->{WeiterTmpl};
-    $mgr->{TmplData} {OUTPUT} = "Benutzer wurde deaktiviert";
-    $mgr->{TmplData} {FORM} = $mgr->my_url;
-    $mgr->{TmplData} {SEARCH} = " ";
+    my $ref = $sth->fetchrow_arrayref();
     
-    $mgr->fill;
+    if ($ref->[1] eq 'admin') {
 
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+	$mgr->{TmplData}{OUTPUT} = "der Admin kann nicht deaktiviert werden !!!";
+	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	$mgr->{TmplData} {FORM} = $mgr->my_url;
+	$mgr->fill;
+
+    } elsif ($ref->[6] lt $mgr->{UserType}) {
+    
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!<br>Dieser Fehler wurde protokolliert !!!";
+	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	$mgr->{TmplData} {FORM} = $mgr->my_url;
+	$mgr->fill;
+    
+    } else {
+	
+    	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = $id});
+    
+	unless ($sth->execute()) {
+	}
+
+        $sth->finish;
+	$dbh->do("UNLOCK TABLES");
+    
+	$self -> user_search($mgr, 0);
+    }
+        
     1;
     
 }
@@ -323,12 +375,14 @@ sub user_edit {
     my $self = shift;
     my $mgr  = shift;
     my $id   = $mgr->{CGI}->param('user');
+    my $type = $mgr->{UserType};
     
     my $dbh = $mgr->connect;
     unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
 	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 			 $mgr->{UserTable}, $dbh->ersstr);
     }
+    
     my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     
     unless ($sth->execute()) {
@@ -338,6 +392,15 @@ sub user_edit {
     
     $sth->finish;
     $dbh->do("UNLOCK TABLES");
+    
+    if ($ref->[6] lt $mgr->{UserType}) {
+    
+	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!<br>Dieser Fehler wurde protokolliert !!!";
+	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	$mgr->{TmplData} {FORM} = $mgr->my_url;
+	$mgr->fill;
+	return 1;
+    }
     
     # fill textfields with values    
     $mgr->{TmplData} {ID} = $ref->[0];
