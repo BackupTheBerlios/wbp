@@ -19,15 +19,6 @@ insert into wbp_user (username, password, firstname, lastname, email, type, stat
 		     ('admin', 'test', 'Testie', 'Testtest', 'test@test.de', 'A', '1', 'den gibs nur einmal ...', 
 		      '2001-03-14 12:15:20', '1');
 
-insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt, ins_id) values
-                     ('testb', 'test', 'bla1', 'blabla1', 'bla1@bla1.de', 'B', '1', '2001-03-14 12:15:20', '1');
-
-insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt ,ins_id) values
-                     ('testc', 'test', 'bla2', 'blabla2', 'bla2@bla2.de', 'C', '1', '2001-03-14 12:15:20', '1');
-
-insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt, ins_id) values
-                     ('testd', 'test', 'bla4', 'blabla4', 'bla4@bla4.de', 'D', '1', '2001-03-14 12:15:20', '1');
-
 create table wbp_project (
 	id           int(10) unsigned  not null auto_increment,
 	name         varchar(255)      not null,
@@ -105,21 +96,6 @@ CREATE TABLE wbp_category (
   upd_id VARCHAR(8) NOT NULL DEFAULT ""
 );
 
-insert into wbp_category (name,        desc_category,             status, ins_dt,                ins_id,
-                          upd_dt,                upd_id) values
-                         ('Rubrik 1', 'Beschreibung zu Rubrik 1', '1',    '2001-03-14 12:15:20', '1',
-                          '2001-03-14 12:15:20', '1');
-
-insert into wbp_category (name,        desc_category,             status, ins_dt,                ins_id,
-                          upd_dt,                upd_id) values
-                         ('Rubrik 2', 'Beschreibung zu Rubrik 2', '1',    '2001-03-14 12:15:20', '1',
-                          '2001-03-14 12:15:20', '1');
-
-insert into wbp_category (name,        desc_category,             status, ins_dt,                ins_id,
-                          upd_dt,                upd_id) values
-                         ('Rubrik 3', 'Beschreibung zu Rubrik 3', '1',    '2001-03-14 12:15:20', '1',
-                          '2001-03-14 12:15:20', '1');
- 
 CREATE TABLE wbp_news ( 
   id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   subject VARCHAR(100) NOT NULL,
