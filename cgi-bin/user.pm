@@ -7,7 +7,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 # use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -164,6 +164,8 @@ sub user_search {
 	    $flag = 1;
 	}
     }
+    
+    $sql .= qq{ ORDER BY ID ASC};
     
     my $dbh = $mgr->connect;
     unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
@@ -968,10 +970,10 @@ sub user_ok {
 	}
     
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} 
-		    SET username = "$username", password = "$password", firstname = "$firstname", lastname = "$lastname", email = "$email",
-    		        desc_user = "$desc", type = "$type", upd_dt = "$upd_dt", upd_id = "$upd_id"
+		    SET USERNAME=?, PASSWORD=?, FIRSTNAME=?, LASTNAME=?, EMAIL=?, TYPE=?, DESC_USER=?, UPD_DT=?, UPD_ID=?
 		    WHERE id = "$id"});
-        unless ($sth->execute()) {}
+	unless ($sth->execute($username, $password, $firstname, $lastname, $email, $type, $desc, $upd_dt, $upd_id)) {}
+	
 	
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
@@ -1170,11 +1172,9 @@ sub user_add {
 	my $sth;	
 	
 	$sth = $dbh->prepare(qq{INSERT INTO $mgr->{UserTable}
-		     (username, password, firstname, lastname, email, type, desc_user, 
-		      status, upd_dt, upd_id, ins_dt, ins_id) values
-		     ('$username', '$password', '$firstname', '$lastname', '$email', 
-		      '$type', '$desc', '1', '$upd_dt', '$upd_id', '$upd_dt', '$upd_id')});
-	unless ($sth->execute()) {}
+		     (username, password, firstname, lastname, email, type, desc_user, status, upd_dt, upd_id, ins_dt, ins_id) VALUES
+		     (?,?,?,?,?,?,?,?,?,?,?,?)});
+	unless ($sth->execute($username, $password, $firstname, $lastname, $email, $type, $desc, '1', $upd_dt, $upd_id, $upd_dt, $upd_id)) {}
 	
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
