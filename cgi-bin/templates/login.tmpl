@@ -1,0 +1,53 @@
+<html>
+<body>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+	<td colspan="2" align="left">
+	<TMPL_IF MSG>
+		<font color="#ff0000"><TMPL_VAR MSG></font>
+	</TMPL_IF>
+	</td>
+</tr>
+<tr>
+	<td>
+	<b>Username:</b>
+	</td>
+	<td>
+	<TMPL_IF NO_USERNAME>
+		<font color="#ff0000"><TMPL_VAR NO_USERNAME></font>
+	</TMPL_IF>
+	<br>
+	<input type="text" name="username" value="<TMPL_VAR USERNAME>">
+	</td>
+</tr>
+<tr>
+	<td>
+	<b>Passwort:</b>
+	</td>
+	<td>
+	<TMPL_IF NO_PASSWORD>
+		<font color="#ff0000"><TMPL_VAR NO_PASSWORD></font>
+	</TMPL_IF>
+	<br>
+	<input type="password" name="password" value="<TMPL_VAR PASSWORD>">
+	</td>
+</tr>
+<tr>
+	<td>
+	&nbsp;
+	</td>
+	<td align="left">
+	<input type="submit" name="login" value="Login">
+	</td>
+</tr>
+</table>
+</form>
+
+</boy>
+</html>
+

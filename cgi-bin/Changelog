@@ -1,0 +1,46 @@
+#====================================================================================================#
+*** 13.05.2001 ***
+Sören Wurch 
+
+- Session.pm angelegt
+- error.tmpl angelegt
+- main.tmpl angelegt
+- wbp.pm geaendert
+	* Sessionverwaltung hinzugefuegt
+- login.pm geaendert
+	* Funktion parameter ueberarbeitet
+	* Funktion check angelegt	
+	* Funktion main_menu angelegt
+- wbp_config.pm geaendert
+	* CONFIG Hash erweitert
+#====================================================================================================#
+*** 10.05.2001 ***
+Sören Wurch
+
+- message.pm angelegt
+- wbp.pm dokumentiert plus kleinere Aendernugen
+- login.tmpl komplett erneuert
+- wbp_config.pm geaendert
+	* CONFIG Hash erweitert
+#====================================================================================================#
+*** 07.05.2001 ***
+Sören Wurch:
+
+- login.pm angelegt
+	* Funktion parameter angelegt
+- login.tmpl angelegt
+#====================================================================================================#
+*** 06.05.2001 ***
+Sören Wurch:
+
+- wbp.pm angelegt
+	* Funktion handler angelegt
+        * Funktion new angelegt
+        * Funktion output angelegt
+        * Funktion fatal_error angelegt
+        * Funktion template_error angelegt
+        * Funktion connect angelegt
+        * Funktion my_url angelegt   
+- wbp_config.pm angelegt
+	* CONFIG Hash angelegt
+#====================================================================================================#
