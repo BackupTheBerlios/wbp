@@ -1,3 +1,15 @@
+#==============================================================================$
+*** 25.05.2001 ***
+Michael Krüger
+
+- message_confirm.tmpl angelegt
+- wbp_config erweitert
+- wbp.cgi erweitert
+        * MessageTmpl
+        * MessageConfirmTmpl
+- message.pm erweitert
+	* Nachricht Verfassen,Bestaetigen,...
+- message_config.pm erweitert
 #===================================================================================================
 *** 25.05.2001 ***
 Michael Krüger
