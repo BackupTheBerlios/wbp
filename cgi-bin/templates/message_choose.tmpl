@@ -39,21 +39,21 @@
 <tr align="center">
 	<td>
 	<select name="user" size="1">
-	<option value="0">Typ C ausw&auml;hlen
+	<option value="0"><TMPL_IF TYPE_C_LOOP>Typ C ausw&auml;hlen
 	<option value="0">---------------
 	<TMPL_LOOP TYPE_C_LOOP>
 	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
-	</TMPL_LOOP>
+	</TMPL_LOOP><TMPL_ELSE>Keine Typ C Benutzer</TMPL_IF>
 	</select>
 	</td>
 </tr>
 <tr align="center">
 	<td><select name="user" size="1">
-	<option value="0">Typ D ausw&auml;hlen
+	<option value="0"><TMPL_IF TYPE_D_LOOP>Typ D ausw&auml;hlen
 	<option value="0">---------------
 	<TMPL_LOOP TYPE_D_LOOP>
 	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
-	</TMPL_LOOP>
+	</TMPL_LOOP><TMPL_ELSE>Keine Typ D Benutzer</TMPL_IF>
 	</select>
 	</td>
 </tr>
@@ -100,11 +100,11 @@
 </tr>
 <tr align="center">
 	<td><select name="project" size="1">
-	<option value="0">Projekt ausw&auml;hlen
+	<option value="0"><TMPL_IF PROJECT_LOOP>Projekt ausw&auml;hlen
 	<option value="0">---------------
 	<TMPL_LOOP PROJECT_LOOP>
 	<option value="<TMPL_VAR PROJECT_ID>"><TMPL_VAR PROJECT_NAME> (<TMPL_VAR CATEGORY>)
-	</TMPL_LOOP>
+	</TMPL_LOOP><TMPL_ELSE>Keine Projekt zur Auswahl</TMPL_IF>
 	</select>
 	</td>
 </tr>
