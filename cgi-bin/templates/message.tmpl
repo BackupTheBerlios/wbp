@@ -1,0 +1,38 @@
+<html>
+<body>
+
+<TMPL_INCLUDE header.tmpl> 
+
+<h1>Messages</h1>
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center"
+<tr>
+	<td>
+	<TMPL_IF NAV_START>
+		<a href="<TMPL_VAR NAV_START>">Main Men&uuml;</a>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+	<td>
+	<TMPL_IF NAV_MSG_READ>
+		<a href="<TMPL_VAR NAV_MSG_READ>">Lesen</a>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+	<td>
+	<TMPL_IF NAV_MSG_WRITE>
+		<a href="<TMPL_VAR NAV_MSG_WRITE>">Verfassen</a>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+
+<TMPL_INCLUDE footer.tmpl>
+
+

@@ -1,0 +1,69 @@
+<html>
+<body>
+
+<TMPL_INCLUDE header.tmpl> 
+
+<h1>Messages - Formular</h1>
+
+
+<form action="<TMPL_VAR FORM>" method="post">
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="method" value="<TMPL_VAR METHOD>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+	<td colspan="2" align="left">
+	<TMPL_IF MSG>
+		<font color="#ff0000"><TMPL_VAR MSG></font>
+	</TMPL_IF>
+	</td>
+</tr>
+<tr>
+	<td>
+	<b>Subject:</b>
+	</td>
+	<td>
+	<TMPL_IF NO_SUBJECT>
+		<font color="#ff0000"><TMPL_VAR NO_SUBJECT></font>
+	</TMPL_IF>
+	<br>
+	<input type="text" name="subject" value="<TMPL_VAR SUBJECT>">
+	</td>
+</tr>
+<tr>
+	<td></td><td><input type="submit" name="ok123" value="OK"></td>
+</tr>
+</table>
+</form>
+
+
+<table cellspacing="0" cellpadding="0" border="0" align="center"
+<tr>
+	<td>
+	<TMPL_IF NAV_START>
+		<a href="<TMPL_VAR NAV_START>">Main Men&uuml;</a>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+	<td>
+	<TMPL_IF NAV_MSG_READ>
+		<a href="<TMPL_VAR NAV_MESSAGE>">Nachrichten</a>
+	<TMPL_ELSE>
+		&nbsp;
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+
+<TMPL_INCLUDE footer.tmpl>
+
+
+
+
+
+
+
+
