@@ -6,7 +6,7 @@ use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -16,6 +16,7 @@ sub parameter {
 	my $self = shift;
 	my $mgr  = shift;
 	my $cgi  = $mgr->{CGI};
+	my $flag = $mgr->{Session}->get("edit") || "0";
 	
 	# kick D-Users
 	if ($mgr->{UserType} eq 'D') {
@@ -58,7 +59,11 @@ sub parameter {
 		    $self->user_inaktiv($mgr);
 		}
 	    }	
-	    # if no action is set, go to startscreen
+	    # after editing a user
+	    elsif ($flag eq '1') {
+		$self->user_search($mgr, 0);
+	    }
+	    # if no action is set, go to startscreen	    
 	    else {
 		$self->user_start($mgr);
 	    }
@@ -99,7 +104,7 @@ sub user_start {
 }
 
 #=============================================================================
-# SYNOPSIS: user_search($mgr);
+# SYNOPSIS: user_search($mgr, $flag)
 # PURPOSE:  search users by id or username and show the result
 # RETURN: 1;
 #=============================================================================
@@ -118,16 +123,15 @@ sub user_search {
 
     if ($flag == 1) {
 	my $cgi = $mgr->{CGI};
-        if (defined($cgi->param('search_username'))) {
-	    $search_name = $cgi->param('search_username') || "";
-	    $search_id = $cgi->param('search_id') || 0;
-	    $mgr->{Session}->del("SearchName");
-	    $mgr->{Session}->del("SearchId");
-	}
+	$search_name = $cgi->param('search_username') || "";
+	$search_id = $cgi->param('search_id') || 0;
+	$mgr->{Session}->del("SearchName");
+	$mgr->{Session}->del("SearchId");
     }
     if ($flag == 0) {
 	$search_name = $mgr->{Session}->get("SearchName") || "";
 	$search_id = $mgr->{Session}->get("SearchId") || "0";	
+	$mgr->{Session}->del("edit");
     }
         
     $mgr->{Session}->set(SearchName => $search_name);
@@ -275,7 +279,7 @@ sub user_aktiv {
 			 $mgr->{UserTable}, $dbh->ersstr);
     }
     
-    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = $id});
+    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     unless ($sth->execute()) {
     }
     
@@ -292,7 +296,7 @@ sub user_aktiv {
     
     } else {
     
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = $id});
+	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
     
 	unless ($sth->execute()) {
 	}
@@ -324,7 +328,7 @@ sub user_inaktiv {
 			 $mgr->{UserTable}, $dbh->ersstr);
     }
     
-    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = $id});
+    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     unless ($sth->execute()) {
     }
     
@@ -350,7 +354,7 @@ sub user_inaktiv {
     
     } else {
 	
-    	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = $id});
+    	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
     
 	unless ($sth->execute()) {
 	}
@@ -393,9 +397,9 @@ sub user_edit {
     $sth->finish;
     $dbh->do("UNLOCK TABLES");
     
-    if ($ref->[6] lt $mgr->{UserType}) {
+    if ($ref->[6] lt $type) {
     
-	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!<br>Dieser Fehler wurde protokolliert !!!";
+	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
 	$mgr->{TmplData} {FORM} = $mgr->my_url;
 	$mgr->fill;
@@ -413,10 +417,11 @@ sub user_edit {
     $mgr->{TmplData} {DESC} = $ref->[8];
     $mgr->{TmplData} {OUTPUT} = "User editieren: ID = ";
     
-    my $type = $mgr->{UserType};
-    
     # distingiush usertype (if usertype had to change)
     if ($type eq "A") {
+	if ($ref->[6] eq 'A') {
+	    $mgr->{TmplData}{A_USER_A} = " ";
+	}
 	if ($ref->[6] eq 'B') {
 	    $mgr->{TmplData}{A_USER_B} = " ";
 	}
@@ -575,33 +580,22 @@ sub user_ok {
 			 $mgr->{UserTable}, $dbh->ersstr);
 	}
     
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET username = '$username' WHERE id = $id});
+	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} 
+		    SET username = "$username", password = "$password", firstname = "$firstname", lastname = "$lastname", email = "$email",
+    		        desc_user = "$desc", type = "$type", upd_dt = "$upd_dt", upd_id = "$upd_id"
+		    WHERE id = "$id"});
         unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET password = '$password' WHERE id = $id});
-        unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET firstname = '$firstname' WHERE id = $id});
-        unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET lastname = '$lastname' WHERE id = $id});
-        unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET email = '$email' WHERE id = $id});
-        unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET desc_user = '$desc' WHERE id = $id});
-        unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET type = '$type' WHERE id = $id});
-	unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET upd_dt = '$upd_dt' WHERE id = $id});
-	unless ($sth->execute()) {}
-	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET upd_id = '$upd_id' WHERE id = $id});
-	unless ($sth->execute()) {}
 	
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
     
 	$mgr->{TmplData}{OUTPUT} = "neue Userdaten &uuml;bernommen";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
-	$mgr->{TmplData}{SEARCH} = " ";
 	
 	$mgr->fill;
+	
+	$mgr->{Session}->set("edit" => "1");
+	
     }
     
     

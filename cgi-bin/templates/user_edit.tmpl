@@ -131,6 +131,11 @@
 			    Typ <br>
 		    </td>
 		    <td>
+			<TMPL_IF A_USER_A>
+			    <select name="type">
+				<option value="A" selected>Typ A
+			    </select>
+			</TMPL_IF>
 		    	<TMPL_IF A_USER_B>
 			    <select name="type">
 				<option value="B" selected>Typ B
@@ -164,9 +169,7 @@
 		    	Beschreibung <br>
 		    </td>
 		    <td colspan="2">	
-			<textarea name="desc" rows=3 cols=40 wrap="virtual">
-			    <TMPL_VAR DESC>
-			</textarea>
+			<textarea name="desc" rows=3 cols=40 wrap="virtual"><TMPL_VAR DESC></textarea>
 		    </td>
     		</tr>
 		<tr>
