@@ -36,15 +36,19 @@
   </td>
 </tr>
 
-<TMPL_IF CREATE_CHANGE>
 <tr>
   <td colspan=2>
-   <input type=radio name="activ" value="activ"> aktiv
-   <br>
-   <input type=radio name="activ" value="inactiv"> inaktiv
+    <TMPL_IF CHECKED_ACTIV>
+      <input type=radio name="activ" value="activ" checked> aktiv
+      <br>
+      <input type=radio name="activ" value="inactiv"> inaktiv
+    <TMPL_ELSE>
+      <input type=radio name="activ" value="activ"> aktiv
+      <br>
+      <input type=radio name="activ" value="inactiv" checked> inaktiv
+    </TMPL_IF>
   </td>
 </tr>
-</TMPL_IF>
 
 <tr>
   <td colspan=2 align=center>

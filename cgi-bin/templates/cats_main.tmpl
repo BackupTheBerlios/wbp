@@ -1,25 +1,89 @@
 <TMPL_INCLUDE header.tmpl>
 
+<form action="<TMPL_VAR FORM>" method="post">
+
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
 <table cellspacing="0" cellpadding="0" align="center" valign=center width="80%">
-  <tr> <td align="center" valign="center" height=100%>
+<tr> <td align="center" valign="center" height=100%>
 
-<table> <tr> <td>
 
-<b> Rubriken: </b><br>
+<table width=100%>
+<tr>
+  <td colspan=3>
+    <hr size=1 noshade>
+  </td>
+</tr>
+<tr>
+  <td valign=top>
+    <b> Neue Rubrik: </b>
+  </td>
+  <td>
+    &nbsp;
+  </td>
+  <td>
+    <input type="submit" name="create_cat" value="Anlegen">
+  </td>
+</tr>
 
 <TMPL_IF SHOW_CAT_IF>
-  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR SHOW_ALL_LINK>">alle Rubriken anzeigen</a><br>
-  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR SHOW_ACTIV_LINK>">aktive Rubriken anzeigen</a><br>
-  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR SHOW_INACTIV_LINK>">inaktive Rubriken anzeigen</a><br><br>
+
+<tr>
+  <td colspan=3>
+    <hr size=1 noshade>
+  </td>
+</tr>
+<tr>
+  <td valign=top>
+    <b> Rubrikensuche: </b>
+  </td>
+  <td align=right>
+    Art:
+  </td>
+  <td>
+    <select name="cat_art">
+      <option value="all">alle Rubriken</option>
+      <option value="activ">aktive Rubriken</option>
+      <option value="inactiv">inaktive Rubriken</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td>
+    &nbsp;
+  </td>
+  <td align=right>
+    Name:
+  </td>
+  <td>
+    <input type="text" name="cat_name" value="">
+  </td>
+</tr>
+<tr>
+  <td>
+    &nbsp;
+  </td>
+  <td>
+    &nbsp;
+  </td>
+  <td>
+    <input type="submit" name="show_cats" value="suchen">
+  </td>
+</tr>
+
 </TMPL_IF>
 
-&nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR CREATE_CAT_LINK>">neue Rubrik anlegen</a>
+<tr>
+  <td colspan=3>
+    <hr size=1 noshade>
+  </td>
+</tr>
+
+</table>
 
 </td> </tr> </table>
 
-</td> </tr> </table>
+</form>
 
 <TMPL_INCLUDE footer.tmpl>

@@ -9,7 +9,7 @@
 <table> <tr> <td colspan=5> <br>
  
 <TMPL_IF NO_CATS>
-<b><TMPL_VAR CAT_STATUS>...</b>
+<b> <TMPL_VAR CAT_STATUS>... </b> <br>
 <TMPL_ELSE>
 <b> <TMPL_VAR CAT_STATUS> Rubriken: </b><br>
 </TMPL_IF>
@@ -31,27 +31,6 @@
 </TMPL_LOOP>
 
 </table>
-
-<br>
-
-<TMPL_IF SHOW_ALL_LINK_IF>
-  &nbsp;&nbsp;
-  <a href="<TMPL_VAR SHOW_ALL_LINK>">alle Rubriken anzeigen</a>
-  &nbsp;&nbsp;
-</TMPL_IF>
-<TMPL_IF SHOW_ACTIV_LINK_IF>
-  &nbsp;&nbsp;
-  <a href="<TMPL_VAR SHOW_ACTIV_LINK>">aktive Rubriken anzeigen</a>
-  &nbsp;&nbsp;
-</TMPL_IF>
-<TMPL_IF SHOW_INACTIV_LINK_IF>
-  &nbsp;&nbsp;
-  <a href="<TMPL_VAR SHOW_INACTIV_LINK>">inaktive Rubriken anzeigen</a>
-  &nbsp;&nbsp;
-</TMPL_IF>
-  &nbsp;&nbsp;
-  <a href="<TMPL_VAR CREATE_CAT_LINK>">neue Rubrik anlegen</a>
-  &nbsp;&nbsp;
 
 </td> </tr> </table>
 
