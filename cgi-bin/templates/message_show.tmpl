@@ -6,35 +6,30 @@
 <hr size="1" noshade width="80%">
 
 <TMPL_INCLUDE message_nav.tmpl>
+<br>
+<table cellspacing="0" cellpadding="5" border="0" align="center" width="80%" bgcolor="#cecece">
 
-
-<table cellspacing="0" cellpadding="5" border="0" align="center">
-<TMPL_IF PARENT_LINK>
-<tr>	<td></td>
-	<td>
-	<small><a href="<TMPL_VAR PARENT_LINK>"><TMPL_VAR PARENT_SUBJECT></a></small>
-	</td>
-</tr>
-</TMPL_IF>
 <tr>
-	<td>Datum</td>
+	<td align="right"><b>Datum</b></td>
 	<td>
 	<tt><TMPL_VAR MESSAGE_DATE></tt>
 	</td>
 </tr>
 <TMPL_IF MESSAGE_SENDER>
 <tr>
-	<td>Absender</td>
+	<td align="right"><b>Von:</b></td>
 	<td>
-	<i><TMPL_VAR MESSAGE_SENDER></i>
+	<TMPL_VAR MESSAGE_SENDER>
 	</td>
 </tr>
 </TMPL_IF>
 <TMPL_IF MESSAGE_RECEIVERS_LOOP>
 <tr>
-	<td>Empf&auml;nger</td>
+	<td align="right"><b>An:</b></td>
 	<td><form>
 	<select name="dummy" size="1">
+	<option>Liste der Empf&auml;nger
+	<option>---------------------
 	<TMPL_LOOP MESSAGE_RECEIVERS_LOOP>
 	<option><TMPL_VAR RECEIVER_NAME>
 	</TMPL_LOOP>
@@ -43,22 +38,36 @@
 	</td>
 </tr>
 </TMPL_IF>
+<TMPL_IF PARENT_LINK>
 <tr>
-	<td>Betreff</td>
+	<td align="right">
+	<b>Antwort auf</b>
+	</td>
 	<td>
-	<b><TMPL_VAR MESSAGE_SUBJECT></b>
+	<a href="<TMPL_VAR PARENT_LINK>"><TMPL_VAR PARENT_SUBJECT></a>
 	</td>
 </tr>
-<tr>	<td></td>
+</TMPL_IF>
+<tr>
+	<td align="right">
+	<b>Betreff</b>
+	</td>
 	<td>
-	<TMPL_VAR MESSAGE_CONTENT>
+	<TMPL_VAR MESSAGE_SUBJECT>
 	</td>
 </tr>
-
+<tr>
+	<td colspan="2">
+	<table cellspacing="0" cellpadding="10" border="0" align="center">
+	<tr>
+		<td>
+		<TMPL_VAR MESSAGE_CONTENT>
+		</td>
+	</tr>
+	</table>
+	</td>
+</tr>
 </table>
-<p>
-<p>
-<div align="center">
 
 <form action="<TMPL_VAR FORM>" method="post">
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
@@ -66,15 +75,22 @@
 <input type="hidden" name="parent_mid" value="<TMPL_VAR PARENT_MID>">
 <input type="hidden" name="mid" value="<TMPL_VAR MID>">
 <input type="hidden" name="modus" value="<TMPL_VAR MODUS>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
+<tr><td align="center">
 <input type="submit" name="reply" value="Antworten">
+</td>
+<td align="center">
 <input type="submit" name="delete_message" value="Löschen">
+</td></tr>
+</table>
 </form>
 
-</div>
 
 <TMPL_INCLUDE message_nav.tmpl>
 
 <hr size="1" noshade width="80%">
 
 <TMPL_INCLUDE footer.tmpl>
+
 

@@ -8,7 +8,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -265,6 +265,16 @@ sub show_message {
     # gewuenschte Messages holen
     # Die Nachricht besteht aus (mid,from_uid,to_uid,parent_mid,status,date,subject,content)
     my @message = $self->{BASE}->get_message($mid);
+
+   unless (@message) {
+	# Error-Template vorbereiten
+	$mgr->{Template} = $C_TMPL->{Error};
+	$mgr->{TmplData}{MSG} = $C_MSG->{NoSuchMsgError};
+	return 1;
+    }
+
+
+
     if ($message[4] eq '0') {
 	$self->{BASE}->set_message_status($mid,1);
 	$modus = 'inbox';
@@ -344,6 +354,13 @@ sub show_send_message {
     # gewuenschte Messages holen
     # Die Nachricht besteht aus (id,parent_mid,date,subject,content)
     my @message = $self->{BASE}->get_send_message($mid);
+
+    unless (@message) {
+	# Error-Template vorbereiten
+	$mgr->{Template} = $C_TMPL->{Error};
+	$mgr->{TmplData}{MSG} = $C_MSG->{NoSuchMsgError};
+	return 1;
+    }
 
     # MessageShow-Template vorbereiten
     $mgr->{Template} = $C_TMPL->{MessageShow};
@@ -515,6 +532,15 @@ sub choose_receivers {
     $to_usernames =~ s/\s+//gs;
     my @usernames = split /,+/, $to_usernames;
     my $id = $self->{BASE}->fetch_uids(\@usernames) || undef;
+
+
+	$mgr->{Session}->del("ParentMid");
+	$mgr->{Session}->del("ToUsernames");
+	$mgr->{Session}->del("Subject");
+	$mgr->{Session}->del("Content");
+	$mgr->{Session}->del("AnswerModeSender");
+	$mgr->{Session}->del("AnswerModeAll");
+
 
     # Message in die Session schreiben
     $mgr->{Session}->set('ParentMid' => $parent_mid,
@@ -815,6 +841,13 @@ sub send_message {
 	my $answermode_all    = $cgi->param('answermode_all') || 0;
 	my $answermode_sender = $cgi->param('answermode_sender') || 0;
 
+	$mgr->{Session}->del("ParentMid");
+	$mgr->{Session}->del("ToUsernames");
+	$mgr->{Session}->del("Subject");
+	$mgr->{Session}->del("Content");
+	$mgr->{Session}->del("AnswerModeSender");
+	$mgr->{Session}->del("AnswerModeAll");
+
 	if ($answermode_all == 0 && $answermode_sender == 0 && $to_usernames eq "") {
 	    $mgr->{TmplData}{NO_RECEIVER} = $mgr->decode_all($C_MSG->{NoReceiver});
 	    # Message in die Session schreiben
@@ -857,7 +890,6 @@ sub send_message {
 	}
 
 
-
 	if ($answermode_sender == 1) {
 	    # empfangene Parent-Message holen
 	    my @message = $self->{BASE}->get_message($parent_mid);
@@ -870,6 +902,12 @@ sub send_message {
 		if ($count == 0) {
 		    push(@$id, $sender_id);
 		}
+	    } else {
+		# es existiert keine empfangene Parent-Nachricht
+		# das ist dann der Fall, wenn der Benutzer auf eine
+		# selbst abgesandte Nachricht antwortet
+		my $sender_id = $mgr->{UserId};
+		push(@$id, $sender_id);
 	    }
 	}
 
@@ -878,25 +916,32 @@ sub send_message {
 	    my @all = $self->{BASE}->fetch_receiver($parent_mid);
 	    # Es gibt Empfaenger
 	    if (@all) {
+		my $myUserId = $mgr->{UserId};
 		foreach my $uid (@all) {
 		    my $count = grep { $uid == $_} @$id;
 		    # Empfaenger der Parent_message ist noch nicht in der Liste der Empfaenger
 		    if ($count == 0) {
-			push(@$id, $uid);
+			unless ($uid eq $myUserId) {
+			    push(@$id, $uid);
+			}
 		    }
 		}
 	    }
 	}
 
-	my $mid = $self->{BASE}->insert_new_messages($id, $parent_mid, $subject, $content);
+	# Sicherstellen, dass keine empfaengerlose Nachricht abgelegt wird
+	# Sollte bei konsistenten Ablauf nicht auftreten
+	my $mid;
+	if (@$id) {
+	    $mid = $self->{BASE}->insert_new_messages($id, $parent_mid, $subject, $content);
+	} else {
+	    # Error-Template vorbereiten
+	    $mgr->{Template} = $C_TMPL->{Error};
+	    $mgr->{TmplData}{MSG} = $C_MSG->{NoRecvError};
+	    return 1;
+	}
 
 
-	$mgr->{Session}->del("ParentMid");
-	$mgr->{Session}->del("ToUsernames");
-	$mgr->{Session}->del("Subject");
-	$mgr->{Session}->del("Content");
-	$mgr->{Session}->del("AnswerModeSender");
-	$mgr->{Session}->del("AnswerModeAll");
 
 	# gleich ansehen
 	show_send_message($self,$mid);

@@ -3,122 +3,127 @@
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
-<hr size="1" noshade width="80%">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
-<tr>
-<td align="center">
+
+<hr size="1" noshade width="80%">
 
 <form action="<TMPL_VAR FORM>" method="post">
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
-Benutzer hinzuf&uuml;gen
-<hr size="1" noshade width="80%">
+
+<table cellspacing="0" cellpadding="3" border="0" align="center" width="80%">
+<tr><td align="center" colspan="2">
+<h1>Empf&auml;nger ausw&auml;hlen</h1>
+</td></tr>
+
+<tr>
+<td align="center" width="25%" bgcolor="#cecece">
+
 <table cellspacing="0" cellpadding="0" border="0" align="center">
-<tr>
-	<td>Typ A/B</td><td>Typ C</td><td>Typ D</td><td>&nbsp;</td>
+<tr align="center">
+	<td>
+	<b>Benutzer</b>
+	</td>
 </tr>
-<tr>
-	<td><select name="user" size="1">
-	<option value="0">Ausw&auml;hlen
+<tr align="center">
+	<td>
+	<select name="user" size="1">
+	<option value="0"><TMPL_IF TYPE_AB_LOOP>Typ A/B ausw&auml;hlen
+	<option value="0">---------------
 	<TMPL_LOOP TYPE_AB_LOOP>
 	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
-	</TMPL_LOOP>
+	</TMPL_LOOP><TMPL_ELSE>Keine Typ A/B Benutzer</TMPL_IF>
 	</select>
 	</td>
-
-	<td><select name="user" size="1">
-	<option value="0">Ausw&auml;hlen
+</tr>
+<tr align="center">
+	<td>
+	<select name="user" size="1">
+	<option value="0">Typ C ausw&auml;hlen
+	<option value="0">---------------
 	<TMPL_LOOP TYPE_C_LOOP>
 	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
 	</TMPL_LOOP>
 	</select>
 	</td>
-
+</tr>
+<tr align="center">
 	<td><select name="user" size="1">
-	<option value="0">Ausw&auml;hlen
+	<option value="0">Typ D ausw&auml;hlen
+	<option value="0">---------------
 	<TMPL_LOOP TYPE_D_LOOP>
 	<option value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME>
 	</TMPL_LOOP>
 	</select>
 	</td>
-
-	<td><input type="submit" name="add_recv_users" value="Hinzuf&uuml;gen"></td>
 </tr>
+<tr align="center">
+	<td>
+	<input type="submit" name="add_recv_users" value="Benutzer hinzuf&uuml;gen">
+	</td>
+</tr>
+</table>
+<hr size="1" noshade width="80%">
+</td>
+<td align="center" valign="top" rowspan="2" bgcolor="#cecece">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr align="center">
+	<td colspan="2">
+	<b>Empf&auml;nger</b>
+	</td>
+</tr>
+<TMPL_IF RECV_LOOP>
+<TMPL_LOOP RECV_LOOP>
+<tr>
+	<td><input type="checkbox" name="remove_receivers" value="<TMPL_VAR RECV_UID>"></td>
+	<td><input type="hidden" name="recv" value="<TMPL_VAR RECV_UID>">&nbsp;<TMPL_VAR RECV_NAME></td>
+</tr>
+</TMPL_LOOP>
+
+<tr align="center">
+	<td colspan="2"><input type="submit" name="remove_recv_users" value="Empf&auml;nger entfernen"></td>
+</tr>
+<TMPL_ELSE>
+	<tr align="center"><td><br>Keine</td></tr>
+</TMPL_IF>
 </table>
 
 </td></tr>
-<tr><td>
 
-<hr size="1" noshade>
-
-</td></tr>
-<tr><td align="center">
-Projekt hinzuf&uuml;gen
-<hr size="1" noshade width="80%">
+<tr><td align="center" bgcolor="#cecece">
 <table cellspacing="0" cellpadding="0" border="0" align="center">
-<tr>
+<tr align="center">
+	<td>
+	<b>Projektmitglieder</b>
+	</td>
+</tr>
+<tr align="center">
 	<td><select name="project" size="1">
-	<option value="0">Ausw&auml;hlen
+	<option value="0">Projekt ausw&auml;hlen
+	<option value="0">---------------
 	<TMPL_LOOP PROJECT_LOOP>
 	<option value="<TMPL_VAR PROJECT_ID>"><TMPL_VAR PROJECT_NAME> (<TMPL_VAR CATEGORY>)
 	</TMPL_LOOP>
 	</select>
 	</td>
+</tr>
+<tr align="center">
 
-	<td><input type="submit" name="add_recv_project" value="Hinzuf&uuml;gen"></td>
+	<td><input type="submit" name="add_recv_project" value="Projektmitglieder hinzuf&uuml;gen"></td>
 </tr>
 </table>
 
 
-</td></tr>
-<tr><td>
-
-
-<hr size="1" noshade>
-
-</td></tr>
-<tr><td align="center">
-
-Empf&auml;nger entfernen
-<hr size="1" noshade width="80%">
-<table cellspacing="0" cellpadding="0" border="0" align="center" bgcolor="#b0b0b0">
-<TMPL_IF RECV_LOOP>
-<TMPL_LOOP RECV_LOOP>
-<tr>
-	<td><input type="checkbox" name="remove_receivers" value="<TMPL_VAR RECV_UID>"></td>
-	<td><input type="hidden" name="recv" value="<TMPL_VAR RECV_UID>"><TMPL_VAR RECV_NAME></td>
+</td>
 </tr>
-</TMPL_LOOP>
-
-<tr>
-	<td colspan="2"><input type="submit" name="remove_recv_users" value="Entfernen"></td>
-</tr>
-<TMPL_ELSE>
-	<tr><td>Keine Empf&auml;nger</td></tr>
-</TMPL_IF>
-</table>
 
 
-</td></tr>
-<tr><td>
-
-
-<hr size="1" noshade>
-
-
-</td></tr>
-<tr><td align="center">
-
-
+<tr><td align="center" colspan="2">
 <input type="submit" name="back" value="Zur&uuml;ck">
-</form>
-
-
-
 </td></tr>
 </table>
-
+</form>
 <hr size="1" noshade width="80%">
 
 

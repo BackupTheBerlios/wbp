@@ -2,7 +2,7 @@ package message_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
 
 $MSG = {
     NoMessages     => "Sie haben keine Nachrichten.", # unused
@@ -23,12 +23,14 @@ $MSG = {
     UsersRemoved => "%s Benutzer entfernt.",
     MessageDeleted => "Nachricht wurde geloescht",
     DbError        => "Es ist ein Fehler mit der Datenbank aufgetreten.",
+    NoRecvError   => "Es konnten keine Empfaenger bestimmt werden.",
     NoSubject      => "Sie haben kein Betreff angegeben.",
     NoReceiver      => "Sie haben keinen Empfaenger angegeben."
 };
 
 
 $TMPL = {
+    Error       => "error.tmpl",        # Error
     Message     => "message.tmpl",      # Message Template, for Inbox and Received
     MessageSend => "message_send.tmpl", # MessageSend Template, for send messages
     MessageForm => "message_form.tmpl", # Form Template, for composing a new message
@@ -37,5 +39,7 @@ $TMPL = {
     };
 
 1;
+
+
 
 
