@@ -7,7 +7,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 # use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -73,7 +73,7 @@ sub parameter {
 }
 
 #=============================================================================
-# SYNOPSIS: user_start($mgr, $type);
+# SYNOPSIS: user_start($mgr);
 # PURPOSE:  Startseite mit Such und Anlegen Option
 # RETURN: 1;
 #=============================================================================
@@ -290,7 +290,13 @@ sub user_aktiv {
     
     my $self = shift;
     my $mgr  = shift;
-    my $id   = $mgr->{CGI}->param('user');
+    my $id   = $mgr->{CGI}->param('user') || undef;
+    
+    if (defined($id)) {
+    } else {
+    	warn sprintf("[Error]: Missing ID");
+	return 1;
+    }	
     
     my $dbh = $mgr->connect;
     unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} WRITE})) {
@@ -303,6 +309,13 @@ sub user_aktiv {
     }
     
     my $ref = $sth->fetchrow_arrayref();
+    
+    if (defined($ref)) {
+    } else {
+	$sth->finish;
+    	$dbh->do("UNLOCK TABLES");
+	return 1;
+    }
     
     if ($mgr->{UserType} eq "A") {
 	# der Admin darf jeden Benutzer aktivieren
@@ -376,7 +389,13 @@ sub user_inaktiv {
     
     my $self = shift;
     my $mgr  = shift;
-    my $id   = $mgr->{CGI}->param('user');
+    my $id   = $mgr->{CGI}->param('user') || undef;
+    
+    if (defined($id)) {
+    } else {
+    	warn sprintf("[Error]: Missing ID");
+	return 1;
+    }
     
     my $dbh = $mgr->connect;
     unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} WRITE})) {
@@ -389,6 +408,14 @@ sub user_inaktiv {
     }
     
     my $ref = $sth->fetchrow_arrayref();
+    
+    if (defined($ref)) {
+    } else {
+	$sth->finish;
+    	$dbh->do("UNLOCK TABLES");
+	return 1;
+    }
+
     
     if ($ref->[1] eq 'admin') {
 	# der Admin darf nicht deaktiviert werden
@@ -726,11 +753,8 @@ sub user_ok {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 	
-	# das Script soll wissen, dass es wieder die alte Suchliste
-	# anzeigen soll
-	$mgr->{Session}->set("edit" => "1");
-	
 	# zurueck zur Liste
+	# die null laedt alte Suchparameter
 	$self -> user_search($mgr, 0);
 	
     }
