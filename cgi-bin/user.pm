@@ -5,9 +5,8 @@ use base 'Class::Singleton';
 use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
-# use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -174,6 +173,8 @@ sub user_search {
     }
     my $sth = $dbh->prepare($sql);
     unless ($sth->execute()) {
+	warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
     
     # wenn das Flag veraendert wurde dann gibt es was zum anzeigen
@@ -291,7 +292,10 @@ sub user_search {
     }	
 	
     $sth->finish;
-    $dbh->do("UNLOCK TABLES");
+    unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     
     1;
 }
@@ -322,6 +326,8 @@ sub user_aktiv {
     
     my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     unless ($sth->execute()) {
+	warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
     
     my $ref = $sth->fetchrow_arrayref();
@@ -332,8 +338,10 @@ sub user_aktiv {
 	# ist aber fuer URL-Hacker noetig
     
 	$sth->finish;
-    	$dbh->do("UNLOCK TABLES");
-	    
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}    
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
 	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
@@ -358,10 +366,14 @@ sub user_aktiv {
     
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
 	unless ($sth->execute()) {
+	    warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
 	}
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
-    
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
         # zurueck zur Liste
 	$self -> user_search($mgr, 0);
 	
@@ -371,9 +383,14 @@ sub user_aktiv {
 	if ($ref->[6] gt "A") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
 	    unless ($sth->execute()) {
+		warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
 	    }
 	    $sth->finish;
-	    $dbh->do("UNLOCK TABLES");
+	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
     
     	    # zurueck zur Liste
 	    $self -> user_search($mgr, 0);
@@ -384,7 +401,11 @@ sub user_aktiv {
 	    # ist aber fuer URL-Hacker noetig
 	    
 	    $sth->finish;
-    	    $dbh->do("UNLOCK TABLES");
+    	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
+	    
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
 	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
@@ -409,9 +430,14 @@ sub user_aktiv {
 	if ($ref->[6] eq "D") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
 	    unless ($sth->execute()) {
+		warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
 	    }
 	    $sth->finish;
-	    $dbh->do("UNLOCK TABLES");
+	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
 	    
 	    $self -> user_search($mgr, 0);
 	} else {
@@ -420,10 +446,15 @@ sub user_aktiv {
 	    # ist aber fuer URL-Hacker noetig
 	     
 	    $sth->finish;
-    	    $dbh->do("UNLOCK TABLES");
+    	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
+	    
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
 	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	    
 	    $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
 	    $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
 	    $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
@@ -470,6 +501,8 @@ sub user_inaktiv {
     
     my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     unless ($sth->execute()) {
+	warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
     
     my $ref = $sth->fetchrow_arrayref();
@@ -480,7 +513,10 @@ sub user_inaktiv {
 	# ist aber fuer URL-Hacker noetig
     
 	$sth->finish;
-    	$dbh->do("UNLOCK TABLES");
+    	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
 	    
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
@@ -508,7 +544,11 @@ sub user_inaktiv {
 	# wieder fuer Hacker
 	
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
+	
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	
 	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
@@ -534,7 +574,10 @@ sub user_inaktiv {
 	unless ($sth->execute()) {
 	}
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
 	
 	# zurueck zur Liste
         $self -> user_search($mgr, 0);
@@ -545,9 +588,14 @@ sub user_inaktiv {
 	if ($ref->[6] gt "A") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
 	    unless ($sth->execute()) {
+		warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
 	    }
 	    $sth->finish;
-	    $dbh->do("UNLOCK TABLES");
+	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
     
     	    #zurueck zur Liste
 	    $self -> user_search($mgr, 0);
@@ -558,7 +606,11 @@ sub user_inaktiv {
 	    # ist aber fuer URL-Hacker noetig
 	    
 	    $sth->finish;
-    	    $dbh->do("UNLOCK TABLES");
+    	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
+	    
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
 	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
@@ -583,9 +635,14 @@ sub user_inaktiv {
 	if ($ref->[6] eq "D") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
 	    unless ($sth->execute()) {
+		warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
 	    }
 	    $sth->finish;
-	    $dbh->do("UNLOCK TABLES");
+	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
 	    
 	    # zurueck zur Liste
 	    $self -> user_search($mgr, 0);
@@ -596,7 +653,10 @@ sub user_inaktiv {
 	    # ist aber fuer URL-Hacker noetig
 	    
 	    $sth->finish;
-    	    $dbh->do("UNLOCK TABLES");
+    	    unless ($dbh->do(qq{UNLOCK TABLES})) {
+		warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	    }
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
 	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
@@ -645,12 +705,17 @@ sub user_edit {
     my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     
     unless ($sth->execute()) {
+	warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
         
     my $ref = $sth->fetchrow_arrayref();
     
     $sth->finish;
-    $dbh->do("UNLOCK TABLES");
+    unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     
     if (defined($ref)) {
     } else {
@@ -785,6 +850,8 @@ sub user_ok {
     my $sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE id = '$id'});
     
     unless ($sth->execute()) {
+	warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
     
     my $ref = $sth->fetchrow_arrayref();
@@ -796,7 +863,10 @@ sub user_ok {
 	# ist aber fuer Hacker noetig
     
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
     
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	    
@@ -820,6 +890,8 @@ sub user_ok {
     $sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE username = '$username'});
     
     unless ($sth->execute()) {
+	warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
     
     # ueberprueft ob neuer Username nicht schon existiert
@@ -834,7 +906,10 @@ sub user_ok {
     }
     
     $sth->finish;
-    $dbh->do("UNLOCK TABLES");
+    unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     
     # ab hier werden die neue Angaben ueberprueft
     
@@ -881,10 +956,10 @@ sub user_ok {
     } elsif (length($cgi->param('email')) > 100) {
 	$error = 1;
 	$mgr->{TmplData}{MAIL_LANG} = $C_MSG->{mail_lang};
-#    } elsif (Email::Valid->address($email)) {
-#    } else {
-#	$error = 1;
-#	$mgr->{TmplData}{MAIL_ERROR} = $C_MSG->{mail_error};
+    } elsif ($email =~ m|^\s*[A-Za-z\d][\w\-\$\.]*[A-Za-z\d]\@([A-Za-z0-9\-?!\.]+\.)+[A-Za-z]{2,3}\s*$|o) {
+    } else {
+	$error = 1;
+	$mgr->{TmplData}{MAIL_ERROR} = $C_MSG->{mail_error};
     }
     
     if (length($cgi->param('desc')) > 500) {
@@ -972,11 +1047,17 @@ sub user_ok {
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} 
 		    SET USERNAME=?, PASSWORD=?, FIRSTNAME=?, LASTNAME=?, EMAIL=?, TYPE=?, DESC_USER=?, UPD_DT=?, UPD_ID=?
 		    WHERE id = "$id"});
-	unless ($sth->execute($username, $password, $firstname, $lastname, $email, $type, $desc, $upd_dt, $upd_id)) {}
+	unless ($sth->execute($username, $password, $firstname, $lastname, $email, $type, $desc, $upd_dt, $upd_id)) {
+	    warn sprintf("[Error]: Updating Database]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
+	}
 	
 	
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
 	
 	# die folgende Zeile veranlasst die Methode
 	# user_search() eine Meldung auszugegeben
@@ -1056,6 +1137,8 @@ sub user_add {
 	$sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE username = '$username'});
     
 	unless ($sth->execute()) {
+	    warn sprintf("[Error]: Preparing Database Query]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
 	}
     
 	# ... sehe nach ob er schon existiert
@@ -1064,7 +1147,10 @@ sub user_add {
 	    $mgr->{TmplData}{USER_ERROR} = $C_MSG->{user_error};
 	}
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
     }
     
     # Ueberpruefe die restl. Angaben
@@ -1112,10 +1198,10 @@ sub user_add {
     } elsif (length($cgi->param('email')) > 100) {
 	$error = 1;
 	$mgr->{TmplData}{MAIL_LANG} = $C_MSG->{mail_lang};
-#    } elsif (Email::Valid->address($email)) {
-#    } else {
-#	$error = 1;
-#	$mgr->{TmplData}{MAIL_ERROR} = $C_MSG->{mail_error};
+    } elsif ($email =~ m|^\s*[A-Za-z\d][\w\-\$\.]*[A-Za-z\d]\@([A-Za-z0-9\-?!\.]+\.)+[A-Za-z]{2,3}\s*$|o) {
+    } else {
+	$error = 1;
+	$mgr->{TmplData}{MAIL_ERROR} = $C_MSG->{mail_error};
     }
     
     if (length($cgi->param('desc')) > 500) {
@@ -1174,10 +1260,16 @@ sub user_add {
 	$sth = $dbh->prepare(qq{INSERT INTO $mgr->{UserTable}
 		     (username, password, firstname, lastname, email, type, desc_user, status, upd_dt, upd_id, ins_dt, ins_id) VALUES
 		     (?,?,?,?,?,?,?,?,?,?,?,?)});
-	unless ($sth->execute($username, $password, $firstname, $lastname, $email, $type, $desc, '1', $upd_dt, $upd_id, $upd_dt, $upd_id)) {}
-	
+	unless ($sth->execute($username, $password, $firstname, $lastname, $email, $type, $desc, '1', $upd_dt, $upd_id, $upd_dt, $upd_id)) {
+	    warn sprintf("[Error]: Inserting into Database]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
+	}
+
 	$sth->finish;
-	$dbh->do("UNLOCK TABLES");
+	unless ($dbh->do(qq{UNLOCK TABLES})) {
+	    warn sprintf("[Error]: Trouble unlocking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
 	
         # jetzt geht es zurueck zum Startbildschirm, also muss noch
 	# der Benutzertyp festgestellt werden
