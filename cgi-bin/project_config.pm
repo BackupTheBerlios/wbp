@@ -2,7 +2,7 @@ package project_config;
  
 use vars qw($VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
  
 $MSG = {
 	NotAllowed    => "Das Skript wurde mit einer falschen Methode aufgerufen.",
@@ -14,9 +14,10 @@ $MSG = {
 	ErrorDate     => "Das ist kein korecktes Datum.",
 	ExistName     => "Dieser Name existiert bereits.",
 	InsertProOk   => "Das Projekt wurde angelegt.",
-	CountProjects => "Anzahl gefundener Projekte: %s",
+	CountProjects => "Anzahl gefundener Projekte: %s.",
 	Inaktive      => "inaktiv",
 	Aktive        => "aktiv",
+	Closed        => "fertig",
 	Private       => "privat",
 	Public        => "öffentlich",
 	ChangeStatus  => "Der Status wurde geändert.",

@@ -26,9 +26,6 @@ insert into wbp_user (username, password, firstname, lastname, email, type, stat
                      ('testc', 'test', 'bla2', 'blabla2', 'bla2@bla2.de', 'C', '1', '2001-03-14 12:15:20', '1');
 
 insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt, ins_id) values
-                     ('testc', 'test', 'bla3', 'blabla3', 'bla3@bla3.de', 'C', '1', '2001-03-14 12:15:20', '1');
-
-insert into wbp_user (username, password, firstname, lastname, email, type, status, ins_dt, ins_id) values
                      ('testd', 'test', 'bla4', 'blabla4', 'bla4@bla4.de', 'D', '1', '2001-03-14 12:15:20', '1');
 
 create table wbp_project (

@@ -8,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -229,7 +229,7 @@ sub add_project {
         } else {
 
 		my $dbh = $mgr->connect;
-		unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE, $mgr->{CUserTable} WRITE")) {
+		unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 	warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         	$mgr->{ProTable}, $dbh->ersstr);
         	}
@@ -242,17 +242,6 @@ sub add_project {
 			$dbh->do("UNLOCK TABLES");
 			$mgr->fatal_error($C_MSG->{DbError});
 		}
-
-		my $insertid = $dbh->{mysql_insertid};
-
-		$sth = $dbh->prepare(qq{INSERT INTO $mgr->{CUserTable} (project_id) VALUES (?)});
-
-		unless ($sth->execute($insertid)) {
-                        warn sprintf("[Error]: Trouble inserting user count into [%s]. Reason [%s].",
-                                $mgr->{CUserTable}, $dbh->errstr);
-                        $dbh->do("UNLOCK TABLES");
-                        $mgr->fatal_error($C_MSG->{DbError});
-                } 
 
 		$dbh->do("UNLOCK TABLES");
 		$sth->finish;
@@ -289,7 +278,11 @@ sub show_projects {
 
 	my $count = $self->{BASE}->get_and_set_projects($mode, $cat, $name);
 
-	$mgr->fill(sprintf($C_MSG->{CountProjects}, $count)." ".$msg);
+	if ($msg) {
+		$mgr->fill($msg);
+	} else {
+		$mgr->fill(sprintf($C_MSG->{CountProjects}, $count));
+	}
 
 	return 1;	
 }

@@ -176,9 +176,9 @@ sub get_and_set_projects {
 	$sql .= qq{ ORDER BY name, id};
 
 	my $dbh = $mgr->connect;
-	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{CUserTable} READ, $mgr->{PhaTable} READ")) {
-                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
-                        $mgr->{ProTable}, $dbh->ersstr);
+	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{ProUserTable} READ, $mgr->{PhaTable} READ")) {
+                warn srpintf("[Error]: Trouble locking tables [%s, %s, %s]. Reason: [%s].",
+                        $mgr->{ProTable}, $mgr->{ProUserTable}, $mgr->{PhaTable}, $dbh->ersstr);
         }
 	my $sth = $dbh->prepare($sql);
 
@@ -218,29 +218,45 @@ sub set_project_data {
 	my $self    = shift;
 	my @project = @_;
 
-	my %tmpldata;
+	my (%tmpldata, $check);
 
 	my $mgr = $self->{MGR};
 	
 	my $dbh = $mgr->connect;
-	my $sth	= $dbh->prepare(qq{SELECT count_ab, count_c, count_d FROM $mgr->{CUserTable} WHERE project_id = ?});
+	my $sth	= $dbh->prepare(qq{SELECT COUNT(*) FROM $mgr->{ProUserTable} WHERE project_id = ? AND position = ?});
 
-	unless ($sth->execute($project[0])) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{CUserTable}, $dbh->errstr);
+	# Fuer jeden Usertypen einen Select auf die UserProjectTabelle machen und so die Anzahl bestimmen
+	# an Usern, die von einem bestimmten Typ zu einem Projekt gehoeren. Die Typen A und B werden zusammen 
+	# betrachetet.
+	unless ($sth->execute($project[0], "0")) {
+        	$check++;
+	}
+	$tmpldata{USER_AB} = $sth->fetchrow_array;
+
+	unless ($sth->execute($project[0], "1")) {
+		$check++;
+	}
+	$tmpldata{USER_C} = $sth->fetchrow_array;
+
+	unless ($sth->execute($project[0], "2")) {
+		$check++;
+	}
+	$tmpldata{USER_D} = $sth->fetchrow_array;
+
+	# Wenn bei einer Abfrage ein Fehler entstanden sein sollte, brechen wir hier mit einer Meldung ab.
+	if ($check) {
+		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+                        $mgr->{ProUserTable}, $dbh->errstr);
                         $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
+	}
 
 	my $link = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$project[0]."&method=";
 
 	my ($count_ab, $count_c, $count_d) = $sth->fetchrow_array;
 
-	$tmpldata{USER_AB}        = $count_ab;
 	$tmpldata{CHANGE_USER_AB} = $link."change_user_ab"; 
-	$tmpldata{USER_C}         = $count_c;
 	$tmpldata{CHANGE_USER_C}  = $link."change_user_c";
-	$tmpldata{USER_D}         = $count_d;
 	$tmpldata{CHANGE_USER_D}  = $link."change_user_d";
 
 	$sth->finish;	
@@ -258,18 +274,10 @@ sub set_project_data {
 	
 	$sth->finish;
 
-	my ($status, $status_link, $modus, $mode_link);
+	my ($status_link, $modus, $mode_link);
 
 	$status_link = $link."change_status&to=";
 	$mode_link   = $link."change_mode&to=";
-
-	if ($project[5] == 0) {
-		$status       = $self->{C_MSG}->{Inaktive};
-		$status_link .= 1; 
-	} else {
-		$status       = $self->{C_MSG}->{Aktive};
-		$status_link .= 0; 
-	}
 
 	if ($project[6] == 0) {
 		$modus      = $self->{C_MSG}->{Private};
@@ -283,39 +291,45 @@ sub set_project_data {
 	$tmpldata{ENDE_DT}        = $mgr->format_date($project[4]);
 	$tmpldata{NAME}           = $mgr->decode_all($project[1]);
 	$tmpldata{CHANGE_PROJECT} = $link."show_project";
-	$tmpldata{STATUS}         = $mgr->decode_all($status);
-	$tmpldata{CHANGE_STATUS}  = $status_link;
 	$tmpldata{MODUS}          = $mgr->decode_all($modus);
 	$tmpldata{CHANGE_MODE}    = $mode_link; 	
+
+	$tmpldata{STATUS_AKTIV}   = $mgr->decode_all($self->{C_MSG}->{Aktive});
+	$tmpldata{STATUS_INAKTIV} = $mgr->decode_all($self->{C_MSG}->{Inaktive});
+	$tmpldata{STATUS_CLOSED}  = $mgr->decode_all($self->{C_MSG}->{Closed});
+
+	if ($project[5] == 0) {
+		$tmpldata{STATUS_AKTIV_LINK}   = $status_link."1";
+		$tmpldata{STATUS_CLOSED_LINK}  = $status_link."2";
+	} elsif ($project[5] == 1) {
+		$tmpldata{STATUS_INAKTIV_LINK} = $status_link."0";
+		$tmpldata{STATUS_CLOSED_LINK}  = $status_link."2";
+	} else {
+		$tmpldata{STATUS_AKTIV_LINK}   = $status_link."1";
+		$tmpldata{STATUS_INAKTIV_LINK} = $status_link."0";	
+	}
 
 	return %tmpldata;	
 }
 
 sub change_status {
 
-	my $self = shift;
-	my $mode = shift;
-	my $pid  = shift;
+	my $self   = shift;
+	my $status = shift;
+	my $pid    = shift;
 
 	my $mgr = $self->{MGR};
 	my $new_status;
 
-	if ($mode == 0) {
-		$new_status = "0";
-	} else {
-		$new_status = "1";
-	}
-	
 	my $dbh = $mgr->connect;
+	my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET status = ?, upd_dt = ?, upd_id = ? WHERE id = ?});
 	
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->ersstr);
         }
 	
-	my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET Status = ? WHERE id = ?});
-	
-	unless ($sth->execute($new_status, $pid)) {
+	unless ($sth->execute($status, $mgr->now(), $mgr->{UserId}, $pid)) {
                 warn sprintf("[Error]: Trouble updating status in [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
                         $dbh->do("UNLOCK TABLES");
@@ -350,9 +364,9 @@ sub change_mode {
                         $mgr->{ProTable}, $dbh->ersstr);
         }
  
-        my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET Mode = ? WHERE id = ?});
+        my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET mode = ?, upd_dt = ?, upd_id = ? WHERE id = ?});
  
-        unless ($sth->execute($new_mode, $pid)) {
+        unless ($sth->execute($new_mode, $mgr->now(), $mgr->{UserId}, $pid)) {
                 warn sprintf("[Error]: Trouble updating mode in [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
                         $dbh->do("UNLOCK TABLES");

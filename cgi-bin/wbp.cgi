@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -341,22 +341,22 @@ sub fill {
 
 	my $link = $self->{ScriptName}."?action=%s&sid=".$self->{Sid};
  
-        $self->{TmplData}{NAV_MESSAGE} = sprintf($link, "message");
-        $self->{TmplData}{NAV_NEWS}    = sprintf($link, "news");
- 
         if (($self->{UserType} eq "A") || ($self->{UserType} eq "B")) {
                 $self->{TmplData}{NAV_PROJECT}  = sprintf($link, "project");
                 $self->{TmplData}{NAV_USER}     = sprintf($link, "user");
                 $self->{TmplData}{NAV_CATEGORY} = sprintf($link, "categories");
                 $self->{TmplData}{NAV_CONFIG}   = sprintf($link, "config");
+		$self->{TmplData}{NAV_MESSAGE}  = sprintf($link, "message");
+	        $self->{TmplData}{NAV_NEWS}     = sprintf($link, "news");
         } elsif ($self->{UserType} eq "C") {
                 $self->{TmplData}{NAV_PROJECT} = sprintf($link, "project");
                 $self->{TmplData}{NAV_USER}    = sprintf($link, "user");
-        } else {
-                warn sprintf("[Error]: Unknown user type [%s] for user [%s].",
-                        $self->{UserType}, $self->{User});
-                $self->fatal_error($wbp_config::MSG->{Unknownerror});
-        }
+		$self->{TmplData}{NAV_MESSAGE} = sprintf($link, "message");
+        	$self->{TmplData}{NAV_NEWS}    = sprintf($link, "news");
+        } elsif ($self->{UserType} eq "D") {
+		$self->{TmplData}{NAV_MESSAGE} = sprintf($link, "message");
+        	$self->{TmplData}{NAV_NEWS}    = sprintf($link, "news");	
+	} 
 
 	1;
 }
