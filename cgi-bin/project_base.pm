@@ -173,6 +173,8 @@ sub get_and_set_projects {
 		}
 	}
 
+	$sql .= qq{ ORDER BY name, id};
+
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{CUserTable} READ, $mgr->{PhaTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",

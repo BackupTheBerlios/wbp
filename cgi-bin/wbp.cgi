@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -347,7 +347,7 @@ sub fill {
         if (($self->{UserType} eq "A") || ($self->{UserType} eq "B")) {
                 $self->{TmplData}{NAV_PROJECT}  = sprintf($link, "project");
                 $self->{TmplData}{NAV_USER}     = sprintf($link, "user");
-                $self->{TmplData}{NAV_CATEGORY} = sprintf($link, "category");
+                $self->{TmplData}{NAV_CATEGORY} = sprintf($link, "categories");
                 $self->{TmplData}{NAV_CONFIG}   = sprintf($link, "config");
         } elsif ($self->{UserType} eq "C") {
                 $self->{TmplData}{NAV_PROJECT} = sprintf($link, "project");

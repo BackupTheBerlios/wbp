@@ -1,5 +1,6 @@
 package project;
 
+use Class::Date qw(date);
 use Class::Singleton;
 use base 'Class::Singleton';
 use project_base;
@@ -7,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -189,10 +190,34 @@ sub add_project {
                 $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($C_MSG->{ErrorDate});
                 $check++;
         }
-# XXX Hier noch pruefen, dass das Startdatum vor dem Endedatum liegt etc.
-# XXX Hier noch die beiden Datumsangaben auf Richtigkeit pruefen. 
-	$start_dt = sprintf("%04d.%02d.%02d 00:00:00", $start_jahr, $start_monat, $start_tag);
-	$end_dt   = sprintf("%04d.%02d.%02d 00:00:00", $ende_jahr, $ende_monat, $ende_tag);
+
+	my $check_start_dt = $start_jahr.$start_monat.$start_tag;
+	my $check_end_dt   = $ende_jahr.$ende_monat.$ende_tag;
+	my $date_check;
+
+	if ($check_start_dt =~ m/\D/) {
+		$mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($C_MSG->{ErrorDate});
+                $check++;
+		$date_check++;
+	} else {
+		$start_dt = date [$start_jahr, $start_monat, $start_tag, 00, 00, 00];
+	}
+
+	if ($check_end_dt =~ m/\D/) {
+		$mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($C_MSG->{ErrorDate});
+                $check++;
+		$date_check++;
+	} else {
+		$end_dt = date [$ende_jahr, $ende_monat, $ende_tag, 00, 00, 00];
+	}
+
+	unless ($date_check) {
+		if ($start_dt >= $end_dt) {
+			$mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($C_MSG->{StartEndDate});
+			$mgr->{TmplData}{ERROR_ENDE_DATUM}  = $mgr->decode_all($C_MSG->{StartEndDate});
+			$check++;
+		}
+	}
 	
 	if ($self->{BASE}->check_project_name($name, $kid)) {
 		$mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($C_MSG->{ExistName});
