@@ -19,7 +19,24 @@
 	<b>Name:</b> <a href="<TMPL_VAR CHANGE_LINK>"><TMPL_VAR NAME></a>
 	</td>
 	<td>
-	<b>Status:</b> <a href="<TMPL_VAR STATUS_LINK>"><TMPL_VAR STATUS></a>
+	<b>Status:</b><br> 
+	<TMPL_IF STATUS_AKTIV_LINK>
+        	<a href="<TMPL_VAR STATUS_AKTIV_LINK>"><TMPL_VAR STATUS_AKTIV></a>
+        <TMPL_ELSE>
+        	<TMPL_VAR STATUS_AKTIV>
+        </TMPL_IF>
+        <br>
+        <TMPL_IF STATUS_INAKTIV_LINK>
+        	<a href="<TMPL_VAR STATUS_INAKTIV_LINK>"><TMPL_VAR STATUS_INAKTIV></a>
+        <TMPL_ELSE>
+        	<TMPL_VAR STATUS_INAKTIV>
+        </TMPL_IF>
+        <br>
+        <TMPL_IF STATUS_CLOSED_LINK>
+        	<a href="<TMPL_VAR STATUS_CLOSED_LINK>"><TMPL_VAR STATUS_CLOSED></a>
+        <TMPL_ELSE>
+        	<TMPL_VAR STATUS_CLOSED>
+        </TMPL_IF>
 	</td>
 	<td>
 	<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a>	
@@ -29,7 +46,7 @@
 	<td valign="top">
 		<b>Beschreibung:</b>
 	</td>
-	<td colspan="3">
+	<td colspan="3" valign="top">
 		<TMPL_VAR BESCHREIBUNG>
 	</td>
 </tr>

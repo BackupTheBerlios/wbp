@@ -834,7 +834,7 @@ sub show_phase {
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	
-	my (@tmpl_data, $to);
+	my (@tmpl_data, $status_link);
 	my $i = 0;
 
 	while (my (@data) = $sth->fetchrow_array()) {
@@ -843,22 +843,29 @@ sub show_phase {
 		$tmpl_data[$i]{NAME}         = $mgr->decode_all($data[1]);
 		$tmpl_data[$i]{BESCHREIBUNG} = $mgr->decode_all($data[2]);
 
-		if ($data[5] eq "0") {
-			$tmpl_data[$i]{STATUS} = $self->{C_MSG}->{Aktive};
-			$to = 1;
-		} else {
-			$tmpl_data[$i]{STATUS} = $self->{C_MSG}->{Closed};
-			$to = 0;
-		}
-
-		$tmpl_data[$i]{STATUS_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
-                                              "&method=change_pha_status&pha_id=".$data[0]."&to=".$to;
-
 		$tmpl_data[$i]{DEL_LINK}    = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
                                                $pid."&method=del_phase&pha_id=".$data[0];
 
 		$tmpl_data[$i]{CHANGE_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
                                                $pid."&method=show_one_phase&pha_id=".$data[0];
+
+		$status_link = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                               "&method=change_pha_status&pha_id=".$data[0]."&to=";
+
+		if ($data[5] == 0) {
+                	$tmpl_data[$i]{STATUS_AKTIV_LINK}   = $status_link."1";
+                	$tmpl_data[$i]{STATUS_CLOSED_LINK}  = $status_link."2";
+        	} elsif ($data[5] == 1) {
+                	$tmpl_data[$i]{STATUS_INAKTIV_LINK} = $status_link."0";
+                	$tmpl_data[$i]{STATUS_CLOSED_LINK}  = $status_link."2";
+        	} else {
+                	$tmpl_data[$i]{STATUS_AKTIV_LINK}   = $status_link."1";
+                	$tmpl_data[$i]{STATUS_INAKTIV_LINK} = $status_link."0";
+        	}
+
+		$tmpl_data[$i]{STATUS_AKTIV}   = $mgr->decode_all($self->{C_MSG}->{Aktive});
+        	$tmpl_data[$i]{STATUS_INAKTIV} = $mgr->decode_all($self->{C_MSG}->{Inaktive});
+        	$tmpl_data[$i]{STATUS_CLOSED}  = $mgr->decode_all($self->{C_MSG}->{Closed});
 		
 		$i++;
 	}

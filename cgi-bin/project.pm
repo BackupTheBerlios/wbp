@@ -8,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -26,7 +26,8 @@ sub parameter {
 
 	my $cgi    = $mgr->{CGI};
 	my $method = $cgi->param('method') || undef;
-	
+
+	# Objekt der Projekt Basis Klasse anlegen.	
 	eval { 
 		$self->{BASE} = project_base->new({MGR    => $mgr,
 						   C_MSG  => $C_MSG,

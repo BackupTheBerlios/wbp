@@ -50,7 +50,7 @@ create table wbp_phase (
 	project_id   int(10) unsigned  not null,
 	start_dt     datetime          not null,
         end_dt       datetime          not null,
-	status       enum('0','1')     not null     default '0',
+	status       enum('0','1','2') not null     default '0',
 	ins_dt       datetime                       default '0',
         ins_id       int(10) unsigned               default '0',
         upd_dt       datetime                       default '0',
