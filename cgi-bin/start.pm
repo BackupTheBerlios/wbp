@@ -6,7 +6,7 @@ use start_config;
 use vars qw($VERSION $conf);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 sub parameter {
 
@@ -48,8 +48,10 @@ sub parameter {
 	}
 
 	if ($check) {
-		$mgr->{Template}       = $mgr->{LoginTmpl};
-        	$mgr->{TmplData}{FORM} = $mgr->my_url();
+		$mgr->{Template}           = $mgr->{LoginTmpl};
+        	$mgr->{TmplData}{FORM}     = $mgr->my_url();
+		$mgr->{TmplData}{USERNAME} = $mgr->decode_some($username) if (defined $username);
+                $mgr->{TmplData}{PASSWORD} = $mgr->decode_some($password) if (defined $password);
 		return 1;
 	}
 
