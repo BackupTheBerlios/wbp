@@ -8,7 +8,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -521,26 +521,24 @@ sub choose_receivers {
     my $mgr = $self->{MGR};
     my $cgi = $self->{MGR}->{CGI};
     
-    my $parent_mid = $cgi->param('parent_mid') || 0;
-    my $subject = $cgi->param('subject') || "";
-    my $content = $cgi->param('content') || "";
+    my $parent_mid = $cgi->param('parent_mid') || $mgr->{Session}->get("ParentMid") || 0;
+    my $subject = $cgi->param('subject') || $mgr->{Session}->get("Subject") || "";
+    my $content = $cgi->param('content') || $mgr->{Session}->get("Content") || "";
     my $to_usernames = $cgi->param('to_usernames') || "";
-    my $answermode_all = $cgi->param('answermode_all') || 0;
-    my $answermode_sender = $cgi->param('answermode_sender') || 0;
+    my $answermode_all = $cgi->param('answermode_all') || $mgr->{Session}->get("AnswerModeAll") || 0;
+    my $answermode_sender = $cgi->param('answermode_sender') || $mgr->{Session}->get("AnswerModeSender") || 0;
 
     # Whitespaces entfernen, Kommaliste trennen
     $to_usernames =~ s/\s+//gs;
     my @usernames = split /,+/, $to_usernames;
     my $id = $self->{BASE}->fetch_uids(\@usernames) || undef;
 
-
-	$mgr->{Session}->del("ParentMid");
-	$mgr->{Session}->del("ToUsernames");
-	$mgr->{Session}->del("Subject");
-	$mgr->{Session}->del("Content");
-	$mgr->{Session}->del("AnswerModeSender");
-	$mgr->{Session}->del("AnswerModeAll");
-
+    $mgr->{Session}->del("ParentMid");
+    $mgr->{Session}->del("ToUsernames");
+    $mgr->{Session}->del("Subject");
+    $mgr->{Session}->del("Content");
+    $mgr->{Session}->del("AnswerModeSender");
+    $mgr->{Session}->del("AnswerModeAll");
 
     # Message in die Session schreiben
     $mgr->{Session}->set('ParentMid' => $parent_mid,
@@ -557,7 +555,7 @@ sub choose_receivers {
 	$tmp{USERNAME} = $mgr->decode_all($username);
 	push(@check_loop,\%tmp);
     }
-    if (@$check) {
+    if (@check_loop) {
 	$mgr->{TmplData}{CHECK_USERNAME} = \@check_loop;
 	$self->compose_message();
 	return;
@@ -778,7 +776,11 @@ sub add_recv_project {
     } else {
 	my $members = $self->{BASE}->fetch_project_members($pid);
 	my $name = $self->{BASE}->get_project_name($pid);
-	$members = [1,2,3,4];
+
+# diese verdammte Sch... hat dafuer gesorgt, dass es nicht funktioniert.
+# Ich hatte es zum Testen, da ich noch keine Benutzer in Projekte einfuegen konnte
+#	$members = [1,2,3,4];
+
 	push(@recv, @$members);
 	$self->choose_receivers(sprintf($C_MSG->{ProjectAdded},$name),\@recv);
     }
@@ -796,8 +798,13 @@ sub remove_recv_users {
 
     my $mgr = $self->{MGR};
     my $cgi = $self->{MGR}->{CGI};
+
+    # die Leute die entfernt werden sollen
     my @remove = $cgi->param('remove_receivers');
+
+    # die Empfaenger
     my @recv = $cgi->param('recv');
+
     if (@remove) {
 	my @recv_new;
 	my $count;
@@ -874,7 +881,8 @@ sub send_message {
 	    $tmp{USERNAME} = $mgr->decode_all($username);
 	    push(@check_loop,\%tmp);
 	}
-	if (@$check) {
+	if (@check_loop) {
+
 	    $mgr->{TmplData}{CHECK_USERNAME} = \@check_loop;
 
 	    # Message in die Session schreiben
@@ -944,7 +952,7 @@ sub send_message {
 
 
 	# gleich ansehen
-	show_send_message($self,$mid);
+	$self->show_send_message($mid);
 
 	return 1;
 }
