@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -123,7 +123,13 @@ sub handler {
 		if ($param eq ('project')) {
 			require project;
 		} elsif ($param eq ('message')) {
-			require message; 
+			require message;
+		} elsif ($param eq ('news')) {
+			require news;
+		} elsif ($param eq ('user')) {
+			require user;
+		} elsif ($param eq ('categories')) {
+			require categories; 
 		} else {
 			require start;
 		}
