@@ -6,11 +6,10 @@
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 <input type="hidden" name="type" value="<TMPL_VAR TYPE>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center" width="90%">
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
   <tr>
     <td align="center">
-      <h3><TMPL_VAR OUTPUT></h3>
-      
+      <h3><TMPL_VAR OUTPUT><TMPL_VAR ID></h3>
     </td>
     <td>
       <table cellspacing="0" cellpadding="0" border="0" align="center">
@@ -26,6 +25,9 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
+			<TMPL_IF USER_LANG>
+			    Username zu lang ( > 8 Zeichen)!
+			</TMPL_IF>
 			<TMPL_IF USER_ERROR>
 			    <TMPL_VAR USER_ERROR> existiert bereits !
 			</TMPL_IF>
@@ -47,6 +49,9 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
+			<TMPL_IF PASS_LANG>
+			    Passwort zu lang ( > 8 Zeichen)!
+			</TMPL_IF>
 			<TMPL_IF PASSWORD>
 			<TMPL_ELSE>
 			    Bitte geben Sie ein Password ein !
@@ -85,6 +90,9 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
+			<TMPL_IF FIRST_LANG>
+			    Vorname zu lang ( > 30 Zeichen)!
+			</TMPL_IF>
 			<TMPL_IF FIRST_NAME>
 			<TMPL_ELSE>
 			    Bitte geben Sie einen Vornamen ein !
@@ -103,6 +111,9 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
+			<TMPL_IF LAST_LANG>
+			    Nachname zu lang ( > 30 Zeichen)!
+			</TMPL_IF>
 			<TMPL_IF LAST_NAME>
 			<TMPL_ELSE>
 			    Bitte geben Sie einen Nachnamen ein !
@@ -121,6 +132,12 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
+			<TMPL_IF MAIL_LANG>
+			    Mailadresse zu lang ( > 100 Zeichen)!
+			</TMPL_IF>
+			<TMPL_IF BAD_MAIL>
+			    ung&uuml;ltige Mailadresse !
+			</TMPL_IF>
 			<TMPL_IF EMAIL>
 			<TMPL_ELSE>
 			    Bitte geben Sie eine Mail-Adresse ein !
@@ -131,20 +148,25 @@
 		    <td>
 		    	Beschreibung <br>
 		    </td>
-		    <td colspan="2">
-			<textarea name="desc" rows="3" cols="40" wrap="virtual">	
-			    <TMPL_VAR DESC>
-			</textarea>
+		    <td colspan="2">	
+			<textarea name="desc" rows=3 cols=40 wrap="virtual"><TMPL_VAR DESC></textarea>
 		    </td>
+		    <td>
+			<TMPL_IF DESC_LANG>
+			    Beschreibung zu lang ( 500 >  Zeichen)!
+			</TMPL_IF>
     		</tr>
 		<tr>
+		    <td>
+		    </td>
 		    <td>
 			<input type="submit" name="add" value="anlegen">
 		    </td>
 		</tr>
-      </table>	
+          </table>	
     </td>
-  </tr>        
+     </tr>        
 </table>
 </form>
 <TMPL_INCLUDE footer.tmpl>
+

@@ -5,8 +5,9 @@ use base 'Class::Singleton';
 use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
+use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -16,23 +17,25 @@ sub parameter {
 	my $self = shift;
 	my $mgr  = shift;
 	my $cgi  = $mgr->{CGI};
+	
+	# um zu einer Suchliste zurueckkehren zu koennen
 	my $flag = $mgr->{Session}->get("edit") || "0";
 	
-	# kick D-Users
+	# D-Benutzer werden rausgeschmissen
 	if ($mgr->{UserType} eq 'D') {
 	    1;
 	} else {
 	
             # Post-Parameter ============================================
-	    # search user
+	    # Benutzer in der Datenbank suchen
 	    if (defined($cgi->param('search'))) {
     		$self->user_search($mgr, 1);
     	    }
-	    # confirm some changes
+	    # Aenderungen bestaetigen
 	    elsif (defined($cgi->param('ok'))) {
 		$self->user_ok($mgr);
 	    }
-	    # add new user
+	    # neue Benutzer anlegen
 	    elsif (defined($cgi->param('add0'))) {
 		$self->user_add0($mgr);
 	    }
@@ -45,24 +48,23 @@ sub parameter {
 	
 		my $method = $cgi->param('method');
 	
-		# edit user-data
+		# Benutzerdaten editieren
 		if ($method eq 'edit') {
 		    $self->user_edit($mgr);
 		}
-		# change user-state to active
+		# Benutzerstatus wechseln
 		elsif ($method eq 'aktiv') {
 		    $self->user_aktiv($mgr);
 		}
-		# change user-state to not active
 	        elsif ($method eq 'inaktiv') {
 		    $self->user_inaktiv($mgr);
 		}
 	    }	
-	    # after editing a user
+	    # zurueckkehren zu einer Suchliste
 	    elsif ($flag eq '1') {
 		$self->user_search($mgr, 0);
 	    }
-	    # if no action is set, go to startscreen	    
+	    # Benutzerstartseite
 	    else {
 		$self->user_start($mgr);
 	    }
@@ -72,7 +74,7 @@ sub parameter {
 
 #=============================================================================
 # SYNOPSIS: user_start($mgr, $type);
-# PURPOSE:  displays the User-Startscreen to search or add users
+# PURPOSE:  Startseite mit Such und Anlegen Option
 # RETURN: 1;
 #=============================================================================
 sub user_start {
@@ -81,7 +83,7 @@ sub user_start {
     my $mgr  = shift;    
     my $type = $mgr->{UserType};
     
-    # to distinguish User-Classes for add new user
+    # Unterscheidung der Benutzerrechte
     if ($type eq 'A') {
 	$mgr->{TmplData}{A_USER} = "A";
     } elsif ($type eq 'B') {
@@ -93,6 +95,7 @@ sub user_start {
     
     $mgr->fill;
     
+    # eventl. vorhandene Suchoptionen zuruecksetzen
     if ($mgr->{Session}->get("SearchName")) {
 	$mgr->{Session}->del("SearchName");
     }
@@ -105,7 +108,7 @@ sub user_start {
 
 #=============================================================================
 # SYNOPSIS: user_search($mgr, $flag)
-# PURPOSE:  search users by id or username and show the result
+# PURPOSE:  sucht Benutzer nach Username oder ID und listet das Ergebniss
 # RETURN: 1;
 #=============================================================================
 sub user_search {
@@ -121,25 +124,27 @@ sub user_search {
     my $search_name;
     my $search_id;
 
+    # nachdem auf den Suchbutton geklickt wurde
     if ($flag == 1) {
 	my $cgi = $mgr->{CGI};
 	$search_name = $cgi->param('search_username') || "";
 	$search_id = $cgi->param('search_id') || 0;
+	
+	# loesche alte Suchparameter aus der Session
 	$mgr->{Session}->del("SearchName");
 	$mgr->{Session}->del("SearchId");
     }
+    # Rueckkehr zur Liste nach editieren
     if ($flag == 0) {
 	$search_name = $mgr->{Session}->get("SearchName") || "";
 	$search_id = $mgr->{Session}->get("SearchId") || "0";	
     }
         
+    # sichere aktuelle Suchparameter in der Session
     $mgr->{Session}->set(SearchName => $search_name);
     $mgr->{Session}->set(SearchId => $search_id);
 
-    # prepare Database-Query 
     my $sql = qq{SELECT * FROM $mgr->{UserTable}};
-    
-    # optional parameters
     if (length($search_name)>0) {
 	$sql .= qq{ WHERE};
     } else {
@@ -147,7 +152,7 @@ sub user_search {
 	    $sql .= qq{ WHERE};
 	}
     }
-    $flag = 0;
+    $flag = 0; # um spaeter ein AND zu setzen in der Datenbankanfrage
     if (length($search_name) > 0) {
         $sql .= qq{ username like '%$search_name%'};
 	$flag = 1;
@@ -161,7 +166,7 @@ sub user_search {
 	    $flag = 1;
 	}
     }
-    # do query
+    
     my $dbh = $mgr->connect;
     unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
     	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
@@ -171,11 +176,12 @@ sub user_search {
     unless ($sth->execute()) {
     }
     
-    my $flag_search = 0; # if unchanged, then there is nothing to show
+    # wenn das Flag veraendert wurde dann gibt es was zum anzeigen
+    my $flag_search = 0; 
 
     while ($ref = $sth->fetchrow_arrayref()) {
         
-	    my $date = $ref->[11];   # for last-update date
+	    my $date = $ref->[11];
 	    $date = $mgr->format_date($date);
 	    
 	    if ($ref->[7] eq '1') {
@@ -221,21 +227,20 @@ sub user_search {
 	
 	    
 	    if ($type eq "A") {
-		# Admin sees every user
+		# der Admin darf alle gefunden Benutzer sehen
 	        push @$loopdata, $href;
-		# loopdata is filled
 		$flag_search = 1;
 	    } elsif ($type eq "B") {
-		# B sees all except admin
+		# B sieht alle ausser den admin
 	        if ($type gt $ref->[6]) {
-		    # for example B is gt A -> do not show
+		    # Beispiel:   B ist gt A -> nicht zeigen
 	        } else {
 		    push @$loopdata, $href;
 		    $flag_search = 1;
 		}
 	    } else {
 		if ($type lt $ref->[6]) {
-		    # C-Users only see D-User -> C lt D
+		    # C-Benutzer sehen nur D-User -> C lt D
 		    push @$loopdata, $href;
 		    $flag_search = 1;
 		}
@@ -243,24 +248,33 @@ sub user_search {
     } # while 
     
     if ($flag_search == 1) {
-	# there are some users to show
+	# es wurden Benutzer zum anzeigen gefunden
+	
+	$mgr->{TmplData} {FORM} = $mgr->my_url;    
 	$mgr->{TmplData} {USERLOOP} = $loopdata;
         $mgr->{Template} = $C_TMPL->{UserListTmpl};
+	if (defined($mgr->{Session}->get("edit"))) {
+	    $mgr->{Session}->del("edit");
+    	    $mgr->fill("Benutzerdaten aktualisiert ...");
+	} else {
+	    $mgr->fill;
+	}
     } else {
-	# nothing found
-	$mgr->{TmplData}{OUTPUT} = "keine Entsprechungen gefunden";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	# keine Daten zum anzeigen
+	# also zurueck zum Startbildschirm
+	
+	$mgr->{TmplData} {FORM} = $mgr->my_url;
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+ 	
+	# Unterscheidung der Userrechte
+	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+	}
+	$mgr->fill("keine Entsprechungen gefunden");
     }	
 	
-    $mgr->{TmplData} {FORM} = $mgr->my_url;    
-    
-    if (defined($mgr->{Session}->get("edit"))) {
-	$mgr->{Session}->del("edit");
-        $mgr->fill("Benutzerdaten aktualisiert ...");
-    } else {
-	$mgr->fill;
-    }
-    
     $sth->finish;
     $dbh->do("UNLOCK TABLES");
     
@@ -269,7 +283,7 @@ sub user_search {
 
 #=============================================================================
 # SYNOPSIS: user_aktiv($mgr);
-# PURPOSE:  changes the state of an user to active (allowed to login)              
+# PURPOSE:  aendert den Status eines Benutzer nach aktiv 
 # RETURN: 1;
 #=============================================================================
 sub user_aktiv {
@@ -291,14 +305,20 @@ sub user_aktiv {
     my $ref = $sth->fetchrow_arrayref();
     
     if ($mgr->{UserType} eq "A") {
+	# der Admin darf jeden Benutzer aktivieren
+    
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
 	unless ($sth->execute()) {
 	}
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
     
-        $self -> user_search($mgr, 0);
+        # zurueck zur Liste
+	$self -> user_search($mgr, 0);
+	
     } elsif ($mgr->{UserType} eq "B") {
+	# alle ausser der Admin duerfen aktiviert werden
+    
 	if ($ref->[6] gt "A") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
 	    unless ($sth->execute()) {
@@ -306,8 +326,14 @@ sub user_aktiv {
 	    $sth->finish;
 	    $dbh->do("UNLOCK TABLES");
     
-    	    $self -> user_search($mgr, 0);
+    	    # zurueck zur Liste
+	    $self -> user_search($mgr, 0);
+	    
 	} else {
+	    # groessere Benutzertypen duerfen nicht veraendert werden
+	    # hier kommt man normalerweise nicht hin
+	    # ist aber fuer URL-Hacker noetig
+	    
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
@@ -315,6 +341,8 @@ sub user_aktiv {
     	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
 	}
     } elsif ($mgr->{UserType} eq "C") {
+	# C-Benutzer duerfen nur D-Benutzer veraendern
+    
 	if ($ref->[6] eq "D") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = '$id'});
 	    unless ($sth->execute()) {
@@ -324,6 +352,10 @@ sub user_aktiv {
 	    
 	    $self -> user_search($mgr, 0);
 	} else {
+	    # groessere Benutzertypen duerfen nicht veraendert werden
+	    # hier kommt man normalerweise nicht hin
+	    # ist aber fuer URL-Hacker noetig
+	     
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
@@ -337,7 +369,7 @@ sub user_aktiv {
 
 #=============================================================================
 # SYNOPSIS: user_inaktiv($mgr);
-# PURPOSE:  changes the state of an user to not active  (not allowed to login)            
+# PURPOSE:  aendert den Status eines Benutzer nach inaktiv             
 # RETURN: 1;
 #=============================================================================
 sub user_inaktiv {
@@ -359,25 +391,31 @@ sub user_inaktiv {
     my $ref = $sth->fetchrow_arrayref();
     
     if ($ref->[1] eq 'admin') {
-
+	# der Admin darf nicht deaktiviert werden
+	# wieder fuer Hacker
+	
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
-	$mgr->{TmplData}{OUTPUT} = "der Admin kann nicht deaktiviert werden !!!";
-	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	$mgr->{TmplData} {FORM} = $mgr->my_url;
-	$mgr->fill;
+	$mgr->fill("der Admin kann nicht deaktiviert werden !!!");
 
     } else {
     
     if ($mgr->{UserType} eq "A") {
+	# der Admin darf jeden Benutzer aktivieren
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
 	unless ($sth->execute()) {
 	}
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
-    
+	
+	# zurueck zur Liste
         $self -> user_search($mgr, 0);
+	
     } elsif ($mgr->{UserType} eq "B") {
+	# alle ausser Admin duerfen veraendert werden
+	
 	if ($ref->[6] gt "A") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
 	    unless ($sth->execute()) {
@@ -385,8 +423,14 @@ sub user_inaktiv {
 	    $sth->finish;
 	    $dbh->do("UNLOCK TABLES");
     
-    	    $self -> user_search($mgr, 0);
+    	    #zurueck zur Liste
+	    $self -> user_search($mgr, 0);
+	    
 	} else {
+	    # groessere Benutzertypen duerfen nicht veraendert werden
+	    # hier kommt man normalerweise nicht hin
+	    # ist aber fuer URL-Hacker noetig
+	    
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
@@ -394,6 +438,8 @@ sub user_inaktiv {
     	    $mgr->fill("letzte Aktion war nicht erlaubt !!!");
 	}
     } elsif ($mgr->{UserType} eq "C") {
+	# hier duerfen nur D-Benutzer veraendert werden
+    
 	if ($ref->[6] eq "D") {
 	    $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = '$id'});
 	    unless ($sth->execute()) {
@@ -401,8 +447,14 @@ sub user_inaktiv {
 	    $sth->finish;
 	    $dbh->do("UNLOCK TABLES");
 	    
+	    # zurueck zur Liste
 	    $self -> user_search($mgr, 0);
+	    
 	} else {
+	    # groessere Benutzertypen duerfen nicht veraendert werden
+	    # hier kommt man normalerweise nicht hin
+	    # ist aber fuer URL-Hacker noetig
+	    
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
@@ -420,7 +472,7 @@ sub user_inaktiv {
 
 #=============================================================================
 # SYNOPSIS: user_edit($mgr);
-# PURPOSE:  displays the user-data to edit something                                  
+# PURPOSE:  gibt die Benutzerdaten zum editieren aus
 # RETURN: 1;
 #=============================================================================
 sub user_edit {
@@ -447,6 +499,8 @@ sub user_edit {
     $dbh->do("UNLOCK TABLES");
     
     if ($ref->[6] lt $type) {
+    # es duerfen keine hoeheren Benutzertypen editiert werden
+    # wieder nur fuer URL-Hacker
     
 	$mgr->{TmplData}{OUTPUT} = "Das d&uuml;rfen Sie nicht !!!";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
@@ -455,7 +509,7 @@ sub user_edit {
 	return 1;
     }
     
-    # fill textfields with values    
+    # alte Daten ins Formular    
     $mgr->{TmplData} {ID} = $ref->[0];
     $mgr->{TmplData} {USERNAME}	= $ref->[1];
     $mgr->{TmplData} {PASSWORD}	= $ref->[2];
@@ -466,7 +520,7 @@ sub user_edit {
     $mgr->{TmplData} {DESC} = $ref->[8];
     $mgr->{TmplData} {OUTPUT} = "User editieren: ID = ";
     
-    # distingiush usertype (if usertype had to change)
+    # Unterscheiden der Benutzertypen -> Auswahl angepasst
     if ($type eq "A") {
 	if ($ref->[6] eq 'A') {
 	    $mgr->{TmplData}{A_USER_A} = " ";
@@ -507,7 +561,7 @@ sub user_edit {
 
 #=============================================================================
 # SYNOPSIS: user_ok($mgr);
-# PURPOSE:  saves changings of an user into user_database, also add user              
+# PURPOSE:  ueberprueft neue Benutzerdaten und uebernimmt sie gegebenenfalls
 # RETURN: 1;
 #=============================================================================
 sub user_ok {
@@ -532,7 +586,7 @@ sub user_ok {
     unless ($sth->execute()) {
     }
     
-    # check if username already exists
+    # ueberprueft ob neuer Username nicht schon existiert
     while (my $ref = $sth->fetchrow_arrayref()) {
 	if ($ref->[0] < $id) {
 	    $error = 1;
@@ -546,27 +600,53 @@ sub user_ok {
     $sth->finish;
     $dbh->do("UNLOCK TABLES");
     
-    # check if all fields were filled
-    if ($cgi->param('username') lt " ") {
+    # ab hier werden die neue Angaben ueberprueft
+    
+    if (length($cgi->param('username')) == 0) {
 	$error = 1;
+    } elsif (length($cgi->param('username')) > 8) {
+	$error = 1;
+	$mgr->{TmplData}{USER_LANG} = " ";
     }
-    if ($cgi->param('password') lt " ") {
+    
+    if (length($cgi->param('password')) == 0) {
 	$error = 1;
+    } elsif (length($cgi->param('password')) > 8) {
+	$error = 1;
+	$mgr->{TmplData}{PASS_LANG} = " ";
     } elsif ($cgi->param('password') ne $cgi->param('password2')) {
 	$error = 1;
 	$mgr->{TmplData}{PASS_ERROR} = " ";
     } 
-    if ($cgi->param('first_name') lt " ") {
+    
+    if (length($cgi->param('first_name')) == 0) {
 	$error = 1;
-    }
-    if ($cgi->param('last_name') lt " ") {
+    } elsif (length($cgi->param('first_name')) > 30) {
 	$error = 1;
-    }
-    if ($cgi->param('email') lt " ") {
-	$error = 1;
+	$mgr->{TmplData}{FIRST_LANG} = " ";
     }
     
-    # if some fields are empty fill out the rest
+    if (length($cgi->param('last_name')) == 0) {
+	$error = 1;
+    } if (length($cgi->param('last_name')) > 30) {
+	$error = 1;
+	$mgr->{TmplData}{LAST_LANG} = " ";
+    }
+    
+    my $email = $cgi->param('email');
+    if (length($cgi->param('email')) == 0) {
+	$error = 1;
+    } elsif (length($cgi->param('email')) > 100) {
+	$error = 1;
+	$mgr->{TmplData}{MAIL_LANG} = " ";
+    } elsif (Email::Valid->address($email)) {
+    } else {
+	$error = 1;
+	$mgr->{TmplData}{BAD_MAIL} = " ";
+    }
+    
+    # wenn Fehler aufgetreten sind dann fuelle die Textfelder 
+    # mit den restl Daten wieder auf
     if ($error == 1) {
         
      	$mgr->{TmplData}{ID} = $id;
@@ -583,8 +663,11 @@ sub user_ok {
 	my $type = $mgr->{UserType};
 	my $edit_type = $cgi->param('type');
     
-	# distingiush usertype (if usertype had to change)
+	# hier wieder die Auswahl der angeboten Usertypen
 	if ($type eq "A") {
+	    if ($edit_type eq 'A') {
+		$mgr->{TmplData}{A_USER_A} = " ";
+	    }
 	    if ($edit_type eq 'B') {
 		$mgr->{TmplData}{A_USER_B} = " ";
 	    }
@@ -612,7 +695,8 @@ sub user_ok {
     
     } else {
 	
-	# fields were filled, so update database
+	# alles Felder waren ordnungsgemaess gefuellt, also
+	# werden die neuen Daten in die Datenbank uebernommen
     
 	my $password = $cgi->param('password');
 	my $firstname = $cgi->param('first_name');
@@ -638,8 +722,11 @@ sub user_ok {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 	
+	# das Script soll wissen, dass es wieder die alte Suchliste
+	# anzeigen soll
 	$mgr->{Session}->set("edit" => "1");
 	
+	# zurueck zur Liste
 	$self -> user_search($mgr, 0);
 	
     }
@@ -650,7 +737,7 @@ sub user_ok {
 
 #=============================================================================
 # SYNOPSIS: user_add0($mgr);
-# PURPOSE:  adding new user-account (empty form)             
+# PURPOSE:  zeigt leeres Formular fuer neue Benutzerdaten
 # RETURN: 1;
 #=============================================================================
 sub user_add0 {
@@ -658,6 +745,8 @@ sub user_add0 {
     my $self = shift;
     my $mgr  = shift;
     
+    # der neue Benutzertyp steht hier schon fest
+    # die ID ist autoinkrement
     my $type = $mgr->{CGI}->param('type');
     
     $mgr->{TmplData}{FORM} = $mgr->my_url;
@@ -671,7 +760,7 @@ sub user_add0 {
 
 #=============================================================================
 # SYNOPSIS: user_add($mgr);
-# PURPOSE:  adding new user-account             
+# PURPOSE:  Ueberpruefung der neuen Benutzerdaten und gegebenenfalls Uebernahme
 # RETURN: 1;
 #=============================================================================
 sub user_add {
@@ -679,7 +768,7 @@ sub user_add {
     my $self = shift;
     my $mgr  = shift;
     my $cgi  = $mgr->{CGI};
-    my $error = 0;
+    my $error = 0;         # Error-Flag
     my $username;
     my $dbh;
     my $sth;
@@ -689,6 +778,8 @@ sub user_add {
     $mgr->{TmplData}{FORM} = $mgr->my_url;
     
     if (defined($cgi->param('username'))) {
+    # wenn ein neuer Username angegeben ist ...
+    
 	$username = $cgi->param('username');
     
         $dbh = $mgr->connect;
@@ -701,7 +792,7 @@ sub user_add {
 	unless ($sth->execute()) {
 	}
     
-	# check if new name already exists
+	# ... sehe nach ob er schon existiert
 	while (my $ref = $sth->fetchrow_arrayref()) {
 	    $error = 1;
 	    $mgr->{TmplData}{USER_ERROR} = $username;
@@ -710,30 +801,60 @@ sub user_add {
 	$dbh->do("UNLOCK TABLES");
     }
     
-    # check if all fields were filled
+    # Ueberpruefe die restl. Angaben
     
-    if (length($cgi->param('username')) < 1) {
+    if (length($cgi->param('username')) == 0) {
 	$error = 1;
+    } elsif (length($cgi->param('username')) > 8) {
+	$error = 1;
+	$mgr->{TmplData}{USER_LANG} = " ";
     }
-    if (length($cgi->param('password')) < 1) {
+    
+    if (length($cgi->param('password')) == 0) {
 	$error = 1;
+    } elsif (length($cgi->param('password')) > 8) {
+	$error = 1;
+	$mgr->{TmplData}{PASS_LANG} = " ";
     } elsif ($cgi->param('password') ne $cgi->param('password2')) {
 	$error = 1;
 	$mgr->{TmplData}{PASS_ERROR} = " ";
-    }    
-    if (length($cgi->param('first_name')) < 1) {
+    } 
+    
+    if (length($cgi->param('first_name')) == 0) {
 	$error = 1;
+    } elsif (length($cgi->param('first_name')) > 30) {
+	$error = 1;
+	$mgr->{TmplData}{FIRST_LANG} = " ";
     }
-    if (length($cgi->param('last_name')) < 1) {
+    
+    if (length($cgi->param('last_name')) == 0) {
 	$error = 1;
+    } if (length($cgi->param('last_name')) > 30) {
+	$error = 1;
+	$mgr->{TmplData}{LAST_LANG} = " ";
     }
-    if (length($cgi->param('email')) < 1) {
+    
+    my $email = $cgi->param('email');
+    if (length($cgi->param('email')) == 0) {
 	$error = 1;
+    } elsif (length($cgi->param('email')) > 100) {
+	$error = 1;
+	$mgr->{TmplData}{MAIL_LANG} = " ";
+    } elsif (Email::Valid->address($email)) {
+    } else {
+	$error = 1;
+	$mgr->{TmplData}{BAD_MAIL} = " ";
+    }
+    
+    if (length($cgi->param('desc')) > 500) {
+	$error = 1;
+	$mgr->{TmplData}{DESC_LANG} = " ";
     }
     
     if ($error == 1) {
 	
-	# if some fields are empty, fill the rest
+	# es gab Fehlerhafte Angaben, also wieder die
+	# Textfelder fuellen
     
 	$mgr->{TmplData}{USERNAME} = $cgi->param('username');
 	$mgr->{TmplData}{PASSWORD} = $cgi->param('password');
@@ -750,7 +871,8 @@ sub user_add {
     
     } else {
     
-	# all fields were filled, so create new user account
+	# alle Angaben sind brauchbar, also wird der neue
+	# Benutzer angelegt
 	
 	my $password = $cgi->param('password');
 	my $firstname = $cgi->param('first_name');
@@ -776,8 +898,9 @@ sub user_add {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 	
-        # to distinguish User-Classes for add new user
-	# ( needed for UserStartTmpl )
+        # jetzt geht es zurueck zum Startbildschirm, also muss noch
+	# der Benutzertyp festgestellt werden
+	# ( wegen der Auswahl bei "neuen User anlegen" )
 	if ($mgr->{UserType} eq 'A') {
 	    $mgr->{TmplData}{A_USER} = "A";
         } elsif ($mgr->{UserType} eq 'B') {
@@ -785,7 +908,7 @@ sub user_add {
 	}
 
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
-
+	
 	$mgr->fill("neuen Benutzer angelegt");
     }
     
