@@ -1,3 +1,15 @@
+#===================================================================================================
+*** 25.05.2001 ***
+Michael Krüger
+
+- message.tmpl angelegt
+- message_form.tmpl angelegt
+- wbp_config erweitert
+- wbp.cgi erweitert
+	* MessageTmpl
+	* MessageFormTmpl
+- message.pm erweitert
+- message_config.pm angelegt
 #====================================================================================================#
 *** 20.05.2001 ***
 Sören Wurch
