@@ -2,8 +2,9 @@ package start_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
+# Nachrichtenhash setzen.
 $MSG = {
 	DbError      => "Es ist ein Fehler mit der Datenbank aufgetreten.",
 	NoPassWord   => "Bitte geben Sie ein Passwort ein.",

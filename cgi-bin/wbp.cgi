@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.18 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -53,7 +53,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.17 $ =~ /(\d+)\.(\d+)/;
 # RETURN:   Templatedata.
 #====================================================================================================#
 sub handler {
-
 	my $in = CGI->new();
 	my $self = __PACKAGE__->new(
 		Action        => undef,
@@ -90,12 +89,14 @@ sub handler {
 		UserTable     => $wbp_config::CONFIG->{UserTable},
 		UserType      => undef
 	);
-	
+
+	# Sessionobjekt anlegen und mit den noetigen Werten fuellen.	
 	$self->{Session} = Session->new(SessDir  => $self->{SessDir}, 
 					SessFile => $self->{SessFile},
 					ExpTime  => "36000",
 					Sid      => undef);
 
+	# Alle Session die aktiv sind ueberpruefen.
 	$self->{Session}->check_sessions();
 
 	my ($check, $class, $param, $sid);
@@ -105,20 +106,26 @@ sub handler {
 	$self->{Action} = $param;
 	$self->{Sid}    = $sid;
 
+	# Neue oder alte Sessionid setzen.
 	$self->{Session}->set_sid($sid);
 
+	# Die Sessionid ueberpruefen.
 	eval { $check = $self->{Session}->check_sid(); };
 	if ($@) {
 		warn "Trouble checking session id [$sid].\n[Error]: $@";
 		$self->fatal_error;
 	}
 
+	# Wenn mit der Session alles ok ist, kann der User das Skript benutzen und muss
+	# sich nicht neu einloggen.
 	if ($check) {
+		# Nuetzliche Sessionwerte setzen.
 		$self->{UserFirstName} = $self->{Session}->get("FIRSTNAME");
 		$self->{UserLastName}  = $self->{Session}->get("LASTNAME");
 		$self->{UserId}        = $self->{Session}->get("USERID");
 		$self->{UserType}      = $self->{Session}->get("USERTYPE");
-	
+
+		# Die verschiedenen Bereiche ansprechen.	
 		if ($param eq ('project')) {
 			require project;
 		} elsif ($param eq ('message')) {
@@ -136,6 +143,7 @@ sub handler {
 			
 			require start;
 		}
+	# Hier muss sich der User neu einloggen.
 	} else {
 		$param          = $self->{DefaultMode};
 		$self->{Action} = $self->{DefaultMode};
@@ -143,23 +151,27 @@ sub handler {
 		require start;
 	}
 
+	# Instance der Klasse anlegen, welche wir als Action uebergeben bekommen haben.
 	eval { $class = $param->instance(); };
 	if ($@) {
 		warn "Can't create class [$param].\n[Error]: $@";
 		$self->fatal_error;
 	}
 
+	# Jedes Modul hat eine parameter Methode.
 	if ($class->can("parameter")) {
 		eval { $class->parameter($self); };
 		if ($@) {
 			warn "Can't execute method parameter in class [$param].\n[Error]: $@";
 			$self->fatal_error;
 		}
+	# ... sonst gibt es einen Error zurueck.
 	} else {
 		warn "No parameter method in class [$param].\n[Error]: $@";
 		$self->fatal_error;
 	}
 
+	# Alle Templatedaten an den Browser zurueck geben.
 	$self->_output;
 	exit;
 }
@@ -170,11 +182,11 @@ sub handler {
 # RETURN:   $self blessed into the namespace from wbp. 
 #====================================================================================================#
 sub new {
-
 	my ($class, %par) = @_;
 	no strict "refs";
 	my $self          = bless [\%{"$class\::FIELDS"}], $class;
 
+	# Fieldwerte setzen.
 	while (my($k, $v) = each %par) {
 		eval { $self->{$k} = $v; };
 
@@ -196,22 +208,25 @@ sub new {
 # RETURN:   Templatedata.
 #====================================================================================================#
 sub _output {
-
 	my $self = shift;
 	
 	print "Content-type: text/html\n\n";
-
+	
+	# Gibt es das Template ueberhaupt?
 	unless (-r "$self->{TmplDir}/$self->{Template}") {
 		warn "[Error]: Template [$self->{Template}] not found or readable";
 		$self->_template_error($self->{Template});
 	}
-
-	my $tmpl = HTML::Template->new(filename => $self->{Template}, path => $self->{TmplDir});
 	
+	# Neue Instance der Klasse Template mit den richtigen Parameter anlegen.
+	my $tmpl = HTML::Template->new(filename => $self->{Template}, path => $self->{TmplDir});
+
+	# Standardwerte setzen.	
 	$self->{TmplData}{ACTION} = $self->{Action};
 	$self->{TmplData}{SID}    = $self->{Sid};
 	$tmpl->param(%{$self->{TmplData}});
-	
+
+	# Template ausgeben.	
 	print $tmpl->output;
 }
 
@@ -221,21 +236,24 @@ sub _output {
 # RETURN:   none.
 #====================================================================================================#
 sub fatal_error {
-
 	my $self = shift;
 	my $msg  = shift;
-	
+
+	# Errortemplate setzen.	
 	$self->{Template} = $self->{ErrorTmpl}; 
 	delete $self->{TmplData};
-	
+
+	# Gab es eine Nachricht ... sonst die Standardnachricht nehmen.	
 	if (defined $msg) {
 		$self->{TmplData}{MSG} = $self->decode_all($msg);
 	} else {
 		$self->{TmplData}{MSG} = $self->decode_all("Es ist ein unbekannter Fehler aufgetreten.");
 	}
 
+	# Den Fehler eines Fatalerrors und die Zeit als Warning ausgeben.
 	warn "[Time]: ".$self->now();
 
+	# Das Errortemplate ausgeben.
 	$self->_output;
 	exit;
 }
@@ -246,10 +264,11 @@ sub fatal_error {
 # RETURN:   none.
 #====================================================================================================#
 sub _template_error {
-	
 	my $self = shift;
 	my $tmpl = shift;
 
+	# Wenn es also einen allgemeinen Templateerror gibt, koennen wir auch kein Errortemplate 
+	# ausgeben und schreiben "per Hand" was an den Browser zurueck.
 	print <<EOT;
 <html><body>
 	<h1>Template [$tmpl] konnte nicht gelesen werden.</h1>
@@ -265,9 +284,9 @@ EOT
 # RETURN:   true.
 #====================================================================================================#
 sub connect {
-
 	my $self = shift;
 
+	# Datenbankconnect aufbauen, wenn wir noch keine Connection zur Datenbank haben.
 	$self->{DbHandle} ||= DBI->connect(
 		$self->{DataBase},
 		$self->{DbUser},
@@ -282,9 +301,9 @@ sub connect {
 # RETURN:   $instance->{MyUrl}.
 #====================================================================================================#
 sub my_url {
-
 	my $self = shift;
 
+	# Url des Skript mit den richtigen Parameter fuellen und setzen sowie zurueck geben.
 	return $self->{MyUrl} if $self->{MyUrl};
 	if ($self->{Sid}) {
 		$self->{MyUrl} = sprintf("%s?action=%s&sid=%s", 
@@ -306,7 +325,6 @@ sub my_url {
 # RETURN:   datetime.
 #====================================================================================================#
 sub now {
- 
         sprintf("%04d-%02d-%02d %02d:%02d:%02d",
                 sub {($_[0]+1900, $_[1]+1),@_[2..5]}->((localtime)[5,4,3,2,1,0]));
 }
@@ -317,7 +335,6 @@ sub now {
 # RETURN:   normal datetime.
 #====================================================================================================# 
 sub format_date {
-	
 	my $self = shift;
 	my $date = shift;
 
@@ -332,10 +349,10 @@ sub format_date {
 # RETURN:   true.
 #====================================================================================================#
 sub fill {
-
 	my $self = shift;
 	my $msg  = shift || undef;
-	
+
+	# Die Hauptnavigationsleiste fuer die verschiedenen Usertypen fuellen.	
 	$self->{TmplData}{FIRSTNAME} = $self->decode_all($self->{UserFirstName});
 	$self->{TmplData}{LASTNAME}  = $self->decode_all($self->{UserLastName});
 	$self->{TmplData}{LOGOUT}    = sprintf($self->{ScriptName}."?action=%s&sid=%s&method=logout",
@@ -370,7 +387,6 @@ sub fill {
 # RETURN:   $value.
 #====================================================================================================#
 sub decode_all {
-
 	my $self  = shift;
 	my $value = shift;
 
@@ -400,7 +416,6 @@ sub decode_all {
 # RETURN:   $value.
 #====================================================================================================#
 sub decode_some {
-
 	my $self  = shift;
 	my $value = shift;
 
@@ -419,7 +434,6 @@ sub decode_some {
 # RETURN:   true.
 #====================================================================================================#
 sub DESTROY {
-
 	my $self = shift;
 
 	$self->{DbHandle}->disconnect if $self->{DbHandle};

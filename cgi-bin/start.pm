@@ -6,10 +6,14 @@ use start_config;
 use vars qw($VERSION $conf);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
 
+#====================================================================================================#
+# SYNOPSIS: parameter($mgr);
+# PURPOSE:  Managt dieses Modul in bezug auf die Aufrufe durch POST und GET.
+# RETURN:   1;
+#====================================================================================================#
 sub parameter {
-
 	my $self = shift;
 	my $mgr  = shift;
 
@@ -74,8 +78,12 @@ sub parameter {
 	$mgr->{TmplData}{MSG}  = $mgr->decode_all($start_config::MSG->{NoUserExist});
 }
 
+#====================================================================================================#
+# SYNOPSIS: $self->check($mgr, $username, $password);
+# PURPOSE:  Prueft, ob es einen User mit diesem Passwort gibt. Wenn ja kann er sich einloggen.
+# RETURN:   true. 
+#====================================================================================================#
 sub check {
-	
 	my $self     = shift;
 	my $mgr      = shift;
 	my $username = shift;
@@ -97,7 +105,7 @@ sub check {
 		return undef;
 	}
 
-	# Wenn wir hier sind, ahebn wir einen User gefunden und fuellen die Daten.
+	# Wenn wir hier sind, haben wir einen User gefunden und fuellen die Daten.
 	while (my $href = $sth->fetchrow_hashref) {
 		unless ($password eq $href->{password})	{
 			return undef;
@@ -118,15 +126,19 @@ sub check {
 	1;
 }
 
+#====================================================================================================#
+# SYNOPSIS: $self->show_start($mgr);
+# PURPOSE:  Setzt das richtige Template und fuellt die Navigation aus.
+# RETURN:   1;
+#====================================================================================================#
 sub show_start {
-
 	my $self = shift;
 	my $mgr  = shift;
 
 	$mgr->{Template} = $mgr->{StartTmpl};
 	$mgr->fill;
 	
-	return;
+	return 1;
 }
 
 1;

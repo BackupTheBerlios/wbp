@@ -2,8 +2,9 @@ package wbp_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
 
+# Den Confighash mit den Daten fuellen.
 $CONFIG = {
 	# Normal:
 	DataBase      => "DBI:mysql:",   # DataBase, includes the host and port
@@ -32,10 +33,13 @@ $CONFIG = {
 	StartTmpl     => "start.tmpl"    # Start template
 };
 
+# Einen Nachrichtenhash anlegen und fuellen.
 $MSG = {
 	Unknownerror => "Es ist ein unbekannter Fehler aufgetreten."
 };
 
+# Da die Developer auf verschiedenen Systemen arbeiten (DATENBANKEN), gibt es da auch
+# verschiedenen Passwoerter usw. ...
 require my_config;
 
 ($CONFIG->{DataBase}, $CONFIG->{DbPassWord}, $CONFIG->{DbUser}) = get();
