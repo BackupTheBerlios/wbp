@@ -16,6 +16,8 @@ use fields (
 	'ErrorTmpl',     # error template
 	'LoginTmpl',     # login template
 	'NewsTable',     # "news" table
+	'MessageTmpl',   # message template
+	'MessageFormTmpl', # message form template
 	'MReceiveTable', # "message receive" table
 	'MSendTable',    # "message send" table
 	'MToUserTable',  # "message to user" table
@@ -43,7 +45,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -66,6 +68,8 @@ sub handler {
 		ErrorTmpl     => $wbp_config::CONFIG->{ErrorTmpl},
 		LoginTmpl     => $wbp_config::CONFIG->{LoginTmpl},
 		NewsTable     => $wbp_config::CONFIG->{NewsTable},
+		MessageTmpl   => $wbp_config::CONFIG->{MessageTmpl},
+		MessageFormTmpl   => $wbp_config::CONFIG->{MessageFormTmpl},
 		MReceiveTable => $wbp_config::CONFIG->{MReceiveTable},
 		MSendTable    => $wbp_config::CONFIG->{MSendTable},
 		MToUserTable  => $wbp_config::CONFIG->{MToUserTable},

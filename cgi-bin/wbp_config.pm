@@ -2,7 +2,7 @@ package wbp_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 $CONFIG = {
 	# Normal:
@@ -29,6 +29,8 @@ $CONFIG = {
 	ErrorTmpl     => "error.tmpl",   # Error template
 	LoginTmpl     => "login.tmpl",   # Login template
 	ProjectTmpl   => "project.tmpl", # Project template
+	MessageTmpl   => "message.tmpl",  # Message template
+	MessageFormTmpl => "message_form.tmpl", # Message Form template
 	StartTmpl     => "start.tmpl"    # Start template
 };
 
