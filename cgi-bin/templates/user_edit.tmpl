@@ -1,0 +1,85 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action=<TMPL_VAR FORM> method="post">
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+    <tr>
+	<td>
+	    <h1>User mit ID: <TMPL_VAR ID> wird editiert</h1>
+	</td>
+    </tr>
+
+    <tr>
+    	<td>
+	    <table cellspacing="0" cellpadding="0" border="0" align="center">
+		<tr>
+		    <td>
+			Username <br>
+		    </td>
+		    <td>
+			<input type=text name="USERNAME" size=20 maxlength=20 value="<TMPL_VAR USERNAME>"><br>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Password <br>
+		    </td>
+		    <td>
+			<input type=password name="PASSWORD" size=20 maxlength=20><br>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Vorname <br>
+		    </td>
+		    <td>
+			<input type=text name="FIRSTNAME" size=20 maxlength=20 value="<TMPL_VAR FIRSTNAME>"><br>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Nachname <br>
+		    </td>
+		    <td>
+			<input type=text name="LASTNAME" size=20 maxlength=20 value="<TMPL_VAR LASTNAME>"><br>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+		    	eMail <br>
+		    </td>
+		    <td>
+			<input type=text name="EMAIL" size=20 maxlength=20 value="<TMPL_VAR EMAIL>"><br>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Typ <br>
+		    </td>
+		    <td>
+			<input type=text name="TYPE" size=20 maxlength=20 value="<TMPL_VAR TYPE>"><br>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+		    	Beschreibung <br>
+		    </td>
+		    <td>			
+			<input type=text name="DESC" size=20 maxlength=20 value="<TMPL_VAR DESC>"><br>
+		    </td>
+		</tr>
+	    </table>
+	</td>
+    </tr>
+    <tr>
+	<td>
+	    <input type="submit" name="OK" value="Ok">
+	</td>
+    </tr>
+        
+</table>
+</form>
+<TMPL_INCLUDE footer.tmpl>
