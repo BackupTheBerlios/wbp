@@ -1,0 +1,40 @@
+<TMPL_INCLUDE header.tmpl>
+ 
+<form action="<TMPL_VAR FORM>" method="post">
+ 
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> 
+  <tr> <td align="center" valign="center" height=100%>
+<br>
+<table> 
+<tr>
+  <td colspan=2>
+    <b>Kategoriename:</b>
+  </td>
+</tr>
+<tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+    <input type="text" name="cat_name" size="40" value="">
+  </td>
+</tr>
+<tr>
+  <td colspan=2>
+    <b>Beschreibung:</b>
+  </td>
+</tr>
+<tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+    <textarea name="descr" rows=10 cols=60 wrap=virtual></textarea>
+  </td>
+</tr>
+</table>
+
+</td> </tr> </table>
+
+</form>
+
+<TMPL_INCLUDE footer.tmpl>

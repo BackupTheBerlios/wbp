@@ -1,0 +1,77 @@
+<TMPL_INCLUDE header.tmpl>
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> 
+  <tr> <td align="center" valign="center" height=100%>
+
+<table>
+<tr>
+  <td colspan=3> <b> Rubrik: </b> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> Interne ID: </td>
+  <td> <TMPL_VAR ID> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> Bezeichnung: </td>
+  <td> <TMPL_VAR NAME> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> Beschreibung: </td>
+  <td> <TMPL_VAR DESCR> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> Status: </td>
+  <td> <TMPL_VAR STATUS> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> Erstellungsdatum: </td>
+  <td> <TMPL_VAR INS_DT> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> Ersteller Username: </td>
+  <td> <TMPL_VAR INS_ID> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> &Auml;nderungsdatum: </td>
+  <td> <TMPL_VAR UPD_DT> </td>
+</tr>
+<tr>
+  <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
+  <td> &Auml;nderer Username: </td>
+  <td> <TMPL_VAR UPD_ID> </td>
+</tr>
+
+
+
+</td> </tr> </table>
+
+<br>
+
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR SHOW_ALL_LINK>">alle Rubriken anzeigen</a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="<TMPL_VAR SHOW_ACTIV_LINK>">aktive Rubriken anzeigen</a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="<TMPL_VAR SHOW_INACTIV_LINK>">inaktive Rubriken anzeigen</a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="<TMPL_VAR CREATE_CAT_LINK>">neue Rubrik anlegen</a>
+  &nbsp;&nbsp;
+<TMPL_IF DELETE_LINK_IF>
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR DELETE_CAT_LINK>">Rubrik l&ouml;schen</a>
+  &nbsp;&nbsp;
+</TMPL_IF>
+
+</td> </tr> </table>
+
+<TMPL_INCLUDE footer.tmpl>

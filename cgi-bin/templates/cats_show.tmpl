@@ -1,0 +1,57 @@
+<TMPL_INCLUDE header.tmpl>
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> 
+  <tr> <td align="center" valign="center" height=100%>
+
+<table> <tr> <td> <br>
+ 
+<TMPL_IF NO_CATS>
+<b>Es sind noch keine Rubriken erstellt...</b>
+<TMPL_ELSE>
+<b> <TMPL_VAR CAT_STATUS> Rubriken: </b><br><br>
+</TMPL_IF>
+
+<TMPL_LOOP CATS_LOOP>
+  &nbsp;&nbsp;&nbsp;-&nbsp;
+  <a href="<TMPL_VAR SHOW_LINK>"><TMPL_VAR CAT_NAME></a>
+  &nbsp;&nbsp; (<a href="<TMPL_VAR STATUS_LINK>"><TMPL_VAR STATUS_TEXT></a>)
+  (<a href="<TMPL_VAR EDIT_LINK>">editieren</a>)
+<TMPL_IF DELETE_IF>
+  (<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a>)
+<TMPL_ELSE>
+  (l&ouml;schen)
+</TMPL_IF>
+
+<br><br>
+
+</TMPL_LOOP>
+
+</td> </tr> </table>
+
+<br>
+
+<TMPL_IF SHOW_ALL_LINK_IF>
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR SHOW_ALL_LINK>">alle Rubriken anzeigen</a>
+  &nbsp;&nbsp;
+</TMPL_IF>
+<TMPL_IF SHOW_ACTIV_LINK_IF>
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR SHOW_ACTIV_LINK>">aktive Rubriken anzeigen</a>
+  &nbsp;&nbsp;
+</TMPL_IF>
+<TMPL_IF SHOW_INACTIV_LINK_IF>
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR SHOW_INACTIV_LINK>">inaktive Rubriken anzeigen</a>
+  &nbsp;&nbsp;
+</TMPL_IF>
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR CREATE_CAT_LINK>">neue Rubrik anlegen</a>
+  &nbsp;&nbsp;
+
+</td> </tr> </table>
+
+<TMPL_INCLUDE footer.tmpl>

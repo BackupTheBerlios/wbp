@@ -107,6 +107,21 @@ CREATE TABLE wbp_category (
   upd_dt DATETIME NOT NULL DEFAULT 0,
   upd_id VARCHAR(8) NOT NULL DEFAULT ""
 );
+
+insert into wbp_category (name,        desc_category,             status, ins_dt,                ins_id,
+                          upd_dt,                upd_id) values
+                         ('Rubrik 1', 'Beschreibung zu Rubrik 1', '1',    '2001-03-14 12:15:20', '1',
+                          '2001-03-14 12:15:20', '1');
+
+insert into wbp_category (name,        desc_category,             status, ins_dt,                ins_id,
+                          upd_dt,                upd_id) values
+                         ('Rubrik 2', 'Beschreibung zu Rubrik 2', '1',    '2001-03-14 12:15:20', '1',
+                          '2001-03-14 12:15:20', '1');
+
+insert into wbp_category (name,        desc_category,             status, ins_dt,                ins_id,
+                          upd_dt,                upd_id) values
+                         ('Rubrik 3', 'Beschreibung zu Rubrik 3', '1',    '2001-03-14 12:15:20', '1',
+                          '2001-03-14 12:15:20', '1');
  
 CREATE TABLE wbp_news ( 
   id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -1,23 +1,25 @@
 <TMPL_INCLUDE header.tmpl>
 
-<form action="<TMPL_VAR FORM>" method="post">
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> <tr> <td>
+<table cellspacing="0" cellpadding="0" align="center" valign=center width="80%">
+  <tr> <td align="center" valign="center" height=100%>
+
+<table> <tr> <td>
 
 <b> Rubriken: </b><br>
- 
-<TMPL_LOOP CATS_LOOP>
-  &nbsp;&nbsp;&nbsp;-&nbsp;
-  <a href="<TMPL_VAR SHOW_LINK>"><TMPL_VAR CAT_NAME></a>
-  &nbsp;<a href="<TMPL_VAR EDIT_LINK>">editieren</a>
-  &nbsp;<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a> <br>
-</TMPL_LOOP>
-    
+
+<TMPL_IF SHOW_CAT_IF>
+  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR SHOW_ALL_LINK>">alle Rubriken anzeigen</a><br>
+  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR SHOW_ACTIV_LINK>">aktive Rubriken anzeigen</a><br>
+  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR SHOW_INACTIV_LINK>">inaktive Rubriken anzeigen</a><br><br>
+</TMPL_IF>
+
+&nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR CREATE_CAT_LINK>">neue Rubrik anlegen</a>
 
 </td> </tr> </table>
 
-</form>
+</td> </tr> </table>
 
 <TMPL_INCLUDE footer.tmpl>
