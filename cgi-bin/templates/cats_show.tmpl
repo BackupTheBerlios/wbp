@@ -6,30 +6,31 @@
 <table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> 
   <tr> <td align="center" valign="center" height=100%>
 
-<table> <tr> <td> <br>
+<table> <tr> <td colspan=5> <br>
  
 <TMPL_IF NO_CATS>
-<b>Es sind noch keine Rubriken erstellt...</b>
+<b><TMPL_VAR CAT_STATUS>...</b>
 <TMPL_ELSE>
-<b> <TMPL_VAR CAT_STATUS> Rubriken: </b><br><br>
+<b> <TMPL_VAR CAT_STATUS> Rubriken: </b><br>
 </TMPL_IF>
-
+</td></tr>
 <TMPL_LOOP CATS_LOOP>
-  &nbsp;&nbsp;&nbsp;-&nbsp;
-  <a href="<TMPL_VAR SHOW_LINK>"><TMPL_VAR CAT_NAME></a>
-  &nbsp;&nbsp; (<a href="<TMPL_VAR STATUS_LINK>"><TMPL_VAR STATUS_TEXT></a>)
-  (<a href="<TMPL_VAR EDIT_LINK>">editieren</a>)
+<tr>
+  <td> - </td>
+  <td> <a href="<TMPL_VAR SHOW_LINK>"><TMPL_VAR CAT_NAME></a> </td>
+  <td> (<a href="<TMPL_VAR STATUS_LINK>"><TMPL_VAR STATUS_TEXT></a>) </td>
+  <td> (<a href="<TMPL_VAR EDIT_LINK>">editieren</a>) </td>
+  <td>
 <TMPL_IF DELETE_IF>
   (<a href="<TMPL_VAR DEL_LINK>">l&ouml;schen</a>)
 <TMPL_ELSE>
   (l&ouml;schen)
 </TMPL_IF>
-
-<br><br>
-
+  </td>
+</tr>
 </TMPL_LOOP>
 
-</td> </tr> </table>
+</table>
 
 <br>
 

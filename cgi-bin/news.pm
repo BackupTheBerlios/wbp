@@ -7,10 +7,14 @@ use message_base;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $news_config::MSG;
 $C_TMPL = $news_config::TMPL;
+
+my $Betreuer    = 0;
+my $ProLeiter   = 1;
+my $Mitarbeiter = 2;
 
 sub parameter {
 
@@ -72,6 +76,39 @@ sub news_user_type_C {
 };
 
 sub news_user_type_D {
+
+  my $self = shift;
+  my $mgr  = shift;
+
+  my $dbh = $mgr->connect;
+  unless ($dbh->do("LOCK TABLES $mgr->{UserProTable} READ")) {
+    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{UserProTable}, $dbh->ersstr);
+  };
+  my $sth = $dbh->prepare(qq{SELECT project_id FROM $mgr->{UserProTable} WHERE user_id = $mgr->{UserId}});
+  unless ($sth->execute()) {
+    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",$mgr->{UserProTable}, $dbh->errstr);
+    $dbh->do("UNLOCK TABLES");
+    $mgr->fatal_error($self->{C_MSG}->{DbError});
+  };
+
+  $dbh->do("UNLOCK TABLES");
+
+  my @pro_user;
+  while (my ($project_id) = $sth->fetchrow_array()) {
+    push (@pro_user, [$project_id]);
+  }
+  $sth->finish;
+
+  if (@pro_user) {
+    for (my $i = 0; $i <= $#pro_user; $i++) {
+
+    };
+  } else {
+    $mgr->{Template} = $C_TMPL->{NewsMainC};
+    $mgr->{Template}{MEMBER_IF} = '0';
+    $mgr->fill;
+  };
+
   return 1;
 };
 

@@ -8,7 +8,7 @@
 
 <table>
 <tr>
-  <td colspan=3> <b> Rubrik: </b> </td>
+  <td colspan=3> <b> <TMPL_VAR HEADLINE>: </b> </td>
 </tr>
 <tr>
   <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
@@ -22,7 +22,7 @@
 </tr>
 <tr>
   <td> &nbsp;&nbsp;&nbsp;&nbsp; </td>
-  <td> Beschreibung: </td>
+  <td valign=top> Beschreibung: </td>
   <td> <TMPL_VAR DESCR> </td>
 </tr>
 <tr>
@@ -63,7 +63,7 @@
   <a href="<TMPL_VAR SHOW_ACTIV_LINK>">aktive Rubriken anzeigen</a>
   &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="<TMPL_VAR SHOW_INACTIV_LINK>">inaktive Rubriken anzeigen</a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
+<br>
   <a href="<TMPL_VAR CREATE_CAT_LINK>">neue Rubrik anlegen</a>
   &nbsp;&nbsp;
 <TMPL_IF DELETE_LINK_IF>
@@ -71,7 +71,8 @@
   <a href="<TMPL_VAR DELETE_CAT_LINK>">Rubrik l&ouml;schen</a>
   &nbsp;&nbsp;
 </TMPL_IF>
-
+  &nbsp;&nbsp;
+  <a href="<TMPL_VAR EDIT_CAT_LINK>">Rubrik editieren</a>
 </td> </tr> </table>
 
 <TMPL_INCLUDE footer.tmpl>

@@ -4,6 +4,7 @@
  
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="catid" value="<TMPL_VAR CATID>">
 
 <table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> 
   <tr> <td align="center" valign="center" height=100%>
@@ -11,13 +12,16 @@
 <table> 
 <tr>
   <td colspan=2>
-    <b>Kategoriename:</b>
+    <b>Rubrikname:</b>
+    <TMPL_IF CAT_IF>
+      &nbsp;&nbsp;<FONT COLOR=RED>(Rubrik existiert bereits)</FONT>
+    </TMPL_IF>
   </td>
 </tr>
 <tr>
   <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
   <td>
-    <input type="text" name="cat_name" size="40" value="">
+    <input type="text" name="cat_name" size="40" value="<TMPL_VAR CAT_NAME>">
   </td>
 </tr>
 <tr>
@@ -28,7 +32,29 @@
 <tr>
   <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
   <td>
-    <textarea name="descr" rows=10 cols=60 wrap=virtual></textarea>
+    <textarea name="descr" rows=10 cols=60 wrap=virtual><TMPL_VAR CAT_DESCR></textarea>
+  </td>
+</tr>
+
+<TMPL_IF CREATE_CHANGE>
+<tr>
+  <td colspan=2>
+   <input type=radio name="activ" value="activ"> aktiv
+   <br>
+   <input type=radio name="activ" value="inactiv"> inaktiv
+  </td>
+</tr>
+</TMPL_IF>
+
+<tr>
+  <td colspan=2 align=center>
+    <TMPL_IF CREATE_CHANGE>
+      <input type="submit" name="create" value="Erstellen">
+    <TMPL_ELSE>
+      <input type="submit" name="change" value="&Auml;ndern">
+    </TMPL_IF>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <input type="submit" name="break" value="Abbrechen">
   </td>
 </tr>
 </table>
