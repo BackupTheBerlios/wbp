@@ -7,6 +7,7 @@ use Session;
 use wbp_config;
 use fields (
 	'Action',        # action paramaeter
+	'CatTable',      # "categories" table
 	'CGI',           # cgi object
 	'DataBase',      # database name
 	'DbHandle',      # database handle
@@ -16,18 +17,13 @@ use fields (
 	'ErrorTmpl',     # error template
 	'LoginTmpl',     # login template
 	'NewsTable',     # "news" table
-	'MessageTmpl',   # message template
-	'MessageFormTmpl', # message form template
-	'MessageConfirmTmpl', # message confirmation template
 	'MReceiveTable', # "message receive" table
 	'MSendTable',    # "message send" table
 	'MToUserTable',  # "message to user" table
 	'MyUrl',         # url of this script
-	'PhaTable',      # "phasen" table
-	'PhaUserTable',  # "phasen benutzer" table
-	'ProjectTmpl',   # project template
-	'ProTable',      # "projekt" table
-	'ProPhaTable',   # "projekte phasen" table
+	'PhaTable',      # "phases" table
+	'ProTable',      # "project" table
+	'ProUserTable',  # "project to user" table
 	'SessDir',       # session directory
 	'SessFile',      # session file (for all sessiosn)
 	'Session',       # session object
@@ -40,13 +36,13 @@ use fields (
 	'UserFirstName', # first name of the user
 	'UserId',        # id of the user
 	'UserLastName',  # last name of the user
-	'UserTable',     # "benutzer" table
+	'UserTable',     # "user" table
 	'UserType'       # type of the user
 );
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -60,6 +56,7 @@ sub handler {
 	my $in = CGI->new();
 	my $self = __PACKAGE__->new(
 		Action        => undef,
+		CatTable      => $wbp_config::CONFIG->{CatTable},
 		CGI           => $in,
 		DataBase      => $wbp_config::CONFIG->{DataBase},
 		DbHandle      => undef,
@@ -69,18 +66,13 @@ sub handler {
 		ErrorTmpl     => $wbp_config::CONFIG->{ErrorTmpl},
 		LoginTmpl     => $wbp_config::CONFIG->{LoginTmpl},
 		NewsTable     => $wbp_config::CONFIG->{NewsTable},
-		MessageTmpl   => $wbp_config::CONFIG->{MessageTmpl},
-		MessageFormTmpl   => $wbp_config::CONFIG->{MessageFormTmpl},
-		MessageConfirmTmpl => $wbp_config::CONFIG->{MessageConfirmTmpl},
 		MReceiveTable => $wbp_config::CONFIG->{MReceiveTable},
 		MSendTable    => $wbp_config::CONFIG->{MSendTable},
 		MToUserTable  => $wbp_config::CONFIG->{MToUserTable},
 		MyUrl         => undef,
 		PhaTable      => $wbp_config::CONFIG->{PhaTable},
-		PhaUserTable  => $wbp_config::CONFIG->{PhaUserTable},
-		ProjectTmpl   => $wbp_config::CONFIG->{ProjectTmpl},
 		ProTable      => $wbp_config::CONFIG->{ProTable},
-		ProPhaTable   => $wbp_config::CONFIG->{ProPhaTable},
+		ProUserTable  => $wbp_config::CONFIG->{ProUserTable},
 		SessDir       => $wbp_config::CONFIG->{SessDir},
 		SessFile      => $wbp_config::CONFIG->{SessFile},
 		Session       => undef,

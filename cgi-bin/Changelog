@@ -1,4 +1,17 @@
-#==============================================================================$
+#====================================================================================================#
+*** 28.05.2001 ***
+Sören Wurch
+
+- wbp.cgi und wbp_config.pm geaendert
+	* Nur noch Drei Haupttemplates enthalten
+	* alle anderen Templates in der jeweiligen config Klasse
+	* Tabellennamen hinzugefuegt
+- project.tmpl geaendert
+- project.pm erweitert
+	* Funktion check_for_projects angelegt
+	* Funktion check_for_categories angelegt 
+- header.tmpl und footer.tmpl erweitert
+#====================================================================================================#
 *** 25.05.2001 ***
 Michael Krüger
 
@@ -10,7 +23,7 @@ Michael Krüger
 - message.pm erweitert
 	* Nachricht Verfassen,Bestaetigen,...
 - message_config.pm erweitert
-#===================================================================================================
+#====================================================================================================#
 *** 25.05.2001 ***
 Michael Krüger
 

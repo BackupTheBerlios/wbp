@@ -1,10 +1,24 @@
-<table cellspacing="0" cellpadding="0" border="0" align="center" width="90%">
+<html>
+<head>
+	<title>Webbasiertes Projektmanagement</title>
+</head>
+<body bgcolor="#ffffff" text="#000000">
+
+<table cellspacing="0" cellpadding="5" border="0" align="center" width="90%">
 <tr bgcolor="#cecece">
 	<td align="left">
-		Benutzer: <TMPL_VAR FIRSTNAME> <TMPL_VAR LASTNAME>
+		<b>Benutzer:</b> <i><TMPL_VAR FIRSTNAME> <TMPL_VAR LASTNAME></i>
 	</td>
 	<td align="right">
 		[<a href="<TMPL_VAR LOGOUT>">Logout</a>]
+	</td>
+</tr>
+<tr bgcolor="#cecece">
+	<td align="left">
+		<b>Meldungen:</b>
+	</td>
+	<td>
+		<TMPL_IF MSG><font color="#ff0000"><TMPL_VAR MSG></font><TMPL_ELSE>&nbsp;</TMPL_IF>
 	</td>
 </tr>
 </table>

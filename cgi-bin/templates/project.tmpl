@@ -1,6 +1,51 @@
 <TMPL_INCLUDE header.tmpl>
 
+<form action="<TMPL_VAR FORM>" method="post">
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade>
+
+<TMPL_IF USER_AB>
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+	<td>
+		<b>Neues Projekt:</b>
+	</td>
+	<td>
+	<TMPL_IF CATEGORIES>
+		<input type="submit" name="new" value="anlegen">
+	<TMPL_ELSE>
+		<font color="#ff0000">
+		Sie m&uuml;&szlig;en erst eine Kategorie anlegen.
+		</font>
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+
+<hr size="1" noshade>
+</TMPL_IF>
+
+<table cellspacing="0" cellpadding="0" border="0" align="center">
+<tr>
+	<td>
+		<b>Projektsuche:</b>
+	</td>
+	<td>
+	<TMPL_IF PROJECTS>
+		<input type="submit" name="search" value="suchen">
+	<TMPL_ELSE>
+		<font color="#ff0000">
+		Es sind keine Projekte vorhanden. 
+		</font>
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+
+<hr size="1" noshade>
+
+</form>
 
 <TMPL_INCLUDE footer.tmpl>

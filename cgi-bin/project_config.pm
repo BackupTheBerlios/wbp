@@ -2,8 +2,15 @@ package project_config;
  
 use vars qw($VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
  
-$MSG = {};
+$MSG = {
+	NotAllowed => "Das Skript wurde mit einer falscehn Methode aufgerufen.",
+	DbError    => "Es ist ein Fehler mit der Datenbank aufgetreten."
+};
+
+$TMPL = {
+	Project => "project.tmpl"
+};
 
 1;
