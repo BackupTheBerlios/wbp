@@ -16,7 +16,15 @@
 <p>
 <table cellspacing="0" cellpadding="5" border="0" width="80%" align="center" bgcolor="#b0b0b0">
 <tr>
-	<td><b>An:</b><br>
+	<td><b>An Benutzer:</b>
+	<TMPL_IF NO_RECEIVER>
+	<font color="#ff0000"><TMPL_VAR NO_RECEIVER></font>
+	</TMPL_IF>
+	<TMPL_IF CHECK_USERNAME>
+	<font color="#ff0000">
+	Unbekannt: <TMPL_LOOP CHECK_USERNAME><TMPL_VAR USERNAME>&nbsp;</TMPL_LOOP>
+	</font>
+	</TMPL_IF><br>
 	<textarea name="to_usernames" rows="2" cols="40" wrap="virtual"><TMPL_VAR TO_USERNAMES></textarea>
 	</td>
 	<td valign="top" rowspan="2">

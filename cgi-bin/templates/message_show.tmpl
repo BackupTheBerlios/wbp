@@ -58,7 +58,19 @@
 </table>
 <p>
 <p>
-<div align="center"><a href="<TMPL_VAR MESSAGE_REPLY>">Reply</a></div>
+<div align="center">
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="parent_mid" value="<TMPL_VAR PARENT_MID>">
+<input type="hidden" name="mid" value="<TMPL_VAR MID>">
+<input type="hidden" name="modus" value="<TMPL_VAR MODUS>">
+<input type="submit" name="reply" value="Antworten">
+<input type="submit" name="delete_message" value="Löschen">
+</form>
+
+</div>
 
 <TMPL_INCLUDE message_nav.tmpl>
 

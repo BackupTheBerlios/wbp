@@ -332,10 +332,10 @@ sub fetch_uids {
 		     $mgr->{UserTable}, $dbh->ersstr);
     }
 
-    my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{UserTable} WHERE username = ?});
+    my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{UserTable} WHERE username = ? AND status = ?});
 
     foreach my $uname (@$usernames) {
-	unless ($sth->execute($uname)) {
+	unless ($sth->execute($uname,'1')) {
 	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
 			 $mgr->{UserTable}, $dbh->errstr);
 	    $dbh->do("UNLOCK TABLES");
@@ -354,7 +354,91 @@ sub fetch_uids {
     return \@uid;
 }
 
+#====================================================================================================#
+# SYNOPSIS: check_projectnames(\@projectnames);
+# PURPOSE:  liefert die unbekannten Benutzernamen, 5.7.2001: wird nicht mehr benoetigt
+# RETURN:   \@falsenames
+#====================================================================================================#
+sub check_projectnames {
+    
+    my $self = shift;
+    my $projectnames = shift;
+    my $mgr = $self->{MGR};
 
+    my @falsenames = ();
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{ProTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{ProTable}, $dbh->ersstr);
+    }
+
+    my $sth = $dbh->prepare(qq{SELECT name FROM $mgr->{ProTable} WHERE name = ? AND status = ?});
+
+    foreach my $pname (@$projectnames) {
+	unless ($sth->execute($pname,1)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{ProTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+	
+	my @id = $sth->fetchrow_array();
+	unless (@id) {
+	    push (@falsenames, $pname);
+	}
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return \@falsenames;
+}
+
+#====================================================================================================#
+# SYNOPSIS: check_usernames(\@usernames);
+# PURPOSE:  liefert die unbekannten Benutzernamen
+# RETURN:   \@falsenames
+#====================================================================================================#
+sub check_usernames {
+    
+    my $self = shift;
+    my $usernames = shift;
+    my $mgr = $self->{MGR};
+
+    my @falsenames = ();
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
+    }
+
+    my $sth = $dbh->prepare(qq{SELECT username FROM $mgr->{UserTable} WHERE username = ?});
+
+    foreach my $uname (@$usernames) {
+	unless ($sth->execute($uname)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+	
+	my @id = $sth->fetchrow_array();
+	unless (@id) {
+	    push (@falsenames, $uname);
+	}
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return \@falsenames;
+}
 #====================================================================================================#
 # SYNOPSIS: insert_new_messages(\@uids,$parent_mid,$subject,$content);
 # PURPOSE:  Neue Messages in die entsprechenden Tables eintragen
@@ -430,12 +514,90 @@ sub insert_new_messages {
 
 	return $mid;
 }
+#====================================================================================================#
+# SYNOPSIS: delete_received_message($mid);
+# PURPOSE:  Loeschen einer Nachricht
+# RETURN:   -
+#====================================================================================================#
+sub delete_received_message {
+
+        my $self = shift;
+	my $mid = shift;
+
+        my $mgr = $self->{MGR};
+
+	my $to_uid = $mgr->{UserId};
+
+	# ### connect ###
+        my $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{MReceiveTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking tables [%s,%s and %s]. Reason: [%s].",
+			 $mgr->{MReceiveTable},$dbh->ersstr);
+	}
+
+	# Message loeschen
+        my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{MReceiveTable} WHERE mid = ? AND to_uid  = ?});
+	
+        unless ($sth->execute($mid,$to_uid)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{MReceiveTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	$sth->finish;
+
+	$dbh->do("UNLOCK TABLES");
+	# ### disonnect ###
+
+	return 1;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: delete_send_message($mid);
+# PURPOSE:  Loeschen einer Nachricht
+# RETURN:   -
+#====================================================================================================#
+sub delete_send_message {
+
+        my $self = shift;
+	my $mid = shift;
+
+        my $mgr = $self->{MGR};
+
+	my $from_uid = $mgr->{UserId};
+
+	# ### connect ###
+        my $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{MSendTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking tables [%s,%s and %s]. Reason: [%s].",
+			 $mgr->{MSendTable},$dbh->ersstr);
+	}
+
+	# Message loeschen
+        my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{MSendTable} WHERE id = ? AND from_uid  = ?});
+	
+        unless ($sth->execute($mid,$from_uid)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{MSendTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	$sth->finish;
+
+	$dbh->do("UNLOCK TABLES");
+	# ### disonnect ###
+
+	return 1;
+}
 
 
 #====================================================================================================#
 # SYNOPSIS: fetch_projects();
 # PURPOSE:  holt alle Prokekte
-# RETURN:   @(id,name)
+# RETURN:   @(id,name,cat_id)
 #====================================================================================================#
 sub fetch_projects{
  
@@ -443,7 +605,9 @@ sub fetch_projects{
     
     my $mgr = $self->{MGR};
     my @projects;
-    
+
+    # Projekt-id, -name, -cat
+    my @projects_cat;
     
     # ### connect ###
     my $dbh = $mgr->connect;
@@ -452,9 +616,10 @@ sub fetch_projects{
 	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 		     $mgr->{ProTable}, $dbh->ersstr);
     }
-    my $sth = $dbh->prepare(qq{SELECT id, name FROM $mgr->{ProTable}});
+    my $sth = $dbh->prepare(qq{SELECT id, name, cat_id FROM $mgr->{ProTable} WHERE status = ?});
     
-    unless ($sth->execute()) {
+    # status
+    unless ($sth->execute('0')) {
 	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
 		     $mgr->{ProTable}, $dbh->errstr);
 	$dbh->do("UNLOCK TABLES");
@@ -469,7 +634,36 @@ sub fetch_projects{
     $dbh->do("UNLOCK TABLES");
     # ### disconnect ###
     
-    return @projects;
+
+    # ### connect ###
+    $dbh = $mgr->connect;
+    
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{CatTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{CatTable}, $dbh->ersstr);
+    }
+    $sth = $dbh->prepare(qq{SELECT name FROM $mgr->{CatTable} WHERE id = ?});
+    
+
+    foreach my $project (@projects) {
+	unless ($sth->execute($project->[2])) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{CatTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+    
+	while (my @cat = $sth->fetchrow_array()) {
+	    push (@projects_cat, [$project->[0],$project->[1],$cat[0]]);
+	}
+    }
+	
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+
+    return @projects_cat;
 }
 
 

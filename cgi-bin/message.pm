@@ -8,7 +8,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -67,6 +67,12 @@ sub parameter {
 	    # Nachricht versenden, d.h. in die Tables eintragen
 	    $self->send_message();
 	    return 1;
+	} elsif (defined $cgi->param('delete_message')) {
+	    $self->delete_message();
+	    return 1;
+	} elsif (defined $cgi->param('reply')) {
+	    $self->compose_message();
+	    return 1;
 	} elsif (defined $cgi->param('choose_receivers')) {
 	    $self->choose_receivers();
 	    return 1;
@@ -91,7 +97,7 @@ sub parameter {
 
 
 #====================================================================================================#
-# SYNOPSIS: view_messages($status);
+# SYNOPSIS: view_messages($status,$msg);
 # PURPOSE:  Uebersicht der empfangenen Nachrichten ($status=0 Inbox, $status=1 Received)
 # RETURN:   1
 #====================================================================================================#
@@ -99,7 +105,7 @@ sub view_messages {
 
         my $self = shift;
 	my $status = shift || 0;
-
+	my $msg = shift || undef;
         my $mgr = $self->{MGR};
 
 	# alle empfangenen Nachrichten mit dem angegebenen Status abrufen
@@ -158,21 +164,25 @@ sub view_messages {
 	
 	$self->fill_nav();
 
-        $mgr->fill; 
+	if (defined $msg) {
+	    $mgr->fill($msg);
+	} else {
+	    $mgr->fill();
+	}
 
 	return 1;
 }
 
 
 #====================================================================================================#
-# SYNOPSIS: view_send_messages();
-# PURPOSE:  Uebersicht der empfangenen Nachrichten ($status=0 Inbox, $status=1 Received)
+# SYNOPSIS: view_send_messages($msg);
+# PURPOSE:  Uebersicht der abgesandten Nachrichten
 # RETURN:   1
 #====================================================================================================#
 sub view_send_messages {
 
         my $self = shift;
-	my $status = shift || 0;
+	my $msg = shift || undef;
 
         my $mgr = $self->{MGR};
 
@@ -226,7 +236,11 @@ sub view_send_messages {
 	
 	$self->fill_nav();
 
-        $mgr->fill; 
+	if (defined $msg) {
+	    $mgr->fill($msg);
+	} else {
+	    $mgr->fill();
+	}
 
 	return 1;
 }
@@ -247,12 +261,13 @@ sub show_message {
     my $mid = $cgi->param('mid');
 
     my $link = $mgr->my_url;
-    
+    my $modus = 'received';
     # gewuenschte Messages holen
     # Die Nachricht besteht aus (mid,from_uid,to_uid,parent_mid,status,date,subject,content)
     my @message = $self->{BASE}->get_message($mid);
     if ($message[4] eq '0') {
 	$self->{BASE}->set_message_status($mid,1);
+	$modus = 'inbox';
     }
     # MessageShow-Template vorbereiten
     $mgr->{Template} = $C_TMPL->{MessageShow};
@@ -296,9 +311,12 @@ sub show_message {
     
     $mgr->{TmplData}{MESSAGE_SUBJECT} = $mgr->decode_all($message[6]);
     $mgr->{TmplData}{MESSAGE_CONTENT} = $mgr->decode_all($message[7]);
-    $link = $mgr->my_url;
-    $link .= "&method=%s&parent_mid=%s";
-    $mgr->{TmplData}{MESSAGE_REPLY} = sprintf($link, "compose_message", $message[0]);
+    $mgr->{TmplData}{FORM} = $mgr->my_url;
+    $mgr->{TmplData}{PARENT_MID} = $message[0];
+    $mgr->{TmplData}{MID} = $mid;
+
+    # Unterscheidung zwischen empfangenen und gelesenen Nachrichten
+    $mgr->{TmplData}{MODUS} = $modus;
 
     $self->fill_nav;
 
@@ -322,7 +340,7 @@ sub show_send_message {
     my $mid = $cgi->param('mid') || shift;
 
     my $link = $mgr->my_url;
-    
+     my $modus = 'send';
     # gewuenschte Messages holen
     # Die Nachricht besteht aus (id,parent_mid,date,subject,content)
     my @message = $self->{BASE}->get_send_message($mid);
@@ -366,9 +384,11 @@ sub show_send_message {
 
     $mgr->{TmplData}{MESSAGE_SUBJECT} = $mgr->decode_all($message[3]);
     $mgr->{TmplData}{MESSAGE_CONTENT} = $mgr->decode_all($message[4]);
-    $link = $mgr->my_url;
-    $link .= "&method=%s&parent_mid=%s";
-    $mgr->{TmplData}{MESSAGE_REPLY} = sprintf($link, "compose_message", $message[0]);
+    $mgr->{TmplData}{FORM} = $mgr->my_url;
+    $mgr->{TmplData}{PARENT_MID} = $message[0];
+    $mgr->{TmplData}{MID} = $mid;
+    # Unterscheidung zwischen empfangenen und gelesenen Nachrichten
+    $mgr->{TmplData}{MODUS} = $modus;
 
     $self->fill_nav;
 
@@ -378,6 +398,36 @@ sub show_send_message {
 }
 
 
+#====================================================================================================#
+# SYNOPSIS: delete_message();
+# PURPOSE:  Nachricht loeschen, dann wieder zur Uebersicht
+# RETURN:   ---
+#====================================================================================================#
+sub delete_message {
+    
+    my $self = shift;
+    
+    my $mgr = $self->{MGR};
+    my $cgi = $self->{MGR}->{CGI};
+    my $modus = $cgi->param('modus') || undef;
+    my $mid = $cgi->param('mid') || undef;
+    unless (defined $modus) {
+	$self->view_messages(0);
+    }
+    if ($modus eq 'received') {
+	$self->{BASE}->delete_received_message($mid);
+	$self->view_messages(1,$C_MSG->{MessageDeleted});
+    } elsif ($modus eq 'inbox') {
+	$self->{BASE}->delete_received_message($mid);
+	$self->view_messages(0,$C_MSG->{MessageDeleted});
+    } else {
+	# $modus eq 'send'
+	$self->{BASE}->delete_send_message($mid);
+	$self->view_send_messages($C_MSG->{MessageDeleted});
+    }
+    
+    return 1;
+}
 #====================================================================================================#
 # SYNOPSIS: compose_message();
 # PURPOSE:  Neue Nachrichten verfassen, d.h. Formular erzeugen
@@ -415,6 +465,7 @@ sub compose_message {
 
     $mgr->{TmplData}{FORM} = $mgr->my_url;
     $mgr->{TmplData}{TO_USERNAMES} = $mgr->decode_some($to_usernames);
+
     $mgr->{TmplData}{MESSAGE_SUBJECT} = $mgr->decode_some($subject);
     $mgr->{TmplData}{MESSAGE_CONTENT} = $mgr->decode_some($content);
     $mgr->{TmplData}{PARENT_MID} = $mgr->decode_some($parent_mid);
@@ -467,10 +518,25 @@ sub choose_receivers {
 
     # Message in die Session schreiben
     $mgr->{Session}->set('ParentMid' => $parent_mid,
+			 'ToUsernames' => $to_usernames,
 			 'Subject' => $subject,
 			 'Content' => $content,
 			 'AnswerModeAll' => $answermode_all,
 			 'AnswerModeSender' => $answermode_sender);
+
+    my $check = $self->{BASE}->check_usernames(\@usernames) || undef;
+    my @check_loop;
+    foreach my $username (@$check) {
+	my %tmp;
+	$tmp{USERNAME} = $mgr->decode_all($username);
+	push(@check_loop,\%tmp);
+    }
+    if (@$check) {
+	$mgr->{TmplData}{CHECK_USERNAME} = \@check_loop;
+	$self->compose_message();
+	return;
+    }
+
 
     # MessageChooseRecv-Template vorbereiten
     $mgr->{Template} = $C_TMPL->{MessageChooseRecv};
@@ -618,6 +684,7 @@ sub choose_receivers {
 	    my %tmp;
 	    $tmp{PROJECT_ID} = $project->[0];
 	    $tmp{PROJECT_NAME} = $mgr->decode_all($project->[1]);
+	    $tmp{CATEGORY} = $mgr->decode_all($project->[2]);
 	    push(@project_loop,\%tmp);
 	}
     }
@@ -743,22 +810,53 @@ sub send_message {
 
 	my $parent_mid        = $cgi->param('parent_mid')   || 0;
 	my $to_usernames      = $cgi->param('to_usernames') || "";
-	my $subject           = $cgi->param('subject')      || "";
-	my $content           = $cgi->param('content')        || "";
+	my $subject           = $cgi->param('subject')      || "kein Betreff";
+	my $content           = $cgi->param('content')        || "kein Text";
 	my $answermode_all    = $cgi->param('answermode_all') || 0;
 	my $answermode_sender = $cgi->param('answermode_sender') || 0;
 
-	$mgr->{Session}->del("ParentMid");
-	$mgr->{Session}->del("ToUsernames");
-	$mgr->{Session}->del("Subject");
-	$mgr->{Session}->del("Content");
-	$mgr->{Session}->del("AnswerModeSender");
-	$mgr->{Session}->del("AnswerModeAll");
+	if ($answermode_all == 0 && $answermode_sender == 0 && $to_usernames eq "") {
+	    $mgr->{TmplData}{NO_RECEIVER} = $mgr->decode_all($C_MSG->{NoReceiver});
+	    # Message in die Session schreiben
+	    $mgr->{Session}->set('ParentMid' => $parent_mid,
+				 'ToUsernames' => $to_usernames,
+				 'Subject' => $subject,
+				 'Content' => $content,
+				 'AnswerModeAll' => $answermode_all,
+				 'AnswerModeSender' => $answermode_sender);
+	    $self->compose_message();
+	    return 1;
+	}
+
 
 	# Whitespaces entfernen, Kommaliste trennen
 	$to_usernames =~ s/\s+//gs;
 	my @usernames = split /,+/, $to_usernames;
 	my $id = $self->{BASE}->fetch_uids(\@usernames);
+
+	my $check = $self->{BASE}->check_usernames(\@usernames) || undef;
+	my @check_loop;
+	foreach my $username (@$check) {
+	    my %tmp;
+	    $tmp{USERNAME} = $mgr->decode_all($username);
+	    push(@check_loop,\%tmp);
+	}
+	if (@$check) {
+	    $mgr->{TmplData}{CHECK_USERNAME} = \@check_loop;
+
+	    # Message in die Session schreiben
+	    $mgr->{Session}->set('ParentMid' => $parent_mid,
+				 'ToUsernames' => $to_usernames,
+				 'Subject' => $subject,
+				 'Content' => $content,
+				 'AnswerModeAll' => $answermode_all,
+				 'AnswerModeSender' => $answermode_sender);
+
+	    $self->compose_message();
+	    return;
+	}
+
+
 
 	if ($answermode_sender == 1) {
 	    # empfangene Parent-Message holen
@@ -791,6 +889,14 @@ sub send_message {
 	}
 
 	my $mid = $self->{BASE}->insert_new_messages($id, $parent_mid, $subject, $content);
+
+
+	$mgr->{Session}->del("ParentMid");
+	$mgr->{Session}->del("ToUsernames");
+	$mgr->{Session}->del("Subject");
+	$mgr->{Session}->del("Content");
+	$mgr->{Session}->del("AnswerModeSender");
+	$mgr->{Session}->del("AnswerModeAll");
 
 	# gleich ansehen
 	show_send_message($self,$mid);

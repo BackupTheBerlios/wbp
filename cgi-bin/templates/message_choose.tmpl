@@ -61,7 +61,7 @@ Projekt hinzuf&uuml;gen
 	<td><select name="project" size="1">
 	<option value="0">Ausw&auml;hlen
 	<TMPL_LOOP PROJECT_LOOP>
-	<option value="<TMPL_VAR PROJECT_ID>"><TMPL_VAR PROJECT_NAME>
+	<option value="<TMPL_VAR PROJECT_ID>"><TMPL_VAR PROJECT_NAME> (<TMPL_VAR CATEGORY>)
 	</TMPL_LOOP>
 	</select>
 	</td>
@@ -119,9 +119,9 @@ Empf&auml;nger entfernen
 </td></tr>
 </table>
 
-
-
 <hr size="1" noshade width="80%">
 
 
 <TMPL_INCLUDE footer.tmpl>
+
+
