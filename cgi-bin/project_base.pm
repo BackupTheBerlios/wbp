@@ -4,11 +4,12 @@ use vars qw($VERSION);
 use strict;
 use Class::Date qw(date);
 
-#
-# Der Konstruktior der Klasse.
-#
+#====================================================================================================#
+# SYNOPSIS: new($proto, $args); 
+# PURPOSE:  Konstruktor der Basisklasse. 
+# RETURN:   $self in den Namensraum von projekt_base geblesst. 
+#====================================================================================================#
 sub new {
-
 	my $proto = shift;
 	my $args  = shift;
 
@@ -24,11 +25,12 @@ sub new {
 	$self;
 }
 
-#
-# Pruefen ob ein Typ C oder Typ D User Projekte an legen will etc.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->check_user();
+# PURPOSE:  Pruefen ob ein Typ C oder Typ D User Projekte an legen will etc.
+# RETURN:   true.
+#====================================================================================================#
 sub check_user {
-
 	my $self = shift;
 
 	my $mgr = $self->{MGR};
@@ -37,27 +39,28 @@ sub check_user {
                 $mgr->fatal_error($self->{C_MSG}->{NotAllowed});
         }
 
-	return; 
+	return 1; 
 }
 
-#
-# Pruefen, ob es Projekte gibt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->check_for_projects();
+# PURPOSE:  Pruefen, ob es Projekte gibt.
+# RETURN:   Anzahl Projekte.
+#====================================================================================================#  
 sub check_for_projects {
- 
         my $self = shift;
- 
-        my $mgr = $self->{MGR};
+        my $mgr  = $self->{MGR};
 	my $count;
- 
+
+	# Datenbankconnect machen und Tabelle locken.
         my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ")) {
 		warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 			$mgr->{ProTable}, $dbh->errstr);
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
 	}
+	# Alle Projekt auslesen.
         my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{ProTable}});
- 
         unless ($sth->execute()) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
@@ -71,11 +74,12 @@ sub check_for_projects {
         return $count;
 }
 
-#
-# Pruefen ob es Kategorien gibt.
-# 
+#====================================================================================================#
+# SYNOPSIS: $self->check_for_categories();
+# PURPOSE:  Pruefen, ob es Kategorien gibt.
+# RETURN:   Kategorien. 
+#====================================================================================================#  
 sub check_for_categories {
- 
         my $self = shift;
  
         my $mgr = $self->{MGR};
@@ -96,6 +100,7 @@ sub check_for_categories {
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
+	# Alle Kategorien in das Array schreiben und dann zurueck geben.
 	while (my ($id, $name) = $sth->fetchrow_array()) {
 		push (@kategorien, [$id, $name]);
 	}
@@ -105,15 +110,15 @@ sub check_for_categories {
         return @kategorien;
 } 
 
-#
-# Auslesen des Namens einer Kategorie.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->get_cat_name($kid);
+# PURPOSE:  Auslesen des Namens einer Kategorie.
+# RETURN:   Kategoriename.
+#====================================================================================================#  
 sub get_cat_name {
-
 	my $self = shift;
 	my $kid  = shift;
-	
-	my $mgr = $self->{MGR};
+	my $mgr  = $self->{MGR};
 
 	my $dbh = $mgr->connect;
 	unless ($dbh->do("LOCK TABLES $mgr->{CatTable} READ")) {
@@ -137,17 +142,17 @@ sub get_cat_name {
 	return $kname;
 }
 
-#
-# Ueberpruefen, ob ein Projektname schon vorhanden ist.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->check_projekt_name($name, $kid, $pid);
+# PURPOSE:  Ueberpruefen, ob ein Projektname schon vorhanden ist.
+# RETURN:   $check.
+#====================================================================================================#  
 sub check_project_name {
-
 	my $self = shift;
 	my $name = shift;
 	my $kid  = shift;
 	my $pid  = shift;
-
-	my $mgr = $self->{MGR};
+	my $mgr  = $self->{MGR};
 	
 	my ($error, $check);
 
@@ -158,12 +163,14 @@ sub check_project_name {
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 	my $sth;
+	# Pruefen, ob das Projekt mit diesem Namen auch zu gleiche Kategorie gehoert.
 	unless ($pid) {
 		$sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ? AND cat_id = ?});
 		unless ($sth->execute($name, $kid)) {
                 	$error++;
         	}
 	} else {
+		# ... oder es noch ein anderes gibt ... wenn man es aendern will.
 		$sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ? AND cat_id = ? AND id <> ?});
 		unless ($sth->execute($name, $kid, $pid)) {
                 	$error++;
@@ -186,9 +193,11 @@ sub check_project_name {
 	return $check;
 }
 
-#
-# Hilfsfunktion zum setzen der Projektdaten.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->get_and_set_projekts($mode, $cat, |$name);
+# PURPOSE:  Hilfsfunktion zum setzen der Projektdaten.
+# RETURN:   Anzahl gefundener Projekte.    
+#====================================================================================================#  
 sub get_and_set_projects {
 
 	my $self = shift;
@@ -199,10 +208,11 @@ sub get_and_set_projects {
 	my $mgr = $self->{MGR};
 	my ($count, @tmpldata);
 
+	# SQL-String zusammen bauen.
 	my $sql = qq{SELECT id, name, cat_id, start_dt, end_dt, status, mode FROM $mgr->{ProTable} };
-
 	$sql .= qq{WHERE cat_id = '$cat'} if (defined $cat && $cat != 0);
 
+	# Den Modus ueberpruefen.
 	if ($mode == 1) {
 		if ($cat != 0) {
 			$sql .= qq{ AND name like '%$name%'};
@@ -211,6 +221,7 @@ sub get_and_set_projects {
 		}
 	}
 
+	# Sortierreihenfolge beachten.
 	$sql .= qq{ ORDER BY name, id};
 
 	my $dbh = $mgr->connect;
@@ -231,6 +242,7 @@ sub get_and_set_projects {
 
 	my $i = 0;
 
+	# Projekte in das templatearray schreiben.
 	while (my (@project) = $sth->fetchrow_array) {
 		my %tmp = $self->set_project_data(@project);
 		
@@ -241,7 +253,6 @@ sub get_and_set_projects {
 		$tmpldata[$i]{KAT_NAME} = $mgr->decode_all($self->get_cat_name($project[2]));
 
 		$i++;	
-
 	}
 	
 	$count = $sth->rows;
@@ -249,17 +260,19 @@ sub get_and_set_projects {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 
+	# Template schreiben und Template festlegen.
 	$mgr->{Template}           = $self->{C_TMPL}->{ProjectShow};
 	$mgr->{TmplData}{PROJECTS} = \@tmpldata;
 
 	return $count;
 }
 
-#
-# Einfuegen der Projektdaten i die Projektliste nach einer Suche.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->set_projekt_data(@projekts);
+# PURPOSE:  Einfuegen der Projektdateien in die Projektliste nach der Suche.
+# RETURN:   %tmpldata;  
+#====================================================================================================#  
 sub set_project_data {
-
 	my $self    = shift;
 	my @project = @_;
 
@@ -300,6 +313,7 @@ sub set_project_data {
 
 	my ($count_ab, $count_c, $count_d) = $sth->fetchrow_array;
 
+	# Link zum aendern der verschiedenen User generieren.
 	$tmpldata{CHANGE_USER_AB} = $link."change_user_ab"; 
 	$tmpldata{CHANGE_USER_C}  = $link."change_user_c";
 	$tmpldata{CHANGE_USER_D}  = $link."change_user_d";
@@ -324,6 +338,7 @@ sub set_project_data {
 	$status_link = $link."change_status&to=";
 	$mode_link   = $link."change_mode&to=";
 
+	# Den Modus richtig raus schreiben.
 	if ($project[6] == 0) {
 		$modus      = $self->{C_MSG}->{Private};
 		$mode_link .= 1;
@@ -332,6 +347,7 @@ sub set_project_data {
 		$mode_link .= 0;
 	}
 
+	# Restliche Projektdaten fuellen.
 	$tmpldata{START_DT}       = $mgr->format_date($project[3]);
 	$tmpldata{ENDE_DT}        = $mgr->format_date($project[4]);
 	$tmpldata{NAME}           = $mgr->decode_all($project[1]);
@@ -343,6 +359,7 @@ sub set_project_data {
 	$tmpldata{STATUS_INAKTIV} = $mgr->decode_all($self->{C_MSG}->{Inaktive});
 	$tmpldata{STATUS_CLOSED}  = $mgr->decode_all($self->{C_MSG}->{Closed});
 
+	# Die verschiedenen Statusangaben machen.
 	if ($project[5] == 0) {
 		$tmpldata{STATUS_AKTIV_LINK}   = $status_link."1";
 		$tmpldata{STATUS_CLOSED_LINK}  = $status_link."2";
@@ -357,9 +374,11 @@ sub set_project_data {
 	return %tmpldata;	
 }
 
-#
-# Aendern des Status zu einem Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->change_status($status, $pid);
+# PURPOSE:  Aendern des Status zu einem Projekt.
+# RETURN:   true.	  
+#====================================================================================================#  
 sub change_status {
 
 	my $self   = shift;
@@ -369,6 +388,7 @@ sub change_status {
 	my $mgr = $self->{MGR};
 	my $new_status;
 
+	# Connect machen und den Update durchfuehren in dem Projekt.
 	my $dbh = $mgr->connect;
 	my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET status = ?, upd_dt = ?, upd_id = ? WHERE id = ?});
 	
@@ -391,9 +411,11 @@ sub change_status {
 	return 1;
 }
 
-#
-# Aendern des Modues eines Projekts.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->change_mode($mode, $pid);
+# PURPOSE:  Aendern des Modus eines Projekts.
+# RETURN:   true.
+#====================================================================================================#  
 sub change_mode {
 
 	my $self = shift;
@@ -402,15 +424,16 @@ sub change_mode {
  
         my $mgr = $self->{MGR};
 	my $new_mode;
- 
+
+	# Modus bestimmen. 
         if ($mode == 0) {
                 $new_mode = "0";
         } else {
                 $new_mode = "1";
         }
- 
+
+	# Connect machen und Update durchfuehren. 
         my $dbh = $mgr->connect;
- 
         unless ($dbh->do("LOCK TABLES $mgr->{ProTable} WRITE")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
@@ -418,7 +441,6 @@ sub change_mode {
         }
  
         my $sth = $dbh->prepare(qq{UPDATE $mgr->{ProTable} SET mode = ?, upd_dt = ?, upd_id = ? WHERE id = ?});
- 
         unless ($sth->execute($new_mode, $mgr->now(), $mgr->{UserId}, $pid)) {
                 warn sprintf("[Error]: Trouble updating mode in [%s]. Reason: [%s].",
                         $mgr->{ProTable}, $dbh->errstr);
@@ -432,15 +454,18 @@ sub change_mode {
 	return 1;
 }
 
-#
-# Ausgeben der Projektliste fuer einen Typ C User.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->get_and_set_for_c();
+# PURPOSE:  Ausgeben der Projektliste fuer einen Typ C User.
+# RETURN:
+#====================================================================================================#  
 sub get_and_set_for_c {
 
 	my $self = shift;
 	my $mgr  = $self->{MGR};
 	my $dbh  = $mgr->connect;
 
+	# Mehrere gebrauchte Tabellen locken.
 	unless ($dbh->do("LOCK TABLES $mgr->{ProTable} READ, $mgr->{ProUserTable} READ, ".
 			 "$mgr->{CatTable} READ, $mgr->{PhaTable} READ")) {
 		warn sprintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
@@ -570,6 +595,7 @@ sub get_and_set_for_c {
 		}
 		$sth->finish;
 
+		# Daten ins Template schreiben.
 		$mgr->{TmplData}{PROJECTS} = \@tmpldata; 
 		
 		$dbh->do("UNLOCK TABLES");
@@ -581,9 +607,11 @@ sub get_and_set_for_c {
 	}	
 }
 
-#
-# Anzeigen der Projektdaten in einer Form zum aendern.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->show_one_project($pid);
+# PURPOSE:  Anzeigen der Projektdaten in einer Form zum aendern eines Projekts.
+# RETURN:   true.
+#====================================================================================================#  
 sub show_one_project {
 
 	my $self = shift;
@@ -607,8 +635,10 @@ sub show_one_project {
 		$mgr->fatal_error($self->{C_MSG}->{DbError}); 
 	}
 
+	# Daten auslesen.
 	my @project_data = $sth->fetchrow_array();
 
+	# Daten ins Template schreiben.
 	$mgr->{TmplData}{PID}          = $mgr->decode_some($project_data[0]);
 	$mgr->{TmplData}{NAME}         = $mgr->decode_some($project_data[3]);
 	$mgr->{TmplData}{START_TAG}    = substr($project_data[1], 8, 2);
@@ -632,6 +662,7 @@ sub show_one_project {
 	my @kat_tmpl;
 	my $i = 0;
 
+	# Daten der Kategorie mit ins Template schreiben.
         while (my ($kid, $kname) = $sth->fetchrow_array()) {
 		$kat_tmpl[$i]{KID}   = $kid;
 		$kat_tmpl[$i]{KNAME} = $mgr->decode_all($kname);
@@ -647,17 +678,21 @@ sub show_one_project {
 
 	$mgr->{TmplData}{FORM} = $mgr->my_url();
 	$mgr->{TmplData}{KATS} = \@kat_tmpl;
+	return 1;
 }
 
-#
-# Aendern eines Projekts in der Datenbank.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->change_project();
+# PURPOSE:  Aendern eines Projekts in der Datenbank.
+# RETURN:   true.
+#====================================================================================================#  
 sub change_project {
 	
 	my $self = shift;
 	my $mgr = $self->{MGR};
 	my $cgi = $mgr->{CGI};
 
+	# Daten auslesen.
 	my $pid          = $cgi->param('pid');
 	my $kid          = $cgi->param('kategorie');
         my $name         = $cgi->param('name')         || "";
@@ -671,7 +706,8 @@ sub change_project {
 
 	my $check = 0;
         my ($start_dt, $end_dt);
- 
+
+	# Die ueblichen Abfragen machen. 
         if (length($name) > 255) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{LengthName});
                 $check++;
@@ -717,12 +753,14 @@ sub change_project {
                         $check++;
                 }
         }
- 
+
+	# Abermals den Projektnamen pruefen. 
         if ($self->check_project_name($name, $kid, $pid)) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{ExistName});
                 $check++;
         }
- 
+
+	# Bei einem Fehler die Daten neu setzen, sonst die Daten in der Datenbank speichern. 
         if ($check) {
                 $self->set_change_data($self->{C_MSG}->{ErrorChangePro});
 		return;
@@ -748,12 +786,14 @@ sub change_project {
                 $sth->finish;
                 return ($self->{C_MSG}->{UpdateProOk});
         }
-
 }
 
-#
-# Wenn ein Fehler beim aendern der Projektdaten aufgetreten ist, wird diese Funktion aufgerufen.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->set_change_data($msg);
+# PURPOSE:  Wenn ein Fehler beim aendern der Projektdaten aufgetreten ist, wird diese Funktion
+#           aufgerufen.
+# RETURN:   true.
+#====================================================================================================#  
 sub set_change_data {
 
 	my $self = shift;
@@ -762,6 +802,7 @@ sub set_change_data {
 	my $mgr = $self->{MGR};
 	my $cgi = $mgr->{CGI};
 
+	# Template setzen.
 	$mgr->{Template} = $self->{C_TMPL}->{ProjectChange};
 
 	my $dbh = $mgr->connect;
@@ -782,7 +823,8 @@ sub set_change_data {
         my @kat_tmpl;
         my $i       = 0;
 	my $old_kid = $cgi->param('kategorie');
- 
+
+	# Kategoriedaten lesen usw. 
         while (my ($kid, $kname) = $sth->fetchrow_array()) {
                 $kat_tmpl[$i]{KID}   = $kid;
                 $kat_tmpl[$i]{KNAME} = $mgr->decode_all($kname);
@@ -795,7 +837,8 @@ sub set_change_data {
         }
         $sth->finish;
         $dbh->do("UNLOCK TABLES");
- 
+
+	# Daten des Projekts ins Template schreiben. 
         $mgr->{TmplData}{KATS}         = \@kat_tmpl; 
 	$mgr->{TmplData}{FORM}         = $mgr->my_url();
 	$mgr->{TmplData}{PID}          = $cgi->param('pid');
@@ -809,13 +852,15 @@ sub set_change_data {
         $mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($cgi->param('beschreibung'));
 	$mgr->fill($msg);
 
+	return 1;
 }
 
-#
-# Anzeigen der Phasen zu einem Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->show_phase($pid);
+# PURPOSE:  Anzeigen der Phasen zu einem Projekt.
+# RETURN:   true.
+#====================================================================================================#  
 sub show_phase {
-
 	my ($self, $pid) = @_;
 	
 	my $mgr = $self->{MGR};
@@ -826,7 +871,8 @@ sub show_phase {
 		$mgr->fatal_error($self->{C_MSG}->{DbError});
         }
         my $sth = $dbh->prepare(qq{SELECT id, name, desc_phase, start_dt, end_dt, status FROM $mgr->{PhaTable} WHERE project_id = ?});
- 
+
+	# Daten der Phasen aus der Datenbank holen. 
         unless ($sth->execute($pid)) {
         	warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
                 		$mgr->{PhaTable}, $dbh->errstr);
@@ -837,12 +883,14 @@ sub show_phase {
 	my (@tmpl_data, $status_link);
 	my $i = 0;
 
+	# Daten formatiert ins Template schreiben.
 	while (my (@data) = $sth->fetchrow_array()) {
 		$tmpl_data[$i]{START_DT}     = $mgr->format_date($data[3]);
 		$tmpl_data[$i]{ENDE_DT}      = $mgr->format_date($data[4]);
 		$tmpl_data[$i]{NAME}         = $mgr->decode_all($data[1]);
 		$tmpl_data[$i]{BESCHREIBUNG} = $mgr->decode_all($data[2]);
 
+		# Die Passenden Links generieren und ins Template schreiben.
 		$tmpl_data[$i]{DEL_LINK}    = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
                                                $pid."&method=del_phase&pha_id=".$data[0];
 
@@ -852,6 +900,7 @@ sub show_phase {
 		$status_link = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
                                "&method=change_pha_status&pha_id=".$data[0]."&to=";
 
+		# Den Status mit den passenden Links generieren.
 		if ($data[5] == 0) {
                 	$tmpl_data[$i]{STATUS_AKTIV_LINK}   = $status_link."1";
                 	$tmpl_data[$i]{STATUS_CLOSED_LINK}  = $status_link."2";
@@ -873,22 +922,26 @@ sub show_phase {
         $dbh->do("UNLOCK TABLES");
         $sth->finish;
 
+	# Daten rein schreiben.
 	$mgr->{TmplData}{PHASE} = \@tmpl_data;
 	if (defined $tmpl_data[0]) {
 		$mgr->{TmplData}{IF_PHASE} = 1;
 	}	             
-	
+
+	return 1;	
 }
 
-#
-# Anlegen einer Phase zu einem Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->add_phase();
+# PURPOSE:  Anlegen einer Phase zu einem Projekt.
+# RETURN:   -1 bei einem Fehler sonst ein Nachricht zurueck geben. 
+#====================================================================================================#  
 sub add_phase {
-
 	my $self = shift;
-	my $mgr = $self->{MGR};
-        my $cgi = $mgr->{CGI};
+	my $mgr  = $self->{MGR};
+        my $cgi  = $mgr->{CGI};
  
+	# Daten einlesen.
         my $pid          = $cgi->param('pid');
         my $name         = $cgi->param('name')         || "";
         my $start_tag    = $cgi->param('start_tag')    || "";
@@ -901,7 +954,8 @@ sub add_phase {
  
         my $check = 0;
         my ($start_dt, $end_dt);
- 
+
+	# Daten ueberpruefen auf zum Beispiel die richtige Laenge etc. 
         if (length($name) > 255) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{LengthName});
                 $check++;
@@ -947,20 +1001,20 @@ sub add_phase {
                         $check++;
                 }
         }
-	# Hier noch pruefen, ob das Anfangsdatum nicht vor dem Anfangsdatum des Projektes liegt. Analog mit dem
-	# Endedatum, das von der Phase auch nicht hinter dem Endedatum des Projektes liegen darf.
- 
-        if ($self->check_phasen_name($name, $pid)) {
+        
+	# Name der Phase ueberpruefen.
+	if ($self->check_phasen_name($name, $pid)) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{ExistName});
                 $check++;
         }
- 
+
+	# Bei einem Fehler die Daten neu ausgeben und die Eingaben ueberpruefen lassen. 
         if ($check) {
 		$mgr->{Template} = $self->{C_TMPL}->{ProPhaNew}; 
 		$self->set_phasen_data($self->{C_MSG}->{ErrorAddPha});
                 return -1;
         } else {
- 
+		# ... sond die Daten in die Datenbank schreiben. 
                 my $dbh = $mgr->connect;
                 unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
                         warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
@@ -982,26 +1036,28 @@ sub add_phase {
         }  	
 }
 
-#
-# Pruefen, ob der Name einer Phase schon existiert.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->check_phasen_name($name, $pid, $pha_id);
+# PURPOSE:  Pruefen, ob der Name einer Phase schon existiert.  
+# RETURN:   $check.
+#====================================================================================================#  
 sub check_phasen_name {
-   	
 	my $self   = shift;
         my $name   = shift;
         my $pid    = shift;
 	my $pha_id = shift;;
   
         my $mgr = $self->{MGR};
- 
         my ($error, $check);
- 
+
+	# Connect machen ... 
         my $dbh = $mgr->connect;
         unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} READ")) {
                 warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
                         $mgr->{PhaTable}, $dbh->errstr);
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
+	# SQL-String absetzen ...
         my $sth;
         unless ($pha_id) {
                 $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ? AND project_id = ?});
@@ -1015,13 +1071,15 @@ sub check_phasen_name {
                 }
         }
  
+	# Eventeulle Fehler abfangen und behandeln.
         if ($error) {
                 warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
                         $mgr->{PhaTable}, $dbh->errstr);
                         $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
- 
+
+	# 0, wenn der Name noch nicht existiert. 
         if ($sth->rows != 0) {
                 $check++;
         }
@@ -1031,9 +1089,11 @@ sub check_phasen_name {
         return $check;                    
 }
 
-#
-# Den Status einer Phase aendern.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->change_pha_status($pha_id, $to);
+# PURPOSE:  Den Status einer Phase aendern.
+# RETURN:   true.
+#====================================================================================================#  
 sub change_pha_status {
 	
 	my ($self, $pha_id, $to) = @_;
@@ -1056,11 +1116,15 @@ sub change_pha_status {
 
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
+
+	return 1;
 }
 
-#
-# Eine Phase loeschen, aus einem Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->del_phase($pha_id);
+# PURPOSE:  Eine Phase aus einem Projekt loeschen.
+# RETURN:   true.
+#====================================================================================================#  
 sub del_phase {
 
 	my ($self, $pha_id) = @_;
@@ -1083,13 +1147,16 @@ sub del_phase {
  
         $sth->finish;
         $dbh->do("UNLOCK TABLES");
+	
+	return 1;
 }
 
-#
-# Anzeigen von Daten einer Phase, um sie zu aendern.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->show_one_phase($pid, $pha_id);
+# PURPOSE:  Anzeigen von Daten einer Phase um sie zu aendern.
+# RETURN:
+#====================================================================================================#  
 sub show_one_phase {
- 
         my ($self, $pid, $pha_id) = @_; 
  
         my $mgr = $self->{MGR};
@@ -1108,7 +1175,8 @@ sub show_one_phase {
                 $dbh->do("UNLOCK TABLES");
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
- 
+
+	# Daten der Phase aus der Datenbank holen und ins Template schreiben. 
         my @data = $sth->fetchrow_array();
 
 	$mgr->{TmplData}{PID}          = $pid; 
@@ -1127,12 +1195,16 @@ sub show_one_phase {
  
         $mgr->{TmplData}{FORM}      = $mgr->my_url();
 	$mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
-                                      "&method=show_phase"; 
+                                      "&method=show_phase";
+
+	return 1; 
 }
 
-#
-# Aenderungen zu einem Projekt in die Datenbank speichern.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->change_phase();
+# PURPOSE:  Aenderungen zu einer Phase in der Datenbank speichern. 
+# RETURN:   true.
+#====================================================================================================#  
 sub change_phase {
 
 	my $self = shift;
@@ -1152,7 +1224,8 @@ sub change_phase {
  
         my $check = 0;
         my ($start_dt, $end_dt);
- 
+
+	# Die ueblichen Vergleichungen und Ueberpruefungen. 
         if (length($name) > 255) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{LengthName});
                 $check++;
@@ -1198,19 +1271,21 @@ sub change_phase {
                         $check++;
                 }
         }
- 
+
+	# Auch hier wieder den Namen der Phase ueberpruefen. 
         if ($self->check_phasen_name($name, $pid, $pha_id)) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{ExistName});
                 $check++;
         }
 
         if ($check) {
+		# Bei einem Fehler das Aenderntemplate wieder mit ausgeben.
 		$mgr->{Template}         = $self->{C_TMPL}->{ProPhaChange};
 		$mgr->{TmplData}{PHA_ID} = $pha_id; 
                 $self->set_phasen_data($self->{C_MSG}->{ErrorChangePro});
                 return -1;
         } else {
- 
+		# Sonst die Daten der Phase in der Datenbank speichern. 
                 my $dbh = $mgr->connect;
                 unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
                         warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
@@ -1230,13 +1305,15 @@ sub change_phase {
  
                 $dbh->do("UNLOCK TABLES");
                 $sth->finish;
-                return ();
+                return 1;
         }                                     
 }
 
-#
-# Wenn beim anlegen oder aendern Fehler auftreten, wird diese Methode aufgerufen und die Daten neu eingetragen.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->set_phasen_data($msg);
+# PURPOSE:  Hilfsfunktion, um die Daten einer Phase wieder in ein Template zu schreiben.
+# RETURN:   true.
+#====================================================================================================#  
 sub set_phasen_data {
 	
 	my $self = shift;
@@ -1260,14 +1337,18 @@ sub set_phasen_data {
 	$mgr->fill($msg);
 }
 
-#
-# Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen. Aber hier nur A und B User.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->show_change_user_ab($pid, $msg);
+# PURPOSE:  Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen.
+#	    Hier aber nur die User vom Tyo A und B.
+# RETURN:   true.
+#====================================================================================================#  
 sub show_change_user_ab {
 	my ($self, $pid, $msg) = @_;
 	my $mgr               = $self->{MGR}; 
 	my (@user_data, @in_data, @tmpl_user, @tmpl_in, $count);
 
+	# Connect machen und die passenden User aus der Datenbnak lesen.
 	my $dbh = $mgr->connect;
         unless ($dbh->do("LOCK TABLES $mgr->{UserTable} READ, $mgr->{ProUserTable} READ")) {
         	warn sprintf("[Error]: Trouble locking table [%s] and [%s]. Reason: [%s].",
@@ -1288,6 +1369,7 @@ sub show_change_user_ab {
 	}
 	$sth->finish;
 
+	# Die Daten aus der zuordnungstabelle auslesen.
 	$sth = $dbh->prepare(qq{SELECT id, user_id, project_id FROM $mgr->{ProUserTable} WHERE position = '0' AND project_id = ?});
 	unless ($sth->execute($pid)) {
                 warn sprintf("[Error]: Trouble selecting data from [%s]. Reason [%s].",
@@ -1301,12 +1383,14 @@ sub show_change_user_ab {
 	$dbh->do("UNLOCK TABLES");
         $sth->finish; 
 
+	# Nur die Daten anzeigen, die nicht in dem Projekt sind und Typ A und B sind oder nur die im Projekt sind.
 	my ($tmp_1, $tmp_2) = $self->merge_user_data(\@user_data, \@in_data);	
 	undef @user_data;
 	undef @in_data;
 	@user_data = @$tmp_1;
 	@in_data   = @$tmp_2;
 
+	# Userdaten fuer beide Varianten raus schreiben.
 	$count = 0;
 	for (my $i = 0, $count = 0; $i <= $#user_data; $i += 5, $count++) {
 		$tmpl_user[$count]{USER_ID}  = $user_data[$i];
@@ -1332,6 +1416,7 @@ sub show_change_user_ab {
 		$mgr->{TmplData}{L_USER}    = \@tmpl_in;
 	}
 
+	# Template mit dem Backlink schreiben.
 	$mgr->{TmplData}{FORM}      = $mgr->my_url();
 	$mgr->{TmplData}{PID}       = $pid;
 	$mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
@@ -1339,11 +1424,15 @@ sub show_change_user_ab {
 	$mgr->{Template} = $self->{C_TMPL}->{ProUserAB};
 	$msg = "" if (!$msg);  
 	$mgr->fill($msg);
+
+	return 1;
 }
 
-#
-# Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen. Aber hier nur C User.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->show_change_user_c($pid, $msg);
+# PURPOSE:  Analog zu $self->show_change_user_ab();
+# RETURN:   true.
+#====================================================================================================#  
 sub show_change_user_c {
         my ($self, $pid, $msg) = @_;
         my $mgr                = $self->{MGR};
@@ -1420,11 +1509,15 @@ sub show_change_user_c {
         $mgr->{Template} = $self->{C_TMPL}->{ProUserC};
 	$msg = "" if (!$msg);
 	$mgr->fill($msg); 
+
+	return 1;
 }           
 
-#
-# Seite anzeigen, mit den Usern in dem Projekt und der Moeglichkeit neue einzufuegen. Aber hier nur C und D User.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->show_change_user_cd($pid, $msg);
+# PURPOSE:  Analog zu $self->show_change_user_c() und $self->show_change_user_c().
+# RETURN:   true.
+#====================================================================================================#  
 sub show_change_user_cd {
         my ($self, $pid, $msg) = @_;
         my $mgr                = $self->{MGR};
@@ -1502,11 +1595,15 @@ sub show_change_user_cd {
         $mgr->{Template} = $self->{C_TMPL}->{ProUserCD};
         $msg = "" if (!$msg);
 	$mgr->fill($msg);
+
+	return 1;
 }           
 
-#
-# Hinzufuegen von einem Typ A/B User zu einem gewaehlten Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->add_user_ab($pid);
+# PURPOSE:  Hinzufuegen von einem Typ A/B User zu einem gewaehlten Projekt.
+# RETURN:   true.
+#====================================================================================================#  
 sub add_user_ab {
 	my ($self, $pid) = @_;
 	my $mgr = $self->{MGR};
@@ -1530,12 +1627,16 @@ sub add_user_ab {
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
 
-	$self->show_change_user_ab($pid, $self->{C_MSG}->{UserAddOk});	
+	$self->show_change_user_ab($pid, $self->{C_MSG}->{UserAddOk});
+	
+	return 1;	
 }
 
-#
-# Hinzufuegen von einem Typ C User zu einem gewaehlten Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->add_user_c();
+# PURPOSE:  Analog zu $self->add_user_ab();
+# RETURN:   true.
+#====================================================================================================#  
 sub add_user_c {
         my ($self, $pid) = @_;
         my $mgr = $self->{MGR};
@@ -1562,9 +1663,11 @@ sub add_user_c {
         $self->show_change_user_c($pid, $self->{C_MSG}->{UserAddOk});
 }     
 
-#
-# Hinzufuegen von einem Typ C/D User zu einem gewaehlten Projekt.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->add_user_cd($pid);
+# PURPOSE:  Analog zu $self->add_user_ab() und $self->add_user_c().
+# RETURN:   true.
+#====================================================================================================#  
 sub add_user_cd {
         my ($self, $pid) = @_;
         my $mgr = $self->{MGR};
@@ -1591,9 +1694,11 @@ sub add_user_cd {
         $self->show_change_user_cd($pid, $self->{C_MSG}->{UserAddOk});
 }     
 
-#
-# Loeschen eines User aus einem Project.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->del_user_ab($pid, $uid);
+# PURPOSE:  Loeschen eines User aus einem Projekt.
+# RETURN:   true.
+#====================================================================================================#  
 sub del_user_ab {
 	my ($self, $pid, $uid) = @_;
 	my $mgr                = $self->{MGR};
@@ -1613,11 +1718,14 @@ sub del_user_ab {
         }
  
         $self->show_change_user_ab($pid, $self->{C_MSG}->{UserDelOk});
+	return 1;
 }
 
-#
-# Loeschen eines User aus einem Project.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->del_user_c($pid, $uid)
+# PURPOSE:  Analog zu $self->del_user_ab().
+# RETURN:   true.
+#====================================================================================================#  
 sub del_user_c {
 	my ($self, $pid, $uid) = @_;
 	my $mgr                = $self->{MGR};
@@ -1637,11 +1745,14 @@ sub del_user_c {
         }
  
         $self->show_change_user_c($pid, $self->{C_MSG}->{UserDelOk}); 
+	return 1;
 }  
 
-#
-# Loeschen eines User aus einem Project.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->del_user_cd($pid, $uid);
+# PURPOSE:  Analog zu $self->del_user_c() und $self->del_user_cd().
+# RETURN:   true.
+#====================================================================================================#  
 sub del_user_cd {
 	my ($self, $pid, $uid) = @_;
 	my $mgr                = $self->{MGR};
@@ -1661,13 +1772,16 @@ sub del_user_cd {
         }
  
         $self->show_change_user_cd($pid, $self->{C_MSG}->{UserDelOk}); 
+	return 1;
 }  
 
-#
-# Wichtige Funktion, um sicher zu stellen, das die User die zur Auswahl stehen nicht mit den eingetragenen
-# uebereinstimmen nud anders herum. Auch wichtig um die restlichen Userdaten zu bekommen, zu den Usern
-# die in der wbp_user_project Tabelle sind.
-#
+#====================================================================================================#
+# SYNOPSIS: $self->merge_user_data($tmp_1, $tmp_2);
+# PURPOSE:  Wichtige Funktion, um sicher zu stellen, das die User die zur Auswahl stehen nicht mit 
+#           den eingetragenen uebereinstimmen und anders herum. Auch wichtig um die restlichen 
+#           Userdaten zu bekommen, zu den Usern die in der wbp_user_project Tabelle sind. 
+# RETURN:   Referenzen auf @tmp_user und @tmp_in.
+#====================================================================================================#  
 sub merge_user_data {
 	my ($self, $tmp_1, $tmp_2) = @_;
 	my @user_data = @$tmp_1;

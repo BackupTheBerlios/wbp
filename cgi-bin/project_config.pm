@@ -2,8 +2,9 @@ package project_config;
  
 use vars qw($VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
- 
+$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
+
+# Nachrichtenhash. 
 $MSG = {
 	NotAllowed     => "Das Skript wurde mit einer falschen Methode aufgerufen.",
 	DbError        => "Es ist ein Fehler mit der Datenbank aufgetreten.",
@@ -37,8 +38,9 @@ $MSG = {
 	UserDelOk      => "Der User wurde aus dem Projekt gelöscht."
 };
 
+# Templatehash.
 $TMPL = {
-	ProjectAB     => "project_ab.tmpl",
+	ProjectAB     => "project_ab.tmpl",            
 	ProjectC      => "project_c.tmpl",
 	ProjectNew    => "project_new.tmpl",
 	ProjectShow   => "project_show.tmpl",
