@@ -1,6 +1,19 @@
 #====================================================================================================#
 *** 10.06.2001 ***
 Michael Krüger
+Viel ueberarbeitet, Lock eingefuegt, Bezeichungen geandert
+- message.pm erweitert
+- message_config.pm erweitert
+- message_base.pm erweitert
+- message.tmpl erweitert
+- message_form.tmpl erweitert
+- message_nav.tmpl erweitert
+- message_send.tmpl erweitert
+- message_show.tmpl erweitert
+- message_test.tmpl geloescht 
+#====================================================================================================#
+*** 10.06.2001 ***
+Michael Krüger
 
 - message.pm erweitert
 	* Message-Übersicht ungelesen/gelesen

@@ -1,77 +1,52 @@
-<TMPL_INCLUDE header.tmpl> 
+<TMPL_INCLUDE header.tmpl>
 
-<p>
-<TMPL_INCLUDE message_nav.tmpl> 
-</p>
-
-<form action="<TMPL_VAR FORM_ACTION>" method="post">
-<input type="hidden" name="sid" value="<TMPL_VAR SID>">
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
-<input type="hidden" name="method" value="<TMPL_VAR METHOD>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<hr size="1" noshade width="80%">
+
+<TMPL_INCLUDE message_nav.tmpl>
+
+<form action="<TMPL_VAR FORM>" method="post">
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
 <input type="hidden" name="parent_mid" value="<TMPL_VAR PARENT_MID>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center">
+<p>
+<table cellspacing="0" cellpadding="5" border="0" width="80%" align="center" bgcolor="#b0b0b0">
 <tr>
-	<td colspan="2" align="left">
-	<TMPL_IF MSG>
-		<font color="#ff0000"><TMPL_VAR MSG></font>
+	<td><b>To:</b><br>
+	<input type="text" name="to_usernames" size="40" value="<TMPL_VAR TO_USERNAMES>"></td>
+	<td valign="top" rowspan="2">
+	<b>To:</b><br>
+	<TMPL_IF ANSWERMODE>
+		<input type=radio name="answermode" value="sender_only" checked>Sender only<br>
+		<input type=radio name="answermode" value="all">All receivers<br>
+		<input type=radio name="answermode" value="choose"><input type="submit" name="choose_receivers" value="Empfänger Auswählen">
+	<TMPL_ELSE>
+	<input type="submit" name="choose_receivers" value="Empfänger Auswählen">
 	</TMPL_IF>
 	</td>
 </tr>
 <tr>
-	<td>
-	<TMPL_IF USER_LOOP>
-	<b>To User:</b><br>
-	<select name="uid" size="3" multiple>
-	<TMPL_LOOP USER_LOOP>
-     		<option value="<TMPL_VAR UID>"><TMPL_VAR FIRSTNAME> <TMPL_VAR LASTNAME> (<TMPL_VAR USERNAME>)
-	</TMPL_LOOP>
-	</select>
-	</TMPL_IF>
-	</td>
-	<td>
-	<TMPL_IF PROJECT_LOOP>
-	<b>To Project:</b><br>
-	<select name="pid" multiple>
-	<TMPL_LOOP PROJECT_LOOP>
-     		<option value="<TMPL_VAR PID>"><TMPL_VAR PNAME>
-	</TMPL_LOOP>
-	</select>
-	</TMPL_IF>
-	</td>
-
+	<td><b>Subject:</b><br>
+	<input type="text" name="subject" size="40" maxlength="255" value="<TMPL_VAR MESSAGE_SUBJECT>"></td>
 </tr>
 <tr>
-	<td colspan="2">
-	<b>Subject:</b><br>
-	<input type="text" name="subject" size="40" value="<TMPL_VAR SUBJECT>">
-	</td>
+	<td colspan="2"><b>Content:</b><br>
+	<textarea name="content" rows="10" cols="60" wrap="virtual"><TMPL_VAR MESSAGE_CONTENT></textarea></td>
 </tr>
 <tr>
-	<td colspan="2">
-	<b>Content:</b><br>
-	<textarea name="content" rows=10 cols=60 wrap=virtual><TMPL_VAR CONTENT></textarea>
-	</td>
-</tr>
-
-<tr>
-	<td colspan="2">
-	<input type="submit" name="message" value="Send">
-	</td>
+	<td colspan="2" align="center"><input type="submit" name="send_message" value="Absenden"></td>
 </tr>
 </table>
 </form>
 
-<p>
-<TMPL_INCLUDE message_nav.tmpl> 
+
 </p>
+<TMPL_INCLUDE message_nav.tmpl>
+
+<hr size="1" noshade width="80%">
 
 <TMPL_INCLUDE footer.tmpl>
-
-
-
-
-
-
-
-

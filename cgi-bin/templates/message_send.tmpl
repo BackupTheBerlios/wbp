@@ -13,13 +13,13 @@
 <p>
 	<table cellspacing="0" cellpadding="0" border="0" align="center">
 	<tr>
-		<th><b>Von:</b></th>
+		<th><b>An:</b></th>
 		<th><b>Betreff:</b></th>
 		<th><b>Datum:</b></th>
 	</tr>
 	<TMPL_LOOP MESSAGE_LOOP>
 	<tr>
-		<td><TMPL_VAR MESSAGE_SENDER>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td><TMPL_VAR MESSAGE_1ST_RECEIVER><TMPL_IF MESSAGE_RECEIVER_COUNT>...<TMPL_VAR MESSAGE_RECEIVER_COUNT></TMPL_IF>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td><a href="<TMPL_VAR MESSAGE_LINK>"><TMPL_VAR MESSAGE_SUBJECT></a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td><tt><TMPL_VAR MESSAGE_DATE></tt></td>
 	</tr>

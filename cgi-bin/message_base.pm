@@ -22,6 +22,451 @@ sub new {
 
 
 #====================================================================================================#
+# SYNOPSIS: get_user($uid);
+# PURPOSE:  Realname und Username des Benutzers mit der ID $uid bestimmen
+# RETURN:   arrayref (firstname,lastname,username)
+#====================================================================================================#
+sub get_user {
+
+        my $self = shift;
+	my $uid = shift;
+
+        my $mgr = $self->{MGR};
+	
+ 	# ### connect ###
+        my $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+        }
+	
+        my $sth = $dbh->prepare(qq{SELECT firstname,lastname,username
+				       FROM $mgr->{UserTable} WHERE id = ?});
+	
+        unless ($sth->execute($uid)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+	
+	my @user = $sth->fetchrow_array();
+	
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+	# ### disconnect ###
+
+	# Falls es keinen User gibt
+	unless (@user) {
+	    $user[0] = 'unbekannt';
+	    $user[1] = '';
+	    $user[2] = '?';
+	}
+
+        return @user;
+    }
+
+
+#====================================================================================================#
+# SYNOPSIS: fetch_received($status);
+# PURPOSE:  ruft die empfangenen Nachrichten ab ($status=0 Inbox, $status=1 Received)
+# RETURN:   @[](mid,from_uid,date,subject)
+#====================================================================================================#
+sub fetch_received {
+    
+    my $self = shift;
+    my $status = shift || 0;
+    
+    my $mgr = $self->{MGR};
+    
+    my @received;
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{MReceiveTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{MReceiveTable}, $dbh->ersstr);
+    }
+    
+    my $sth = $dbh->prepare(qq{SELECT mid,from_uid,date,subject FROM $mgr->{MReceiveTable}
+			       WHERE to_uid = ? AND status = ?});
+    
+    unless ($sth->execute($mgr->{UserId},"$status")) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{MReceiveTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    while (my @message = $sth->fetchrow_array()) {
+	push (@received, \@message);
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return @received;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: get_message($mid);
+# PURPOSE:  holt die empfangene Nachricht mit der ID $mid
+# RETURN:   (mid,from_uid,to_uid,parent_mid,status,date,subject,content)
+#====================================================================================================#
+sub get_message {
+    
+    my $self = shift;
+    my $mid = shift;
+    
+    my $mgr = $self->{MGR};
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{MReceiveTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{MReceiveTable}, $dbh->ersstr);
+    }
+    
+    my $sth = $dbh->prepare(qq{SELECT mid,from_uid,to_uid,parent_mid,status,date,subject,content
+				   FROM $mgr->{MReceiveTable} WHERE to_uid = ? AND mid = ?});
+    
+    unless ($sth->execute($mgr->{UserId},$mid)) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{MReceiveTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    my @message = $sth->fetchrow_array();
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return @message;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: get_send_message($mid);
+# PURPOSE:  holt die versandte Nachricht mit der ID $mid
+# RETURN:   (id,parent_mid,date,subject,content)
+#====================================================================================================#
+sub get_send_message {
+    
+    my $self = shift;
+    my $mid = shift;
+    
+    my $mgr = $self->{MGR};
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{MSendTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{MSendTable}, $dbh->ersstr);
+    }
+    
+    my $sth = $dbh->prepare(qq{SELECT id,parent_mid,date,subject,content
+				   FROM $mgr->{MSendTable} WHERE from_uid = ? AND id = ?});
+    
+    unless ($sth->execute($mgr->{UserId},$mid)) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{MSendTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    my @message = $sth->fetchrow_array();
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return @message;
+} 
+
+
+#====================================================================================================#
+# SYNOPSIS: set_message_status($mid,$status);
+# PURPOSE:  setzt den Status der betreffenden Nachricht ($status=0 Inbox, $status=1 Received)
+# RETURN:   1
+#====================================================================================================#
+sub set_message_status {
+
+	my $self = shift;
+	my $mid  = shift;
+	my $status  = shift;
+
+	my $mgr = $self->{MGR};
+
+	# ### connect ###
+	my $dbh = $mgr->connect;
+	
+	unless ($dbh->do("LOCK TABLES $mgr->{MReceiveTable} WRITE")) {
+	    warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{MReceiveTable}, $dbh->ersstr);
+        }
+	
+	my $sth = $dbh->prepare(qq{UPDATE $mgr->{MReceiveTable} SET status = ?
+				       WHERE to_uid = ? AND mid = ?});
+	
+	unless ($sth->execute("$status", $mgr->{UserId}, $mid)) {
+	    warn sprintf("[Error]: Trouble updating status in [%s]. Reason: [%s].",
+			 $mgr->{MReceiveTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+	
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+	
+	return 1;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: fetch_send();
+# PURPOSE:  ruft die versandten Nachrichten ab
+# RETURN:   @[](id,date,subject)
+#====================================================================================================#
+sub fetch_send {
+    
+    my $self = shift;
+
+    my $mgr = $self->{MGR};
+    
+    my @send;
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{MSendTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{MSendTable}, $dbh->ersstr);
+    }
+
+    my $sth = $dbh->prepare(qq{SELECT id,date,subject FROM $mgr->{MSendTable}
+			       WHERE from_uid = ?});
+    
+    unless ($sth->execute($mgr->{UserId})) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{MSendTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    while (my @message = $sth->fetchrow_array()) {
+	push (@send, \@message);
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return @send;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: fetch_receiver($mid);
+# PURPOSE:  liefert die uids aller Empfaenger der angegebenen Message
+# RETURN:   @(id)
+#====================================================================================================#
+sub fetch_receiver {
+    
+    my $self = shift;
+    my $mid = shift;
+    my $mgr = $self->{MGR};
+    
+    my @uid;
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{MToUserTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{MToUserTable}, $dbh->ersstr);
+    }
+
+    my $sth = $dbh->prepare(qq{SELECT uid FROM $mgr->{MToUserTable}
+			       WHERE mid = ?});
+    
+    unless ($sth->execute($mid)) {
+	warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+		     $mgr->{MToUserTable}, $dbh->errstr);
+	$dbh->do("UNLOCK TABLES");
+	$mgr->fatal_error($self->{C_MSG}->{DbError});
+    }
+    
+    while (my @id = $sth->fetchrow_array()) {
+	push (@uid, \@id);
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return @uid;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: fetch_uids(\@usernames);
+# PURPOSE:  liefert die uids der angegebenen Usernamen
+# RETURN:   \@uid
+#====================================================================================================#
+sub fetch_uids(\@usernames){
+    
+    my $self = shift;
+    my $usernames = shift;
+    my $mgr = $self->{MGR};
+
+    my @uid = ();
+    
+    # ### connect ###
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
+    }
+
+    my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{UserTable} WHERE username = ?});
+
+    foreach my $uname (@$usernames) {
+	unless ($sth->execute($uname)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+	
+	my @id = $sth->fetchrow_array();
+	# push (@uid,\@id);
+	push (@uid, @id);
+    }
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    # ### disconnect ###
+    
+    return \@uid;
+}
+
+
+#====================================================================================================#
+# SYNOPSIS: insert_new_messages(\@uids,$parent_mid,$subject,$content);
+# PURPOSE:  Neue Messages in die entsprechenden Tables eintragen
+# RETURN:   $mid, Message-ID
+#====================================================================================================#
+sub insert_new_messages {
+
+        my $self = shift;
+
+	my $uids = shift;
+	my $parent_mid = shift;
+	my $subject = shift;
+	my $content = shift;
+
+        my $mgr = $self->{MGR};
+
+	my $from_uid = $mgr->{UserId};
+	my $date = $mgr->now();
+	my $mid = 0; # ist auto_increment, daher 'mysql_insertid'
+
+	# ### connect ###
+        my $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{MSendTable} WRITE, $mgr->{MReceiveTable} WRITE, $mgr->{MToUserTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking tables [%s,%s and %s]. Reason: [%s].",
+			 $mgr->{MSendTable},$mgr->{MReceiveTable},$mgr->{MToUserTable},$dbh->ersstr);
+	}
+
+	# Message in Send-Table einfuegen
+        my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{MSendTable}
+				   (from_uid,parent_mid,date,subject,content) values (?,?,?,?,?);});
+	
+        unless ($sth->execute($from_uid,$parent_mid,$date,$subject,$content)) {
+	    warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			 $mgr->{MSendTable}, $dbh->errstr);
+	    $dbh->do("UNLOCK TABLES");
+	    $mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	# MessageID ermitteln (autoincrement)
+	$mid = $dbh->{'mysql_insertid'};
+
+	$sth->finish;
+
+	# Message in Receive-Table einfuegen
+	$sth = $dbh->prepare(qq{INSERT INTO $mgr->{MReceiveTable} (mid,from_uid,to_uid,parent_mid,status,date,subject,content) values (?,?,?,?,?,?,?,?);});
+
+	# An alle Empfaenger
+	foreach my $to_uid (@$uids) {
+	    unless ($sth->execute($mid,$from_uid,$to_uid,$parent_mid,'0',$date, $subject,$content)) {
+                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			     $mgr->{MReceiveTable}, $dbh->errstr);
+		$dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+	    }
+	}
+	
+	$sth->finish;
+
+	# MessageID/UserID-Verknuepfung anlegen in ToUser-Table
+	$sth = $dbh->prepare(qq{INSERT INTO $mgr->{MToUserTable} (mid, uid) values (?,?);});
+	foreach my $to_uid (@$uids) {
+	    unless ($sth->execute($mid, $to_uid)) {
+                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			     $mgr->{MToUserTable}, $dbh->errstr);
+		$dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+	    }   
+	}
+
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+	# ### disonnect ###
+
+	return $mid;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#====================================================================================================#
 # SYNOPSIS: fetch_users($status);
 # PURPOSE:  ermittelt alle existierenden User (status: 0=inaktiv, 1=aktiv)
 # RETURN:   array von hashref
@@ -57,71 +502,6 @@ sub fetch_users {
 } 
 
 
-
-
-
-# --- get_user ---
-# holt infos ueber user mit uid
-sub get_user {
- 
-        my $self = shift;
-	my $uid = shift;
-
-        my $mgr = $self->{MGR};
-
- 	# ### connect ###
-        my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = $uid});
- 
-        unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{UserTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
-
-	my $user = $sth->fetchrow_hashref();
-
-	$sth->finish;
-	# ### disconnect ###
-
-        return $user;
-} 
-
-#====================================================================================================#
-# SYNOPSIS: get_message($mid);
-# PURPOSE:  liefert die Message mit mid
-# RETURN:   hashref
-#====================================================================================================#
-# --- get_messge ---
-# holt message mit mid
-sub get_message {
- 
-        my $self = shift;
-	my $mid = shift;
-
-        my $mgr = $self->{MGR};
-
- 	# ### connect ###
-        my $dbh = $mgr->connect;
-        my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{MReceiveTable} WHERE mid=$mid});
- 
-        unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{MReceiveTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
-
-	my $message = $sth->fetchrow_hashref();
-
-	$sth->finish;
-	# ### disconnect ###
-
-        return $message;
-} 
-
-
-
-
 # --- fetcht (id, name) aller existierenden Projekte ---
 # TODO Nach aktiv und inaktiv unterscheiden?
 sub fetch_projects{
@@ -152,12 +532,6 @@ sub fetch_projects{
 
         return @projects;
 } 
-
-
-
-
-
-
 
 
 # --- fetcht (user_id) aller User aus den Projekten @pid ---
@@ -207,188 +581,5 @@ sub fetch_project_members {
         return \@users;
 }
 
-#====================================================================================================#
-# SYNOPSIS: insert_new_messages($uids,$parent_id,$subject,$content);
-# PURPOSE:  Neue Messages in die entsprechenden Tables eintragen
-# RETURN:   ---
-#====================================================================================================#
-sub insert_new_messages {
-
-        my $self = shift;
-
-	my $uids = shift;
-	my $parent_mid = shift;
-	my $subject = shift;
-	my $content = shift;
-
-        my $mgr = $self->{MGR};
-
-	my $to_uid;
-	my $from_uid = $mgr->{UserId};
-	my $date = "2001-06-11 14:16:32"; # TODO
-	my $mid = 0; # ist auto_increment, daher 'mysql_insertid'
-
-
-	# ### connect ###
-        my $dbh = $mgr->connect;
-
-	# Message in Send-Table einfuegen
-        my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{MSendTable}
-				   (from_uid, parent_mid, date, subject, content) values
-				       ($from_uid, $parent_mid, '$date', '$subject', '$content');});
-
-        unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{MSendTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
-
-	# MessageID ermitteln (autoincrement)
-	$mid = $dbh->{'mysql_insertid'};
-
-
-	# An alle Empfaenger
-	foreach $to_uid (@$uids) {
-
-	# Message in Receive-Table einfuegen
-	    $sth = $dbh->prepare(qq{INSERT INTO $mgr->{MReceiveTable}
-				       (mid, from_uid, to_uid, parent_mid, status, date, subject, content) values
-					   ($mid, $from_uid, $to_uid, $parent_mid, '0','$date', '$subject', '$content');});
-
-	    unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-			     $mgr->{MReceiveTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-	    }
-
-	    # MessageID/UserID-Verknuepfung anlegen in ToUser-Table
-	    $sth = $dbh->prepare(qq{INSERT INTO $mgr->{MToUserTable }
-				       (mid, uid) values ($mid, $to_uid);});
-
-	    unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-			     $mgr->{MToUserTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-	    }
-
-	}
-
-	$sth->finish;
-	# ### disonnect ###
-
-	return;
-}
-
-
-
-#====================================================================================================#
-# SYNOPSIS: fetch_received_messages($status);
-# PURPOSE:  ruft die empfangenen Nachrichten ab (status: 0=ungelesen, 1=gelesen)
-# RETURN:   array von hashref
-#====================================================================================================#
-sub fetch_received_messages{
- 
-        my $self = shift;
-	my $status = shift || 0;
-
-        my $mgr = $self->{MGR};
-
-	my @messages;
-	my $my_uid = $mgr->{UserId};
-
-	# ### connect ###
-        my $dbh = $mgr->connect;
-	my $sth;
-	$sth = $dbh->prepare(qq{SELECT * FROM $mgr->{MReceiveTable} WHERE to_uid=$my_uid AND status='$status'});
-
-        unless ($sth->execute()) {
-                warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
-                        $mgr->{MReceiveTable}, $dbh->errstr);
-                $mgr->fatal_error($self->{C_MSG}->{DbError});
-        }
-
-	while (my $message = $sth->fetchrow_hashref()) {
-		push (@messages, $message);
-	}
-
-	$sth->finish;
-	# ### disconnect ###
-
-        return @messages;
-} 
-
-
-
-
-
-
-
-
-
-
-
-
-# --- count_element($elem, \@aref) liefert Anzahl der $elem in \@aref ---
-sub count_element {
-
-        my $self = shift;
-	my $element = shift;
-	my $aref = shift;
-
-	my $count = 0;
-	foreach (@$aref) {
-	    if ($element eq $_) {
-		$count = $count+1;
-	    }
-	}
-
-        return $count;
-}
-
-
-
-
-
-
-
-
-
-
-
-# --- filtert Doubletten eines Arrays ---
-# filter(\@aref)
-sub filter {
-
-        my $self = shift;
-	my $aref = shift;
-
-	my $aref_new;
-	my $element;
-	foreach $element (@$aref) {
-	    if (count_element($element,$aref_new) == 0) {
-		push(@$aref_new, $element);
-	    }
-	}
-
-        return $aref_new;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 1;
+# end of file

@@ -2,16 +2,19 @@ package message_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 $MSG = {
-    NoMessages     => "Sie haben keine Nachrichten.",
-    NoNewMessages  => "Sie haben keine neuen Nachrichten.",
-    NoOldMessages  => "Sie haben keine alten Nachrichten.",
-    NewMessages    => "Sie haben %s neue Nachrichten.", # plural
-    OldMessages    => "Sie haben %s alte Nachrichten.", # plural
-    NewMessage     => "Sie haben eine neue Nachricht.", # singular
-    OldMessage     => "Sie haben eine alte Nachricht.", # singular
+    NoMessages     => "Sie haben keine Nachrichten.", # unused
+    InboxEmpty  => "Sie haben keine neuen Nachrichten.", # zero
+    InboxMessage     => "Sie haben eine neue Nachricht.", # singular
+    InboxMessages    => "Sie haben %s neue Nachrichten.", # plural
+    ReceivedEmpty  => "Sie haben keine bekannten Nachrichten.", # zero
+    ReceivedMessage     => "Sie haben eine bekannte Nachricht.", # singular
+    ReceivedMessages    => "Sie haben %s bekannte Nachrichten.", # plural
+    SendEmpty  => "Sie haben keine versandten Nachrichten.", # zero
+    SendMessage     => "Sie haben eine Nachricht versandt.", # singular
+    SendMessages    => "Sie haben %s Nachrichten versandt.", # plural
     Unknownerror   => "Es ist ein unbekannter Fehler aufgetreten.",
     NoSuchMsgError => "Nachricht konnte nicht gefunden werden.",
     DbError        => "Es ist ein Fehler mit der Datenbank aufgetreten.",
@@ -20,9 +23,10 @@ $MSG = {
 
 
 $TMPL = {
-    Message     => "message.tmpl",      # Message Template
-    MessageForm => "message_form.tmpl", # Form Template
-    MessageShow => "message_show.tmpl", # Show template
+    Message     => "message.tmpl",      # Message Template, for Inbox and Received
+    MessageSend => "message_send.tmpl", # MessageSend Template, for send messages
+    MessageForm => "message_form.tmpl", # Form Template, for composing a new message
+    MessageShow => "message_show.tmpl", # Show template shows one detailed message
     MessageTest => "message_test.tmpl"  # --- test output template ---
     };
 

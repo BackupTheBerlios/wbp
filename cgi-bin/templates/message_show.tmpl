@@ -1,19 +1,14 @@
-<TMPL_INCLUDE header.tmpl> 
+<TMPL_INCLUDE header.tmpl>
 
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
+<hr size="1" noshade width="80%">
+
 <TMPL_INCLUDE message_nav.tmpl>
 
-<p><center><b><TMPL_VAR MSG_NOTIFY></b></center></p>
 
 <table cellspacing="0" cellpadding="5" border="0" align="center">
-<tr>
-	<td>Status</td>
-	<td>
-	<TMPL_VAR STATUS>
-	</td>
-</tr>
 <TMPL_IF PARENT_LINK>
 <tr>	<td></td>
 	<td>
@@ -24,35 +19,37 @@
 <tr>
 	<td>Datum</td>
 	<td>
-	<tt><TMPL_VAR DATE></tt>
+	<tt><TMPL_VAR MESSAGE_DATE></tt>
 	</td>
 </tr>
+<TMPL_IF MESSAGE_SENDER>
 <tr>
 	<td>Absender</td>
 	<td>
-	<i><TMPL_VAR FIRSTNAME> <TMPL_VAR LASTNAME> (<TMPL_VAR USERNAME>)</i>
+	<i><TMPL_VAR MESSAGE_SENDER></i>
 	</td>
 </tr>
+</TMPL_IF>
 <tr>
 	<td>Betreff</td>
 	<td>
-	<b><TMPL_VAR SUBJECT></b>
+	<b><TMPL_VAR MESSAGE_SUBJECT></b>
 	</td>
 </tr>
 <tr>	<td></td>
 	<td>
-	<TMPL_VAR CONTENT>
+	<TMPL_VAR MESSAGE_CONTENT>
 	</td>
 </tr>
 
 </table>
 <p>
 <p>
-<center><a href="<TMPL_VAR REPLY>">Antworten</a></center>
-</p>
+<div align="center"><a href="<TMPL_VAR MESSAGE_REPLY>">Reply</a></div>
+
 <TMPL_INCLUDE message_nav.tmpl>
-</p>
+
+<hr size="1" noshade width="80%">
 
 <TMPL_INCLUDE footer.tmpl>
-
 
