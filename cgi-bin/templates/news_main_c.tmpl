@@ -3,13 +3,33 @@
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> <tr> <td>
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> <tr> <td align=center>
 
-<b> Projekte: </b><br>
+<table> <tr> <td>
 
-<TMPL_LOOP PROJECT_LOOP>
+<br>
+
+<TMPL_IF PROJECTS_LEADER_LOOP>
+  <b> Projekte (Projektleiter): </b><br>
+  <TMPL_LOOP PROJECTS_LEADER_LOOP>
   &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR PR_LINK>"><TMPL_VAR PR_TEXT></a> <br>
-</TMPL_LOOP>
+  </TMPL_LOOP>
+<TMPL_ELSE>
+  Es gibt keine Projekte, bei denen sie Projektleiter sind... <br>
+</TMPL_IF>
+
+<br>
+
+<TMPL_IF PROJECTS_MEMBER_LOOP>
+  <b> Projekte (Mitglied): </b><br>
+  <TMPL_LOOP PROJECTS_MEMBER_LOOP>
+  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR PR_LINK>"><TMPL_VAR PR_TEXT></a> <br>
+  </TMPL_LOOP>
+<TMPL_ELSE>
+  Es gibt keine Projekte, bei denen sie Projektmitglied sind... <br>
+</TMPL_IF>
+
+</td> </tr> </table>
 
 </td> </tr> </table>
 

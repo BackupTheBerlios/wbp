@@ -1,16 +1,62 @@
 <TMPL_INCLUDE header.tmpl>
 
+<form action="<TMPL_VAR FORM>" method="post">
+
 <input type="hidden" name="action" value="<TMPL_VAR ACTION>">
 <input type="hidden" name="sid" value="<TMPL_VAR SID>">
 
-<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%"> <tr> <td>
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="80%">
 
-<b> Projekte: </b><br>
+<tr>
+  <td colspan=3>
+    <hr size=1 noshade>
+  </td>
+</tr>  
+<tr>
+  <td valign=top>
+    <b> Projektsuche: </b>
+  </td>
+  <td align=right>
+    Eigener Status:
+  </td>
+  <td>
+    <select name="project_art">
+      <option value="care">Betreuer</option>
+      <option value="notcare">nicht Betreuer</option>
+      <option value="all">alle</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td>
+    &nbsp;
+  </td>
+  <td align=right>
+    Name:
+  </td>
+  <td>
+    <input type="text" name="project_name" value="">
+  </td>
+</tr>
+<tr>
+  <td>
+    &nbsp;
+  </td>
+  <td>
+    &nbsp;
+  </td>
+  <td>
+    <input type="submit" name="show_projects" value="suchen">
+  </td>
+</tr>      
+<tr>
+  <td colspan=3>
+    <hr size=1 noshade>
+  </td>
+</tr>
 
-<TMPL_LOOP PROJECT_LOOP>
-  &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR PR_LINK>"><TMPL_VAR PR_TEXT></a> <br>
-</TMPL_LOOP>
+</table>
 
-</td> </tr> </table>
+</form>
 
 <TMPL_INCLUDE footer.tmpl>

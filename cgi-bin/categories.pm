@@ -16,7 +16,7 @@ use categories_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $categories_config::MSG;
 $C_TMPL = $categories_config::TMPL;
@@ -220,9 +220,8 @@ sub categories_show {
         $tmp[$i]{STATUS_TEXT} = $C_MSG->{activ};
         $tmp[$i]{STATUS_LINK} = $mgr->decode_all(sprintf("%s&catid=%s", $link_status, $cats[$i][0]));
       };
-
-      $mgr->{TmplData}{CATS_LOOP} = \@tmp;
     };
+    $mgr->{TmplData}{CATS_LOOP} = \@tmp;
     if ($status_param eq 'all') {
       $mgr->{TmplData}{CAT_STATUS} = $C_MSG->{all_st};
     } elsif ($status_param eq 'inactiv') {
@@ -300,7 +299,7 @@ sub categories_create {
   };
 
   if (@cats) {
-    # Error: Kategorie existiert bereits
+    # Error: Rubrik existiert bereits
     $mgr->{Template} = $C_TMPL->{CatCreate};
     $mgr->{TmplData}{FORM} = $mgr->my_url;
     $mgr->{TmplData}{CAT_IF} = '1';
@@ -679,7 +678,7 @@ sub categories_intern_get_user {
     warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",$mgr->{UserTable}, $dbh->ersstr);
   };
 
-  my $sth = $dbh->prepare(qq{SELECT username FROM $mgr->{UserTable} WHERE id = $uid});
+  my $sth = $dbh->prepare(qq{SELECT username FROM $mgr->{UserTable} WHERE id = '$uid'});
 
   unless ($sth->execute()) {
     warn sprintf("[Error]: Trouble selecting from [%]. Reason: [%s].",$mgr->{UserTable}, $dbh->errstr);

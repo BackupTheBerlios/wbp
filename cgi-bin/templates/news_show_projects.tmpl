@@ -9,7 +9,7 @@
 
 <TMPL_IF MEMBER_IF>
 
-  <b> Projekte bei denen sie Mitglied sind: </b> <br>
+  <b> Projekte: </b> <br>
 
   <TMPL_LOOP PROJECTS_LOOP>
     &nbsp;&nbsp;&nbsp;-&nbsp; <a href="<TMPL_VAR PR_LINK>"><TMPL_VAR PR_TEXT></a> <br>
@@ -17,7 +17,7 @@
 
 <TMPL_ELSE>
 
-  <center> <b> Sie sind bei keinem Projekt Mitglied </b> </center>
+  <center> <b> Keine entsprechenden Projekte gefunden! </b> </center>
 
 </TMPL_IF>  
 

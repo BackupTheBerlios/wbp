@@ -1,0 +1,48 @@
+<TMPL_INCLUDE header.tmpl>
+
+<!-- Member -->
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="50%"> <tr> <td align=center>
+
+<table width=100%>
+
+  <tr> <td> <table cellspacing=0 border=0 width=100%>
+
+<TMPL_LOOP NEWS_LOOP>
+
+  <tr>
+    <TMPL_IF STATUS>
+      <td bgcolor=blue colspan=2> <TMPL_VAR SUBJECT> </td>
+    <TMPL_ELSE>
+      <td bgcolor=red> <TMPL_VAR SUBJECT> </td>
+      <td bgcolor=red align=right> (nicht freigegeben) </td>
+    </TMPL_IF>
+  </tr>
+  <tr>
+    <td colspan=2 bgcolor=#cecece> <TMPL_VAR TEXT> </TD>
+  </tr>
+  <tr>
+    <td align=right colspan=2 bgcolor=#bfbfbf> <TMPL_VAR AUTHOR> </td>
+  </tr>
+  <tr> <td colspan=2> &nbsp; </td> </tr>
+
+
+</TMPL_LOOP>
+
+ </table> </tr> </td>
+
+  <tr>
+    <td align=center>
+      <br>
+      <a href='<TMPL_VAR NEWS_NEW_LINK>'>Neue News schreiben</a>
+    </td>
+  </tr>
+
+</table>
+
+</td> </tr> </table>
+
+<TMPL_INCLUDE footer.tmpl>

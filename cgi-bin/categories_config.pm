@@ -2,7 +2,7 @@ package categories_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 $MSG = {
   user_cd_error => "Die Kategorienverwaltung ist nur fuer User vom Typ A und B interessant.",
