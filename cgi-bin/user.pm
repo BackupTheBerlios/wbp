@@ -5,9 +5,9 @@ use base 'Class::Singleton';
 use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
-use Email::Valid;
+# use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -639,10 +639,15 @@ sub user_ok {
     } elsif (length($cgi->param('email')) > 100) {
 	$error = 1;
 	$mgr->{TmplData}{MAIL_LANG} = " ";
-    } elsif (Email::Valid->address($email)) {
-    } else {
+#    } elsif (Email::Valid->address($email)) {
+#    } else {
+#	$error = 1;
+#	$mgr->{TmplData}{BAD_MAIL} = " ";
+    }
+    
+    if (length($cgi->param('desc')) > 500) {
 	$error = 1;
-	$mgr->{TmplData}{BAD_MAIL} = " ";
+	$mgr->{TmplData}{DESC_LANG} = " ";
     }
     
     # wenn Fehler aufgetreten sind dann fuelle die Textfelder 
@@ -840,10 +845,10 @@ sub user_add {
     } elsif (length($cgi->param('email')) > 100) {
 	$error = 1;
 	$mgr->{TmplData}{MAIL_LANG} = " ";
-    } elsif (Email::Valid->address($email)) {
-    } else {
-	$error = 1;
-	$mgr->{TmplData}{BAD_MAIL} = " ";
+#    } elsif (Email::Valid->address($email)) {
+#    } else {
+#	$error = 1;
+#	$mgr->{TmplData}{BAD_MAIL} = " ";
     }
     
     if (length($cgi->param('desc')) > 500) {
