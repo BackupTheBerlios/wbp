@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -95,6 +95,8 @@ sub handler {
 					SessFile => $self->{SessFile},
 					ExpTime  => "3600",
 					Sid      => undef);
+
+	$self->{Session}->check_sessions();
 
 	my ($check, $class, $param, $sid);
 
