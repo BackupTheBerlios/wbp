@@ -7,7 +7,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 # use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -1170,8 +1170,10 @@ sub user_add {
 	my $sth;	
 	
 	$sth = $dbh->prepare(qq{INSERT INTO $mgr->{UserTable}
-		     (username, password, firstname, lastname, email, type, desc_user, status, upd_dt, upd_id, ins_dt, ins_id) values
-		     ('$username', '$password', '$firstname', '$lastname', '$email', '$type', '$desc', '1', '$upd_dt', '$upd_id', '$upd_dt', '$upd_id')});
+		     (username, password, firstname, lastname, email, type, desc_user, 
+		      status, upd_dt, upd_id, ins_dt, ins_id) values
+		     ('$username', '$password', '$firstname', '$lastname', '$email', 
+		      '$type', '$desc', '1', '$upd_dt', '$upd_id', '$upd_dt', '$upd_id')});
 	unless ($sth->execute()) {}
 	
 	$sth->finish;
