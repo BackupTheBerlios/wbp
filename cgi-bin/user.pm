@@ -7,7 +7,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 # use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -93,6 +93,11 @@ sub user_start {
     $mgr->{Template} = $C_TMPL->{UserStartTmpl};
     $mgr->{TmplData} {FORM} = $mgr->my_url;
     
+    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+    $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+    $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+    $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
     $mgr->fill;
     
     # eventl. vorhandene Suchoptionen zuruecksetzen
@@ -123,6 +128,7 @@ sub user_search {
     my $ref;
     my $search_name;
     my $search_id;
+    my $message;
 
     # nachdem auf den Suchbutton geklickt wurde
     if ($flag == 1) {
@@ -138,6 +144,7 @@ sub user_search {
     if ($flag == 0) {
 	$search_name = $mgr->{Session}->get("SearchName") || "";
 	$search_id = $mgr->{Session}->get("SearchId") || "0";	
+	$message = $C_MSG->{geaendert};
     }
         
     # sichere aktuelle Suchparameter in der Session
@@ -196,7 +203,7 @@ sub user_search {
 		#    UPD_DT	=> $date,
 		#    UPD_ID	=> $ref->[12],
 		    FORM	=> $mgr->my_url,
-		    ADMIN	=> sprintf(" ")
+		    ADMIN	=> $C_MSG->{aktiv_}
 		};
 	      } else {	# if not admin
 		$href = {
@@ -205,7 +212,7 @@ sub user_search {
 		    FIRSTNAME   => $ref->[3],
 		    LASTNAME	=> $ref->[4],
 		    TYPE	=> $ref->[6],
-		    AKTIV	=> sprintf(" "),
+		    AKTIV	=> $C_MSG->{aktiv_},
 		#    UPD_DT	=> $date,
 		#    UPD_ID	=> $ref->[12],
 		    FORM	=> $mgr->my_url
@@ -218,7 +225,7 @@ sub user_search {
 	    	FIRSTNAME   	=> $ref->[3],
 	    	LASTNAME	=> $ref->[4],
 	    	TYPE		=> $ref->[6],
-        	INAKTIV		=> sprintf(" "),
+        	INAKTIV		=> $C_MSG->{inaktiv_},
 	    #	UPD_DT		=> $date,
 	    #	UPD_ID		=> $ref->[12],
 	    	FORM		=> $mgr->my_url
@@ -250,15 +257,17 @@ sub user_search {
     if ($flag_search == 1) {
 	# es wurden Benutzer zum anzeigen gefunden
 	
+	$mgr->{TmplData}{FIRSTNAME_} = $C_MSG->{firstname_};
+	$mgr->{TmplData}{LASTNAME_} = $C_MSG->{lastname_};
+	$mgr->{TmplData}{STATE_} = $C_MSG->{state_};
+	$mgr->{TmplData}{TYPE_} = $C_MSG->{type_};
+	
 	$mgr->{TmplData} {FORM} = $mgr->my_url;    
 	$mgr->{TmplData} {USERLOOP} = $loopdata;
         $mgr->{Template} = $C_TMPL->{UserListTmpl};
-	if (defined($mgr->{Session}->get("edit"))) {
-	    $mgr->{Session}->del("edit");
-    	    $mgr->fill($C_MSG->{geaendert});
-	} else {
-	    $mgr->fill;
-	}
+	
+	$mgr->fill($message);
+	
     } else {
 	# keine Daten zum anzeigen
 	# also zurueck zum Startbildschirm
@@ -266,6 +275,12 @@ sub user_search {
 	$mgr->{TmplData} {FORM} = $mgr->my_url;
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
  	
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	$mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	$mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+	
 	# Unterscheidung der Userrechte
 	if ($type eq 'A') {
 	    $mgr->{TmplData}{A_USER} = "A";
@@ -291,6 +306,7 @@ sub user_aktiv {
     my $self = shift;
     my $mgr  = shift;
     my $id   = $mgr->{CGI}->param('user') || undef;
+    my $type = $mgr->{UserType};
     
     if (defined($id)) {
     } else {
@@ -312,8 +328,28 @@ sub user_aktiv {
     
     if (defined($ref)) {
     } else {
+	# hier kommt man normalerweise nicht hin
+	# ist aber fuer URL-Hacker noetig
+    
 	$sth->finish;
     	$dbh->do("UNLOCK TABLES");
+	    
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	$mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	$mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+	
+	# Unterscheidung der Benutzerrechte
+        if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+        }
+    
+    	$mgr->{TmplData} {FORM} = $mgr->my_url;
+    	$mgr->fill($C_MSG->{nicht_erlaubt});
 	return 1;
     }
     
@@ -350,8 +386,22 @@ sub user_aktiv {
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	    $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	    $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	    $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+    	    # Unterscheidung der Benutzerrechte
+    	    if ($type eq 'A') {
+		$mgr->{TmplData}{A_USER} = "A";
+	    } elsif ($type eq 'B') {
+		$mgr->{TmplData}{A_USER} = "B";
+    	    }
+
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
     	    $mgr->fill($C_MSG->{nicht_erlaubt});
+	    return 1;
 	}
     } elsif ($mgr->{UserType} eq "C") {
 	# C-Benutzer duerfen nur D-Benutzer veraendern
@@ -372,8 +422,22 @@ sub user_aktiv {
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	    $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	    $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	    $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+	    # Unterscheidung der Benutzerrechte
+    	    if ($type eq 'A') {
+		$mgr->{TmplData}{A_USER} = "A";
+	    } elsif ($type eq 'B') {
+		$mgr->{TmplData}{A_USER} = "B";
+    	    }
+
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
     	    $mgr->fill($C_MSG->{nicht_erlaubt});
+	    return 1;
 	}    
     } else {}
     
@@ -390,6 +454,7 @@ sub user_inaktiv {
     my $self = shift;
     my $mgr  = shift;
     my $id   = $mgr->{CGI}->param('user') || undef;
+    my $type = $mgr->{UserType};
     
     if (defined($id)) {
     } else {
@@ -411,10 +476,31 @@ sub user_inaktiv {
     
     if (defined($ref)) {
     } else {
+	# hier kommt man normalerweise nicht hin
+	# ist aber fuer URL-Hacker noetig
+    
 	$sth->finish;
     	$dbh->do("UNLOCK TABLES");
+	    
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	$mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	$mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+	# Unterscheidung der Benutzerrechte
+    	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+    	}
+
+    	$mgr->{TmplData} {FORM} = $mgr->my_url;
+    	$mgr->fill($C_MSG->{nicht_erlaubt});
 	return 1;
     }
+
 
     
     if ($ref->[1] eq 'admin') {
@@ -424,6 +510,19 @@ sub user_inaktiv {
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+        $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+        $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+        $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+	
+	# Unterscheidung der Benutzerrechte
+    	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+    	}
+	
 	$mgr->{TmplData} {FORM} = $mgr->my_url;
 	$mgr->fill($C_MSG->{admin_aktiv});
 
@@ -461,8 +560,22 @@ sub user_inaktiv {
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	    $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	    $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	    $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+	    
+	    # Unterscheidung der Benutzerrechte
+    	    if ($type eq 'A') {
+		$mgr->{TmplData}{A_USER} = "A";
+	    } elsif ($type eq 'B') {
+		$mgr->{TmplData}{A_USER} = "B";
+    	    }
+    
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
     	    $mgr->fill($C_MSG->{nicht_erlaubt});
+	    return 1;
 	}
     } elsif ($mgr->{UserType} eq "C") {
 	# hier duerfen nur D-Benutzer veraendert werden
@@ -485,8 +598,22 @@ sub user_inaktiv {
 	    $sth->finish;
     	    $dbh->do("UNLOCK TABLES");
     	    $mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	    $mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+            $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+            $mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+            $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+	    # Unterscheidung der Benutzerrechte
+    	    if ($type eq 'A') {
+		$mgr->{TmplData}{A_USER} = "A";
+	    } elsif ($type eq 'B') {
+		$mgr->{TmplData}{A_USER} = "B";
+    	    }
+    
     	    $mgr->{TmplData} {FORM} = $mgr->my_url;
     	    $mgr->fill($C_MSG->{nicht_erlaubt});
+	    return 1;
 	}    
     } else {
     }
@@ -525,11 +652,49 @@ sub user_edit {
     $sth->finish;
     $dbh->do("UNLOCK TABLES");
     
+    if (defined($ref)) {
+    } else {
+	# wenn die id nicht existiert
+	# hier kommt man normalerweise nicht hin
+	# ist aber fuer URL-Hacker noetig
+    
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	$mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	$mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+	# Unterscheidung der Benutzerrechte
+    	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+    	}
+
+    	$mgr->{TmplData} {FORM} = $mgr->my_url;
+    	$mgr->fill($C_MSG->{nicht_erlaubt});
+	return 1;
+    }
+
     if ($ref->[6] lt $type) {
     # es duerfen keine hoeheren Benutzertypen editiert werden
     # wieder nur fuer URL-Hacker
     
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+        $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+        $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
+	# Unterscheidung der Benutzerrechte
+    	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+    	}
+	
     	$mgr->{TmplData} {FORM} = $mgr->my_url;
     	$mgr->fill($C_MSG->{nicht_erlaubt});
 	return 1;
@@ -578,6 +743,15 @@ sub user_edit {
     $mgr->{Template} = $C_TMPL->{UserEditTmpl};
     $mgr->{TmplData} {FORM} = $mgr->my_url;
     
+    $mgr->{TmplData}{FIRSTNAME_} = $C_MSG->{firstname_};
+    $mgr->{TmplData}{LASTNAME_} = $C_MSG->{lastname_};
+    $mgr->{TmplData}{DESC_} = $C_MSG->{desc_};
+    $mgr->{TmplData}{MAIL_} = $C_MSG->{mail_};
+    $mgr->{TmplData}{PASSWORD_} = $C_MSG->{password_};
+    $mgr->{TmplData}{CONFIRM_} = $C_MSG->{confirm_};
+    $mgr->{TmplData}{TYPE_} = $C_MSG->{type_};
+    $mgr->{TmplData}{B_UEBERNEHMEN} = $C_MSG->{b_uebernehmen};
+    
     $mgr->fill;
     
     1;
@@ -596,6 +770,7 @@ sub user_ok {
     my $mgr  = shift;
     my $cgi  = $mgr->{CGI};
     my $error = 0;
+    my $type = $mgr->{UserType};
     
     $mgr->{TmplData}{FORM} = $mgr->my_url;
     
@@ -607,19 +782,54 @@ sub user_ok {
 	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 			 $mgr->{UserTable}, $dbh->ersstr);
     }
-    my $sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE username = '$username'});
+    my $sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE id = '$id'});
+    
+    unless ($sth->execute()) {
+    }
+    
+    my $ref = $sth->fetchrow_arrayref();
+    
+    if (defined($ref)) {
+    } else {
+	# wenn die id nicht existiert
+	# hier kommt man normalerweise nicht hin
+	# ist aber fuer URL-Hacker noetig
+    
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+    
+	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
+	    
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+	$mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+	$mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+	
+	# Unterscheidung der Benutzerrechte
+    	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+    	}
+    
+    	$mgr->{TmplData} {FORM} = $mgr->my_url;
+    	$mgr->fill($C_MSG->{nicht_erlaubt});
+	return 1;
+    }
+    
+    $sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE username = '$username'});
     
     unless ($sth->execute()) {
     }
     
     # ueberprueft ob neuer Username nicht schon existiert
-    while (my $ref = $sth->fetchrow_arrayref()) {
+    while ($ref = $sth->fetchrow_arrayref()) {
 	if ($ref->[0] < $id) {
 	    $error = 1;
-	    $mgr->{TmplData}{USER_ERROR} = $username;
+	    $mgr->{TmplData}{USER_ERROR} = $C_MSG->{user_error};
 	} elsif ($ref->[0] > $id) {
 	    $error = 1;
-	    $mgr->{TmplData}{USER_ERROR} = $username; 
+	    $mgr->{TmplData}{USER_ERROR} = $C_MSG->{user_error}; 
 	}
     }
     
@@ -630,50 +840,56 @@ sub user_ok {
     
     if (length($cgi->param('username')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{USER_KURZ} = $C_MSG->{user_kurz};
     } elsif (length($cgi->param('username')) > 8) {
 	$error = 1;
-	$mgr->{TmplData}{USER_LANG} = " ";
+	$mgr->{TmplData}{USER_LANG} = $C_MSG->{user_lang};
     }
     
     if (length($cgi->param('password')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{PASS_KURZ} = $C_MSG->{pass_kurz};	
     } elsif (length($cgi->param('password')) > 8) {
 	$error = 1;
-	$mgr->{TmplData}{PASS_LANG} = " ";
+	$mgr->{TmplData}{PASS_LANG} = $C_MSG->{pass_lang};
     } elsif ($cgi->param('password') ne $cgi->param('password2')) {
 	$error = 1;
-	$mgr->{TmplData}{PASS_ERROR} = " ";
+	$mgr->{TmplData}{PASS_ERROR1} = $C_MSG->{pass_error1};
+	$mgr->{TmplData}{PASS_ERROR2} = $C_MSG->{pass_error2};
     } 
     
     if (length($cgi->param('first_name')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{FIRST_KURZ} = $C_MSG->{first_kurz};
     } elsif (length($cgi->param('first_name')) > 30) {
 	$error = 1;
-	$mgr->{TmplData}{FIRST_LANG} = " ";
+	$mgr->{TmplData}{FIRST_LANG} = $C_MSG->{first_lang};
     }
     
     if (length($cgi->param('last_name')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{LAST_KURZ} = $C_MSG->{last_kurz};
     } if (length($cgi->param('last_name')) > 30) {
 	$error = 1;
-	$mgr->{TmplData}{LAST_LANG} = " ";
+	$mgr->{TmplData}{LAST_LANG} = $C_MSG->{last_lang};
     }
     
     my $email = $cgi->param('email');
     if (length($cgi->param('email')) == 0) {
+	$mgr->{TmplData}{MAIL_KURZ} = $C_MSG->{mail_kurz};
 	$error = 1;
     } elsif (length($cgi->param('email')) > 100) {
 	$error = 1;
-	$mgr->{TmplData}{MAIL_LANG} = " ";
+	$mgr->{TmplData}{MAIL_LANG} = $C_MSG->{mail_lang};
 #    } elsif (Email::Valid->address($email)) {
 #    } else {
 #	$error = 1;
-#	$mgr->{TmplData}{BAD_MAIL} = " ";
+#	$mgr->{TmplData}{MAIL_ERROR} = $C_MSG->{mail_error};
     }
     
     if (length($cgi->param('desc')) > 500) {
 	$error = 1;
-	$mgr->{TmplData}{DESC_LANG} = " ";
+	$mgr->{TmplData}{DESC_LANG} = $C_MSG->{desc_lang};
     }
     
     # wenn Fehler aufgetreten sind dann fuelle die Textfelder 
@@ -722,6 +938,15 @@ sub user_ok {
 	    $mgr->{TmplData}{C_USER} = " ";
 	}
 
+	$mgr->{TmplData}{FIRSTNAME_} = $C_MSG->{firstname_};
+        $mgr->{TmplData}{LASTNAME_} = $C_MSG->{lastname_};
+        $mgr->{TmplData}{DESC_} = $C_MSG->{desc_};
+        $mgr->{TmplData}{MAIL_} = $C_MSG->{mail_};
+        $mgr->{TmplData}{PASSWORD_} = $C_MSG->{password_};
+        $mgr->{TmplData}{CONFIRM_} = $C_MSG->{confirm_};
+        $mgr->{TmplData}{TYPE_} = $C_MSG->{type_};
+        $mgr->{TmplData}{B_UEBERNEHMEN} = $C_MSG->{b_uebernehmen};
+	
 	$mgr->fill;
     
     } else {
@@ -782,6 +1007,14 @@ sub user_add0 {
     $mgr->{TmplData}{OUTPUT} = $C_MSG->{anlegen1}.$type.$C_MSG->{anlegen2};
     $mgr->{Template} = $C_TMPL->{UserAdd0Tmpl};
     
+    $mgr->{TmplData}{FIRSTNAME_} = $C_MSG->{firstname_};
+    $mgr->{TmplData}{LASTNAME_} = $C_MSG->{lastname_};
+    $mgr->{TmplData}{DESC_} = $C_MSG->{desc_};
+    $mgr->{TmplData}{MAIL_} = $C_MSG->{mail_};
+    $mgr->{TmplData}{PASSWORD_} = $C_MSG->{password_};
+    $mgr->{TmplData}{CONFIRM_} = $C_MSG->{confirm_};
+    $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+    
     $mgr->fill();
     1;
 }
@@ -803,7 +1036,7 @@ sub user_add {
     
     my $type = $mgr->{CGI}->param('type');
     
-    $mgr->{TmplData}{FORM} = $mgr->my_url;
+    $mgr->{TmplData}{FORM} = $mgr->my_url;    
     
     if (defined($cgi->param('username'))) {
     # wenn ein neuer Username angegeben ist ...
@@ -823,7 +1056,7 @@ sub user_add {
 	# ... sehe nach ob er schon existiert
 	while (my $ref = $sth->fetchrow_arrayref()) {
 	    $error = 1;
-	    $mgr->{TmplData}{USER_ERROR} = $username;
+	    $mgr->{TmplData}{USER_ERROR} = $C_MSG->{user_error};
 	}
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
@@ -833,50 +1066,56 @@ sub user_add {
     
     if (length($cgi->param('username')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{USER_KURZ} = $C_MSG->{user_kurz};
     } elsif (length($cgi->param('username')) > 8) {
 	$error = 1;
-	$mgr->{TmplData}{USER_LANG} = " ";
+	$mgr->{TmplData}{USER_LANG} = $C_MSG->{user_lang};
     }
     
     if (length($cgi->param('password')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{PASS_KURZ} = $C_MSG->{pass_kurz};	
     } elsif (length($cgi->param('password')) > 8) {
 	$error = 1;
-	$mgr->{TmplData}{PASS_LANG} = " ";
+	$mgr->{TmplData}{PASS_LANG} = $C_MSG->{pass_lang};
     } elsif ($cgi->param('password') ne $cgi->param('password2')) {
 	$error = 1;
-	$mgr->{TmplData}{PASS_ERROR} = " ";
+	$mgr->{TmplData}{PASS_ERROR1} = $C_MSG->{pass_error1};
+	$mgr->{TmplData}{PASS_ERROR2} = $C_MSG->{pass_error2};
     } 
     
     if (length($cgi->param('first_name')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{FIRST_KURZ} = $C_MSG->{first_kurz};
     } elsif (length($cgi->param('first_name')) > 30) {
 	$error = 1;
-	$mgr->{TmplData}{FIRST_LANG} = " ";
+	$mgr->{TmplData}{FIRST_LANG} = $C_MSG->{first_lang};
     }
     
     if (length($cgi->param('last_name')) == 0) {
 	$error = 1;
+	$mgr->{TmplData}{LAST_KURZ} = $C_MSG->{last_kurz};
     } if (length($cgi->param('last_name')) > 30) {
 	$error = 1;
-	$mgr->{TmplData}{LAST_LANG} = " ";
+	$mgr->{TmplData}{LAST_LANG} = $C_MSG->{last_lang};
     }
     
     my $email = $cgi->param('email');
     if (length($cgi->param('email')) == 0) {
+	$mgr->{TmplData}{MAIL_KURZ} = $C_MSG->{mail_kurz};
 	$error = 1;
     } elsif (length($cgi->param('email')) > 100) {
 	$error = 1;
-	$mgr->{TmplData}{MAIL_LANG} = " ";
+	$mgr->{TmplData}{MAIL_LANG} = $C_MSG->{mail_lang};
 #    } elsif (Email::Valid->address($email)) {
 #    } else {
 #	$error = 1;
-#	$mgr->{TmplData}{BAD_MAIL} = " ";
+#	$mgr->{TmplData}{MAIL_ERROR} = $C_MSG->{mail_error};
     }
     
     if (length($cgi->param('desc')) > 500) {
 	$error = 1;
-	$mgr->{TmplData}{DESC_LANG} = " ";
+	$mgr->{TmplData}{DESC_LANG} = $C_MSG->{desc_lang};
     }
     
     if ($error == 1) {
@@ -895,6 +1134,15 @@ sub user_add {
 	$mgr->{TmplData}{OUTPUT} = $C_MSG->{anlegen1}.$type.$C_MSG->{anlegen2};
 	$mgr->{Template} = $C_TMPL->{UserAddTmpl};
 
+	$mgr->{TmplData}{FORM} = $mgr->my_url;
+        $mgr->{TmplData}{FIRSTNAME_} = $C_MSG->{firstname_};
+        $mgr->{TmplData}{LASTNAME_} = $C_MSG->{lastname_};
+        $mgr->{TmplData}{DESC_} = $C_MSG->{desc_};
+        $mgr->{TmplData}{MAIL_} = $C_MSG->{mail_};
+        $mgr->{TmplData}{PASSWORD_} = $C_MSG->{password_};
+        $mgr->{TmplData}{CONFIRM_} = $C_MSG->{confirm_};
+        $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+	
 	$mgr->fill;
     
     } else {
@@ -937,6 +1185,18 @@ sub user_add {
 
 	$mgr->{Template} = $C_TMPL->{UserStartTmpl};
 	
+	$mgr->{TmplData}{S_SUCHEN} = $C_MSG->{s_suchen};
+        $mgr->{TmplData}{S_ANLEGEN} = $C_MSG->{s_anlegen};
+	$mgr->{TmplData}{B_SUCHEN} = $C_MSG->{b_suchen};
+        $mgr->{TmplData}{B_ANLEGEN} = $C_MSG->{b_anlegen};
+	
+	# Unterscheidung der Benutzerrechte
+    	if ($type eq 'A') {
+	    $mgr->{TmplData}{A_USER} = "A";
+	} elsif ($type eq 'B') {
+	    $mgr->{TmplData}{A_USER} = "B";
+    	}
+    
 	$mgr->fill($C_MSG->{angelegt});
     }
     

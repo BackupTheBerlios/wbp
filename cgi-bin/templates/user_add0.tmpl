@@ -25,7 +25,7 @@
 		</tr>
 		<tr>
 		    <td>
-			Password
+			<TMPL_VAR PASSWORD_>
 		    </td>
 		    <td>
 			    <input type="password" name="password" size=20 maxlength=8>
@@ -33,7 +33,7 @@
 		</tr>
 		<tr>
 		    <td>
-			- Confirm
+			<TMPL_VAR CONFIRM_>
 		    </td>
 		    <td>
 			    <input type="password" name="password2" size=20 maxlength=8>
@@ -41,7 +41,7 @@
 		</tr>
 		<tr>
 		    <td>
-			Vorname
+			<TMPL_VAR FIRSTNAME_>
 		    </td>
 		    <td>
 			    <input type="text" name="first_name" size=20 maxlength=30>
@@ -49,7 +49,7 @@
 		</tr>
 		<tr>
 		    <td>
-			Nachname
+			<TMPL_VAR LASTNAME_>
 		    </td>
 		    <td>
 			    <input type="text" name="last_name" size=20 maxlength=30>
@@ -57,7 +57,7 @@
 		</tr>
 		<tr>
 		    <td>
-		    	eMail
+		    	<TMPL_VAR MAIL_>
 		    </td>
 		    <td>
 			    <input type="text" name="email" size=20 maxlength=100>
@@ -65,7 +65,7 @@
 		</tr>
 		<tr>
 		    <td>
-		    	Beschreibung
+		    	<TMPL_VAR DESC_>
 		    </td>
 		    <td>	
 			    <textarea name="desc" rows="3" cols="40" wrap="virtual"></textarea>
@@ -76,7 +76,7 @@
 			&nbsp;
 		    </td>
 		    <td>
-			<input type="submit" name="add" value="anlegen">
+			<input type="submit" name="add" value=<TMPL_VAR B_ANLEGEN>>
 		    </td>
 		</tr>
       </table>	

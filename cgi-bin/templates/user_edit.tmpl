@@ -25,21 +25,14 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
-			<TMPL_IF USER_LANG>
-			    Username zu lang ( > 8 Zeichen)!
-			</TMPL_IF>
-			<TMPL_IF USER_ERROR>
-			    <TMPL_VAR USER_ERROR> existiert bereits !
-			</TMPL_IF>
-			<TMPL_IF USERNAME>
-			<TMPL_ELSE>
-			    Bitte geben Sie einen Usernamen ein !
-			</TMPL_IF>
+			<TMPL_VAR USER_LANG>
+			<TMPL_VAR USER_ERROR>
+			<TMPL_VAR USER_KURZ>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-			Password <br>
+			<TMPL_VAR PASSWORD_> <br>
 		    </td>
 		    <td>
 			<TMPL_IF PASSWORD>
@@ -49,21 +42,14 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
-			<TMPL_IF PASS_LANG>
-			    Passwort zu lang ( > 8 Zeichen)!
-			</TMPL_IF>
-			<TMPL_IF PASSWORD>
-			<TMPL_ELSE>
-			    Bitte geben Sie ein Password ein !
-			</TMPL_IF>
-			<TMPL_IF PASS_ERROR>
-			    Passwort und dessen Best&auml;tigung
-			</TMPL_IF>
+			<TMPL_VAR PASS_LANG>
+			<TMPL_VAR PASS_ERROR1>
+			<TMPL_VAR PASS_KURZ>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-			- Confirm<br>
+			<TMPL_VAR CONFIRM_> <br>
 		    </td>
 		    <td>
 			<TMPL_IF PASSWORD2>
@@ -73,14 +59,12 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
-			<TMPL_IF PASS_ERROR>
-			    stimmen nicht &uuml;berein !
-			</TMPL_IF>
+			<TMPL_VAR PASS_ERROR2>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-			Vorname <br>
+			<TMPL_VAR FIRSTNAME_> <br>
 		    </td>
 		    <td>
 			<TMPL_IF FIRST_NAME>
@@ -90,18 +74,13 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
-			<TMPL_IF FIRST_LANG>
-			    Vorname zu lang ( > 30 Zeichen)!
-			</TMPL_IF>
-			<TMPL_IF FIRST_NAME>
-			<TMPL_ELSE>
-			    Bitte geben Sie einen Vornamen ein !
-			</TMPL_IF>
+			<TMPL_VAR FIRST_LANG>
+			<TMPL_VAR FIRST_KURZ>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-			Nachname <br>
+			<TMPL_VAR LASTNAME_> <br>
 		    </td>
 		    <td>
 			<TMPL_IF LAST_NAME>
@@ -111,18 +90,13 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
-			<TMPL_IF LAST_LANG>
-			    Nachname zu lang ( > 30 Zeichen)!
-			</TMPL_IF>
-			<TMPL_IF LAST_NAME>
-			<TMPL_ELSE>
-			    Bitte geben Sie einen Nachnamen ein !
-			</TMPL_IF>
+			<TMPL_VAR LAST_LANG>
+			<TMPL_VAR LAST_KURZ>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-		    	eMail <br>
+		    	<TMPL_VAR MAIL_> <br>
 		    </td>
 		    <td>
 			<TMPL_IF EMAIL>
@@ -132,22 +106,15 @@
 			</TMPL_IF>
 		    </td>
 		    <td>
-			<TMPL_IF MAIL_LANG>
-			    Mailadresse zu lang ( > 100 Zeichen)!
-			</TMPL_IF>
-			<TMPL_IF BAD_MAIL>
-			    ung&uuml;ltige Mailadresse !
-			</TMPL_IF>
-			<TMPL_IF EMAIL>
-			<TMPL_ELSE>
-			    Bitte geben Sie eine Mail-Adresse ein !
-			</TMPL_IF>
+			<TMPL_VAR MAIL_LANG>
+			<TMPL_VAR MAIL_KURZ>
+			<TMPL_VAR MAIL_ERROR>
 		    </td>
 		</tr>
 		<tr>
 		    <td>
-			    Typ <br>
-		    </td>
+			<TMPL_VAR TYPE_> <br>
+		    </td> 
 		    <td>
 			<TMPL_IF A_USER_A>
 			    <select name="type">
@@ -184,21 +151,19 @@
 		</tr>
 		<tr>
 		    <td>
-		    	Beschreibung <br>
+		    	<TMPL_VAR DESC_> <br>
 		    </td>
 		    <td colspan="2">	
 			<textarea name="desc" rows=3 cols=40 wrap="virtual"><TMPL_VAR DESC></textarea>
 		    </td>
 		    <td>
-			<TMPL_IF DESC_LANG>
-			    Beschreibung zu lang ( 500 >  Zeichen)!
-			</TMPL_IF>
+			<TMPL_VAR DESC_LANG>
     		</tr>
 		<tr>
 		    <td>
 		    </td>
 		    <td>
-			<input type="submit" name="ok" value="&uuml;bernehmen">
+			<input type="submit" name="ok" value=<TMPL_VAR B_UEBERNEHMEN>>
 		    </td>
 		</tr>
           </table>	

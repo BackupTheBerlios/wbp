@@ -10,14 +10,12 @@
     <td>
         <table align="center">
     	<tr>
-    	    <td><h3>Id<br>&nbsp;</h3></td>
+    	    <td><h3>ID<br>&nbsp;</h3></td>
     	    <td><h3>Username<br>&nbsp;</h3></td>
-     	    <td><h3>Vorname<br>&nbsp;</h3></td>
-    	    <td><h3>Nachname<br>&nbsp;</h3></td>
-    	    <td><h3>Type<br>&nbsp;</h3></td>
-   	    <td><h3>Status<br>&nbsp;</h3></td>
-<!--	    <td align="center"><h3>letzte &Auml;nd.<br>am</h3></td>  -->
-<!--	    <td align="center"><h3>durch<br>Benutzer</h3></td>	     -->
+     	    <td><h3><TMPL_VAR FIRSTNAME_><br>&nbsp;</h3></td>
+    	    <td><h3><TMPL_VAR LASTNAME_><br>&nbsp;</h3></td>
+    	    <td><h3><TMPL_VAR TYPE_><br>&nbsp;</h3></td>
+   	    <td><h3><TMPL_VAR STATE_><br>&nbsp;</h3></td>
 	</tr>
         <TMPL_LOOP USERLOOP>
     	<tr>
@@ -38,21 +36,15 @@
             </td>
             <td align="center">
 		<TMPL_IF ADMIN>
-		    aktiv
+		    <TMPL_VAR ADMIN>
 		</TMPL_IF>
 		<TMPL_IF AKTIV>
-		    <a href="<TMPL_VAR FORM>&method=inaktiv&user=<TMPL_VAR ID>">aktiv</a>
+		    <a href="<TMPL_VAR FORM>&method=inaktiv&user=<TMPL_VAR ID>"><TMPL_VAR AKTIV></a>
 		</TMPL_IF>
 		<TMPL_IF INAKTIV>
-		    <a href="<TMPL_VAR FORM>&method=aktiv&user=<TMPL_VAR ID>">inaktiv</a>
+		    <a href="<TMPL_VAR FORM>&method=aktiv&user=<TMPL_VAR ID>"><TMPL_VAR INAKTIV></a>
 		</TMPL_IF>
             </td>
-<!--	    <td align="center">
-		<TMPL_VAR UPD_DT>
-	    </td>
-	    <td align="center">
-		<TMPL_VAR UPD_ID>
-//-->	    </td>
         </tr>
         </TMPL_LOOP>
 	</table>

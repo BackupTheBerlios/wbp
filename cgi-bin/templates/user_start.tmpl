@@ -15,7 +15,7 @@
 </tr>
 <tr>
     <td align="left">
-        <h3>neuer User:</h3>
+        <h3><TMPL_VAR S_ANLEGEN></h3>
     </td>
     <td align="left">
 	<TMPL_IF A_USER>
@@ -29,7 +29,7 @@
 		<option value="D">Typ D
 	    </select>
 	</TMPL_IF>
-	<input type="submit" name="add0" value="anlegen">
+	<input type="submit" name="add0" value=<TMPL_VAR B_ANLEGEN>>
     </td>
 </tr>
 <tr>
@@ -39,13 +39,13 @@
 </tr>
 <tr>
     <td align="left">
-	<h3>User suchen:</h3>
+	<h3><TMPL_VAR S_SUCHEN></h3>
     </td>
     <td>
         <table cellspacing="0" cellpadding="0" border="0" align="left">
 	    <tr>
 		<td>
-		    <b>Username:</b>
+		    <b>Username: </b>
 		</td>
 		<td>
 		    <input type="text" name="search_username">
@@ -66,7 +66,7 @@
 		    &nbsp;
 		</td>
 		<td>
-		    <input type="submit" name="search" value="suchen">
+		    <input type="submit" name="search" value=<TMPL_VAR B_SUCHEN>>
 		</td
 	    </tr>
 	</table>
