@@ -7,7 +7,7 @@ use message_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -64,7 +64,7 @@ sub menue {
 	$mgr->{TmplData}{NAV_MSG_READ} = sprintf($link, "message","read_messages");
 	$mgr->{TmplData}{NAV_MSG_NEW} = sprintf($link, "message","new_message");
 
-        $mgr->fill_header; 
+        $mgr->fill; 
 
 	return;
 }
@@ -125,7 +125,7 @@ sub new_message {
 	$mgr->{TmplData}{SUBJECT} = $mgr->decode_all($subject);
 	$mgr->{TmplData}{CONTENT} = $mgr->decode_all($content);
      
-	$mgr->fill_header;
+	$mgr->fill;
 
 	return;
 }
@@ -161,7 +161,7 @@ sub send_message {
 	$mgr->{TmplData}{TEST_OUT_C} = $mgr->decode_all($subject);
 	$mgr->{TmplData}{TEST_OUT_D} = $mgr->decode_all($content);
      
-	$mgr->fill_header;
+	$mgr->fill;
 
 	return;
 }
@@ -197,7 +197,7 @@ sub read_messages {
 	}
 
 
-	$mgr->fill_header;
+	$mgr->fill;
 
 	return;
 }
