@@ -10,7 +10,7 @@
 <TMPL_IF USER_AB>
 <tr>
 	<td align="left">
-		<b>Neues Projekt:</b>
+		<h3>Neues Projekt:</h3>
 	</td>
 	<td align="left">
 	<TMPL_IF KATEGORIEN>
@@ -35,23 +35,40 @@
 </TMPL_IF>
 <tr>
 	<td align="left" valign="top">
-		<b>Projektsuche:</b>
+		<h3>Projektsuche:</h3>
 	</td>
 	<td align="left">
 	<TMPL_IF PROJECTS>
 		<TMPL_IF TYPE_AB>
-			<b>Projektname:</b>
-			<input type="text" name="project_name" value="">
-			<br>
-			<b>Kategorie:</b>
-			<select name="project_category">
+			<table cellspacing="0" cellpadding="0" border="0">
+			<tr>
+				<td>
+				<b>Projektname:</b>
+				</td>
+				<td>
+				<input type="text" name="project_name" value="">
+				</td>
+			</tr>
+			<tr>
+				<td>
+				<b>Kategorie:</b>
+				</td>
+				<td>
+				<select name="project_category">
 					<option value="0">Aus allen Kategorien
-				<TMPL_LOOP KATEGORIEN>
+					<TMPL_LOOP KATEGORIEN>
                         		<option value="<TMPL_VAR KID>"><TMPL_VAR KNAME></option>
-                        	</TMPL_LOOP>
-			</select>
-			<br>
-			<input type="submit" name="search" value="suchen">
+                        		</TMPL_LOOP>
+				</select>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>
+				<input type="submit" name="search" value="suchen">
+				</td>
+			</tr>
+			</table>
 		<TMPL_ELSE>
 			<b>Projekte:</b><br>
 			<TMPL_LOOP TYPE_C_PROJECTS>
