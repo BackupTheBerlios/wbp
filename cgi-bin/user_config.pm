@@ -2,13 +2,13 @@ package user_config;
  
 use vars qw($VERSION);
  
-$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
  
 $MSG = {
     angelegt		=> "neuen Benutzer angelegt",
     nix_gefunden	=> "keine Entsprechungen gefunden",
     nicht_erlaubt	=> "letzte Aktion war nicht erlaubt !!!",
-    geaendert		=> "Benutzerdaten geändert",
+    geaendert		=> "Benutzerdaten geändert ...",
     admin_aktiv		=> "der Admin darf nicht deaktiviert werden !!!",
     edit_id		=> "User editieren: ID = ",
     anlegen1		=> "neuen Benutzer vom Typ ",

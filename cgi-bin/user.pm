@@ -7,7 +7,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 # use Email::Valid;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.14 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -17,9 +17,6 @@ sub parameter {
 	my $self = shift;
 	my $mgr  = shift;
 	my $cgi  = $mgr->{CGI};
-	
-	# um zu einer Suchliste zurueckkehren zu koennen
-	my $flag = $mgr->{Session}->get("edit") || "0";
 	
 	# D-Benutzer werden rausgeschmissen
 	if ($mgr->{UserType} eq 'D') {
@@ -60,10 +57,6 @@ sub parameter {
 		    $self->user_inaktiv($mgr);
 		}
 	    }	
-	    # zurueckkehren zu einer Suchliste
-	    elsif ($flag eq '1') {
-		$self->user_search($mgr, 0);
-	    }
 	    # Benutzerstartseite
 	    else {
 		$self->user_start($mgr);
@@ -128,7 +121,6 @@ sub user_search {
     my $ref;
     my $search_name;
     my $search_id;
-    my $message;
 
     # nachdem auf den Suchbutton geklickt wurde
     if ($flag == 1) {
@@ -144,7 +136,6 @@ sub user_search {
     if ($flag == 0) {
 	$search_name = $mgr->{Session}->get("SearchName") || "";
 	$search_id = $mgr->{Session}->get("SearchId") || "0";	
-	$message = $C_MSG->{geaendert};
     }
         
     # sichere aktuelle Suchparameter in der Session
@@ -266,7 +257,14 @@ sub user_search {
 	$mgr->{TmplData} {USERLOOP} = $loopdata;
         $mgr->{Template} = $C_TMPL->{UserListTmpl};
 	
-	$mgr->fill($message);
+	# wenn bei user_ok() die Sessionvariable gesetzt wurde
+	# dann wird eine Meldung verfasst
+	if (defined($mgr->{Session}->get("edit"))) {
+	    $mgr->{Session}->del("edit");
+	    $mgr->fill($C_MSG->{geaendert});
+	} else {
+	    $mgr->fill();
+	}
 	
     } else {
 	# keine Daten zum anzeigen
@@ -793,7 +791,7 @@ sub user_ok {
     } else {
 	# wenn die id nicht existiert
 	# hier kommt man normalerweise nicht hin
-	# ist aber fuer URL-Hacker noetig
+	# ist aber fuer Hacker noetig
     
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
@@ -977,6 +975,11 @@ sub user_ok {
 	
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
+	
+	# die folgende Zeile veranlasst die Methode
+	# user_search() eine Meldung auszugegeben
+	# ("Benutzer geaendert ...")
+	$mgr->{Session}->set("edit" => "1");
 	
 	# zurueck zur Liste
 	# die null laedt alte Suchparameter
