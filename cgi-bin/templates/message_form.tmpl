@@ -22,6 +22,19 @@
 </tr>
 <tr>
 	<td>
+	<b>To:</b>
+	</td>
+	<td>
+	<select name="MSG_TO"  multiple>
+	<TMPL_LOOP NAME=MSG_TO_LOOP>
+     		<option value="<TMPL_VAR NAME=MSG_TO_UID>"><TMPL_VAR NAME=MSG_TO_NAME>
+	</TMPL_LOOP>
+</SELECT>
+
+	</td>
+</tr>
+<tr>
+	<td>
 	<b>Subject:</b>
 	</td>
 	<td>
