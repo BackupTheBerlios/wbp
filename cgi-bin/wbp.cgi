@@ -42,7 +42,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -301,11 +301,11 @@ sub now {
 } 
 
 #====================================================================================================#
-# SYNOPSIS: $instance->fill_header();
-# PURPOSE:  Fills out the normal header.
+# SYNOPSIS: $instance->fill();
+# PURPOSE:  Fills out the normal header and footer.
 # RETURN:   true.
 #====================================================================================================#
-sub fill_header {
+sub fill {
 
 	my $self = shift;
 	my $msg  = shift || undef;
@@ -315,6 +315,25 @@ sub fill_header {
 	$self->{TmplData}{LOGOUT}    = sprintf($self->{ScriptName}."?action=%s&sid=%s&method=logout",
 						$self->{DefaultMode}, $self->{Sid});
 	$self->{TmplData}{MSG}       = $self->decode_all($msg) if $msg;
+
+	my $link = $self->{ScriptName}."?action=%s&sid=".$self->{Sid};
+ 
+        $self->{TmplData}{NAV_MESSAGE} = sprintf($link, "message");
+        $self->{TmplData}{NAV_NEWS}    = sprintf($link, "news");
+ 
+        if (($self->{UserType} eq "A") || ($self->{UserType} eq "B")) {
+                $self->{TmplData}{NAV_PROJECT}  = sprintf($link, "project");
+                $self->{TmplData}{NAV_USER}     = sprintf($link, "user");
+                $self->{TmplData}{NAV_CATEGORY} = sprintf($link, "category");
+                $self->{TmplData}{NAV_CONFIG}   = sprintf($link, "config");
+        } elsif ($self->{UserType} eq "C") {
+                $self->{TmplData}{NAV_PROJECT} = sprintf($link, "project");
+                $self->{TmplData}{NAV_USER}    = sprintf($link, "user");
+        } else {
+                warn sprintf("[Error]: Unknown user type [%s] for user [%s].",
+                        $self->{UserType}, $self->{User});
+                $self->fatal_error($wbp_config::MSG->{Unknownerror});
+        }
 
 	1;
 }

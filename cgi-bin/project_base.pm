@@ -90,4 +90,31 @@ sub get_cat_name {
 	return $kname;
 }
 
+sub check_project_name {
+
+	my $self = shift;
+	my $name = shift;
+
+	my $mgr = $self->{MGR};
+	
+	my $check;
+
+	my $dbh = $mgr->connect;
+	my $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{ProTable} WHERE name = ?});
+
+	unless ($sth->execute($name)) {
+		warn sprintf("[Error]: Trouble selecting from [%s]. Reason: [%s].",
+			$mgr->{ProTable}, $dbh->errstr);
+		$mgr->fatal_error($self->{C_MSG}->{DbError});
+	}
+
+	if ($sth->rows != 0) {
+		$check++;
+	}
+
+	$sth->finish;
+
+	return $check;
+}
+
 1;

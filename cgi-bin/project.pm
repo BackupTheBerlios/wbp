@@ -7,7 +7,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -84,7 +84,7 @@ sub menue {
  
         my $mgr = $self->{MGR};
  
-        $mgr->{Tmpldata}{PROJECTS} = 1 if ($self->{BASE}->check_for_projects != 0);
+        $mgr->{TmplData}{PROJECTS} = 1 if ($self->{BASE}->check_for_projects != 0);
  
         if ($mgr->{UserType} ne "C") {
                 $mgr->{TmplData}{USER_AB}    = 1;
@@ -105,9 +105,8 @@ sub menue {
  
         $mgr->{Template}       = $C_TMPL->{Project};
         $mgr->{TmplData}{FORM} = $mgr->my_url;
-        $mgr->fill_header;
  
-        $mgr->fill_header($msg);
+        $mgr->fill($msg);
 
 	return;
 }
@@ -133,9 +132,9 @@ sub menue_new {
                 $mgr->{TmplData}{ENDE_MONAT}   = $mgr->decode_some($cgi->param('ende_monat'));
                 $mgr->{TmplData}{ENDE_JAHR}    = $mgr->decode_some($cgi->param('ende_jahr'));
                 $mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($cgi->param('beschreibung'));
-                $mgr->fill_header($msg);
+                $mgr->fill($msg);
         } else {
-                $mgr->fill_header;
+                $mgr->fill;
         }
  
         $mgr->{Template}       = $C_TMPL->{ProjectNew};
@@ -148,7 +147,11 @@ sub add_project {
  
         my $mgr = $self->{MGR};
         my $cgi = $self->{MGR}->{CGI};
- 
+
+	if (($mgr->{UserType} ne "A") && ($mgr->{UserType} ne "B")) {
+		$mgr->fatal_error($C_MSG->{NotAllowed});
+	} 
+
         my $kid          = $cgi->param('kid');
 	my $kname        = $cgi->param('kname');
         my $name         = $cgi->param('name')         || "";
@@ -161,6 +164,7 @@ sub add_project {
         my $beschreibung = $cgi->param('beschreibung') || "";
  
         my $check = 0;
+	my ($start_dt, $end_dt);
  
         if (length($name) > 255) {
                 $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($C_MSG->{LengthName});
@@ -169,7 +173,7 @@ sub add_project {
 		$mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($C_MSG->{EmptyName});
 		$check++;
 	}
- 
+
         if (($start_tag eq "") || ($start_monat eq "") || ($start_jahr eq "")) {
                 $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($C_MSG->{ErrorDate});
                 $check++;
@@ -179,16 +183,32 @@ sub add_project {
                 $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($C_MSG->{ErrorDate});
                 $check++;
         }
+
 # XXX Hier noch die beiden Datumsangaben auf Richtigkeit pruefen. 
+	$start_dt = sprintf("%04d.%02d.%02d 00:00:00", $start_jahr, $start_monat, $start_tag);
+	$end_dt   = sprintf("%04d.%02d.%02d 00:00:00", $ende_jahr, $ende_monat, $ende_tag);
+	
+	if ($self->{BASE}->check_project_name($name)) {
+		$mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($C_MSG->{ExistName});
+		$check++;
+	}
+
         if ($check) {
                 $self->menue_new($C_MSG->{ErrorAddPro});
         } else {
-# XXX Hier die Daten in die Datenbank speichern.
-# XXX Pruefen, ob es schon ein Project mit diesem Namen gibt etc.
-		$self->menue_new("[DEBUG]: alles toooolll ...");
+
+		my $dbh = $mgr->connect;
+		my $sth = $dbh->prepare(qq{INSERT INTO $mgr->{ProTable} (name, desc_project, start_dt, end_dt, 
+					   ins_dt, ins_id) VALUES (?, ?, ?, ?, ?, ?)});
+
+		unless ($sth->execute($name, $beschreibung, $start_dt, $end_dt, $mgr->now, $mgr->{UserId})) {
+			warn sprintf("[Error]: Trouble inserting project into [%s]. Reason [%s].",
+				$mgr->{ProTable}, $dbh->errstr);
+			$mgr->fatal_error($C_MSG->{DbError});
+		}
+
+		$self->menue($C_MSG->{InsertProOk});
 	}
-	
-	return;
 } 
 
 1;

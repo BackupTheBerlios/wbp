@@ -1,4 +1,13 @@
 #====================================================================================================#
+*** 03.05.2001 ***
+Sören Wurch
+
+- wbp.cgi geaendert
+	* Funktion fill_header ind fill umbenannt und erweitert
+- header.tmpl und footer.tmpl um Navigationsmenue erweitert
+- project.pm, project_base.pm und project_config.pm erweitert
+- start.pm geaendert
+#====================================================================================================#
 *** 31.05.2001 ***
 Sören Wurch
 

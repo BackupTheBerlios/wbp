@@ -2,7 +2,7 @@ package wbp_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.6 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.7 $ =~ /(\d+)\.(\d+)/;
 
 $CONFIG = {
 	# Normal:
@@ -29,6 +29,10 @@ $CONFIG = {
 	ErrorTmpl     => "error.tmpl",   # Error template
 	LoginTmpl     => "login.tmpl",   # Login template
 	StartTmpl     => "start.tmpl"    # Start template
+};
+
+$MSG = {
+	Unknownerror => "Es ist ein unbekannter Fehler aufgetreten."
 };
 
 require my_config;

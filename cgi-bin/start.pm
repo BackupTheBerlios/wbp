@@ -6,7 +6,7 @@ use start_config;
 use vars qw($VERSION $conf);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 sub parameter {
 
@@ -22,7 +22,7 @@ sub parameter {
 			return 1;
 		}
 
-		$self->main_menu($mgr);
+		$self->show_start($mgr);
 		return 1;
 	}
 
@@ -56,7 +56,7 @@ sub parameter {
 	}
 
 	if ($self->check($mgr, $username, $password)) {
-		$self->main_menu($mgr);
+		$self->show_start($mgr);
 		return 1;
 	}
 
@@ -105,35 +105,15 @@ sub check {
 	1;
 }
 
-sub main_menu {
- 
-        my $self = shift;
-        my $mgr  = shift;
- 
-        my $link = $mgr->{ScriptName}."?action=%s&sid=".$mgr->{Sid};
- 
-        $mgr->{Template} = $mgr->{StartTmpl};
- 
-        $mgr->{TmplData}{NAV_MESSAGE} = sprintf($link, "message");
-        $mgr->{TmplData}{NAV_NEWS}    = sprintf($link, "news");
- 
-        if (($mgr->{UserType} eq "A") || ($mgr->{UserType} eq "B")) {
-                $mgr->{TmplData}{NAV_PROJECT}  = sprintf($link, "project");
-                $mgr->{TmplData}{NAV_USER}     = sprintf($link, "user");
-                $mgr->{TmplData}{NAV_CATEGORY} = sprintf($link, "category");
-                $mgr->{TmplData}{NAV_CONFIG}   = sprintf($link, "config");
-        } elsif ($mgr->{UserType} eq "C") {
-                $mgr->{TmplData}{NAV_PROJECT} = sprintf($link, "project");
-                $mgr->{TmplData}{NAV_USER}    = sprintf($link, "user");
-        } else {
-                warn sprintf("[Error]: Unknown user type [%s] for user [%s].",
-                        $mgr->{UserType}, $mgr->{User});
-                $mgr->fatal_error($start_config::MSG->{UnknownError});
-        }
- 
-        $mgr->fill_header;
- 
-        1;
-} 
+sub show_start {
+
+	my $self = shift;
+	my $mgr  = shift;
+
+	$mgr->{Template} = $mgr->{StartTmpl};
+	$mgr->fill;
+	
+	return;
+}
 
 1;
