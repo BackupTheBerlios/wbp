@@ -10,7 +10,7 @@
   <tr>
     <td align="center">
       <h3><TMPL_VAR OUTPUT></h3>
-      <input type="submit" name="add" value="anlegen">
+      
     </td>
     <td>
       <table cellspacing="0" cellpadding="0" border="0" align="center">
@@ -131,14 +131,17 @@
 		    <td>
 		    	Beschreibung <br>
 		    </td>
-		    <td>	
-			<TMPL_IF DESC>
-			    <input type="text" name="desc" size=20 maxlength=100 value="<TMPL_VAR DESC>">
-			<TMPL_ELSE>
-			    <input type="text" name="desc" size=20 maxlength=100>
-			</TMPL_IF>
+		    <td colspan="2">
+			<textarea name="desc" rows="3" cols="40" wrap="virtual">	
+			    <TMPL_VAR DESC>
+			</textarea>
 		    </td>
     		</tr>
+		<tr>
+		    <td>
+			<input type="submit" name="add" value="anlegen">
+		    </td>
+		</tr>
       </table>	
     </td>
   </tr>        

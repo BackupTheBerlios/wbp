@@ -1,0 +1,85 @@
+<TMPL_INCLUDE header.tmpl>
+
+<form action=<TMPL_VAR FORM> method="post">
+
+<input type="hidden" name="action" value="<TMPL_VAR ACTION>">
+<input type="hidden" name="sid" value="<TMPL_VAR SID>">
+<input type="hidden" name="type" value="<TMPL_VAR TYPE>">
+
+<table cellspacing="0" cellpadding="0" border="0" align="center" width="90%">
+  <tr>
+    <td align="center">
+      <h3><TMPL_VAR OUTPUT></h3>
+      
+    </td>
+    <td>
+      <table cellspacing="0" cellpadding="0" border="0" align="center">
+	    <tr>
+		    <td>
+			Username
+		    </td>
+		    <td>
+			<input type="text" name="username" size=20 maxlength=8>
+
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Password
+		    </td>
+		    <td>
+			    <input type="password" name="password" size=20 maxlength=8>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			- Confirm
+		    </td>
+		    <td>
+			    <input type="password" name="password2" size=20 maxlength=8>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Vorname
+		    </td>
+		    <td>
+			    <input type="text" name="first_name" size=20 maxlength=30>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+			Nachname
+		    </td>
+		    <td>
+			    <input type="text" name="last_name" size=20 maxlength=30>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+		    	eMail
+		    </td>
+		    <td>
+			    <input type="text" name="email" size=20 maxlength=100>
+		    </td>
+		</tr>
+		<tr>
+		    <td>
+		    	Beschreibung
+		    </td>
+		    <td>	
+			    <textarea name="desc" rows="3" cols="40" wrap="virtual">
+			    </textarea>
+		    </td>
+    		</tr>
+		<tr>
+		    <td>
+			<input type="submit" name="add" value="anlegen">
+		    </td>
+		</tr>
+      </table>	
+    </td>
+  </tr>        
+</table>
+</form>
+<TMPL_INCLUDE footer.tmpl>

@@ -6,7 +6,7 @@ use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -33,9 +33,13 @@ sub parameter {
 		$self->user_ok($mgr);
 	    }
 	    # add new user
+	    elsif (defined($cgi->param('add0'))) {
+		$self->user_add0($mgr);
+	    }
 	    elsif (defined($cgi->param('add'))) {
 		$self->user_add($mgr);
 	    }
+	    
 	    # GET-Parameter =============================================
 	    elsif (defined($cgi->param('method'))) {
 	
@@ -83,6 +87,13 @@ sub user_start {
     $mgr->{TmplData} {FORM} = $mgr->my_url;
     
     $mgr->fill;
+    
+    if ($mgr->{Session}->get("SearchName")) {
+	$mgr->{Session}->del("SearchName");
+    }
+    if ($mgr->{Session}->get("SearchId")) {
+	$mgr->{Session}->del("SearchId");
+    }
     1;
     
 }
@@ -102,36 +113,69 @@ sub user_search {
     my $href;
     my $name;
     my $ref;
-    my $flag;
-    my $flag_search = 0;
-    my $search_name = $cgi->param('search_username');
-    my $search_id = $cgi->param('search_id');
+    my $search_name;
+    my $search_id;
+    my $flag = 0;
+
+    if (defined($cgi->param('search_username'))) {
+	$search_name = $cgi->param('search_username') || "";
+	$search_id = $cgi->param('search_id') || 0;
+	$mgr->{Session}->del("SearchName");
+	$mgr->{Session}->del("SearchId");
+	$flag = 1;
+    }
+    if ($flag == 0) {
+	$search_name = $mgr->{Session}->get("SearchName") || "";
+	$search_id = $mgr->{Session}->get("SearchId") || "0";	
+    }
         
+    $mgr->{Session}->set(SearchName => $search_name);
+    $mgr->{Session}->set(SearchId => $search_id);
+
+    # prepare Database-Query 
+    my $sql = qq{SELECT * FROM $mgr->{UserTable}};
+    
+    # optional parameters
+    if (length($search_name)>0) {
+	$sql .= qq{ WHERE};
+    } else {
+	if ($search_id > 0) {
+	    $sql .= qq{ WHERE};
+	}
+    }
+    $flag = 0;
+    if (length($search_name) > 0) {
+        $sql .= qq{ username like '%$search_name%'};
+	$flag = 1;
+    }
+    if ($search_id > 0) {
+	if ($flag == 1) {
+    	    $sql .= qq{ AND id = '$search_id'};
+	    $flag = 1;
+	} else {
+	    $sql .= qq{ id = '$search_id'};
+	    $flag = 1;
+	}
+    }
+    # do query
     my $dbh = $mgr->connect;
     unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
     	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
 		     $mgr->{UserTable}, $dbh->ersstr);
     }
-    
-    my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable}});
-    
+    my $sth = $dbh->prepare($sql);
     unless ($sth->execute()) {
     }
     
+    my $flag_search = 0; # if unchanged, then there is nothing to show
+
     while ($ref = $sth->fetchrow_arrayref()) {
         
-	$flag = 0;
-	my $uid = sprintf("%s", $ref->[0]);
-	if ($ref->[1] =~ /\L$search_name\E/) {
-	    $flag = 1;
-	} elsif ($search_id eq $ref->[0]) {
-	    $flag = 1;
-	}
-	if ($flag == 1) {
-	    my $date = $ref->[11];
+	    my $date = $ref->[11];   # for last-update date
 	    $date = $mgr->format_date($date);
 	    
 	    if ($ref->[7] eq '1') {
+	    # if user-state is active
 		$href = {
 		    ID		=> $ref->[0],
 		    USERNAME	=> $ref->[1],
@@ -139,8 +183,8 @@ sub user_search {
 		    LASTNAME	=> $ref->[4],
 		    TYPE	=> $ref->[6],
 		    AKTIV	=> sprintf(" "),
-		    UPD_DT	=> $date,
-		    UPD_ID	=> $ref->[12],
+		#    UPD_DT	=> $date,
+		#    UPD_ID	=> $ref->[12],
 		    FORM	=> $mgr->my_url
 		};
 	    } else {
@@ -151,8 +195,8 @@ sub user_search {
 	    	LASTNAME	=> $ref->[4],
 	    	TYPE		=> $ref->[6],
         	INAKTIV		=> sprintf(" "),
-	    	UPD_DT		=> $date,
-	    	UPD_ID		=> $ref->[12],
+	    #	UPD_DT		=> $date,
+	    #	UPD_ID		=> $ref->[12],
 	    	FORM		=> $mgr->my_url
 	        };
 	    }
@@ -178,7 +222,6 @@ sub user_search {
 		    $flag_search = 1;
 		}
 	    }
-	} # if flag
     } # while 
     
     if ($flag_search == 1) {
@@ -227,6 +270,7 @@ sub user_aktiv {
     $mgr->{Template} = $C_TMPL->{WeiterTmpl};
     $mgr->{TmplData} {OUTPUT} = "Benutzer wurde aktiviert";
     $mgr->{TmplData} {FORM} = $mgr->my_url;
+    $mgr->{TmplData} {SEARCH} = " ";
     
     $mgr->fill;
 
@@ -261,6 +305,7 @@ sub user_inaktiv {
     $mgr->{Template} = $C_TMPL->{WeiterTmpl};
     $mgr->{TmplData} {OUTPUT} = "Benutzer wurde deaktiviert";
     $mgr->{TmplData} {FORM} = $mgr->my_url;
+    $mgr->{TmplData} {SEARCH} = " ";
     
     $mgr->fill;
 
@@ -394,7 +439,6 @@ sub user_ok {
 	$error = 1;
 	$mgr->{TmplData}{PASS_ERROR} = " ";
     } 
-    
     if ($cgi->param('first_name') lt " ") {
 	$error = 1;
     }
@@ -407,6 +451,7 @@ sub user_ok {
     
     # if some fields are empty fill out the rest
     if ($error == 1) {
+        
      	$mgr->{TmplData}{ID} = $id;
 	$mgr->{TmplData}{USERNAME} = $cgi->param('username');
 	$mgr->{TmplData}{PASSWORD} = $cgi->param('password');
@@ -418,6 +463,34 @@ sub user_ok {
 	$mgr->{TmplData} {OUTPUT} = "User editieren: ID = ";
 	$mgr->{Template} = $C_TMPL->{UserEditTmpl};
 
+	my $type = $mgr->{UserType};
+	my $edit_type = $cgi->param('type');
+    
+	# distingiush usertype (if usertype had to change)
+	if ($type eq "A") {
+	    if ($edit_type eq 'B') {
+		$mgr->{TmplData}{A_USER_B} = " ";
+	    }
+	    if ($edit_type eq "C") {
+		$mgr->{TmplData}{A_USER_C} = " ";
+	    }
+	    if ($edit_type eq 'D') {
+		$mgr->{TmplData}{A_USER_D} = " ";
+	    }
+	} elsif ($type eq 'B') {
+	    if ($edit_type eq "B") {
+		$mgr->{TmplData}{A_USER_B} = " ";
+	    }
+	    if ($edit_type eq "C") {
+		$mgr->{TmplData}{A_USER_C} = " ";
+    	    }
+	    if ($edit_type eq "D") {
+		$mgr->{TmplData}{A_USER_D} = " ";
+	    }
+        } elsif ($type eq 'C') {
+	    $mgr->{TmplData}{C_USER} = " ";
+	}
+
 	$mgr->fill;
     
     } else {
@@ -428,7 +501,7 @@ sub user_ok {
 	my $firstname = $cgi->param('first_name');
 	my $lastname = $cgi->param('last_name');
 	my $email = $cgi->param('email');
-	my $desc = $cgi->param('desc');
+	my $desc = $cgi->param('desc') || "";
 	my $type = $cgi->param('type');
 	my $upd_dt = $mgr->now();
 	my $upd_id = $mgr->{UserId};
@@ -463,11 +536,33 @@ sub user_ok {
     
 	$mgr->{TmplData}{OUTPUT} = "neue Userdaten &uuml;bernommen";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
-
+	$mgr->{TmplData}{SEARCH} = " ";
+	
 	$mgr->fill;
     }
     
     
+    1;
+}
+
+#=============================================================================
+# SYNOPSIS: user_add0($mgr);
+# PURPOSE:  adding new user-account (empty form)             
+# RETURN: 1;
+#=============================================================================
+sub user_add0 {
+    
+    my $self = shift;
+    my $mgr  = shift;
+    
+    my $type = $mgr->{CGI}->param('type');
+    
+    $mgr->{TmplData}{FORM} = $mgr->my_url;
+    $mgr->{TmplData}{TYPE} = $mgr->{CGI}->param('type');
+    $mgr->{TmplData}{OUTPUT} = sprintf("neuen User vom Typ %s hinzuf&uuml;gen", $type);
+    $mgr->{Template} = $C_TMPL->{UserAdd0Tmpl};
+    
+    $mgr->fill;
     1;
 }
 
@@ -513,24 +608,23 @@ sub user_add {
     }
     
     # check if all fields were filled
-    my $dummy = " ";
     
-    if ($cgi->param('username') lt $dummy) {
+    if (length($cgi->param('username')) < 1) {
 	$error = 1;
     }
-    if ($cgi->param('password') lt $dummy) {
+    if (length($cgi->param('password')) < 1) {
 	$error = 1;
     } elsif ($cgi->param('password') ne $cgi->param('password2')) {
 	$error = 1;
 	$mgr->{TmplData}{PASS_ERROR} = " ";
     }    
-    if ($cgi->param('first_name') lt $dummy) {
+    if (length($cgi->param('first_name')) < 1) {
 	$error = 1;
     }
-    if ($cgi->param('last_name') lt $dummy) {
+    if (length($cgi->param('last_name')) < 1) {
 	$error = 1;
     }
-    if ($cgi->param('email') lt $dummy) {
+    if (length($cgi->param('email')) < 1) {
 	$error = 1;
     }
     
@@ -559,7 +653,7 @@ sub user_add {
 	my $firstname = $cgi->param('first_name');
 	my $lastname = $cgi->param('last_name');
 	my $email = $cgi->param('email');
-	my $desc = $cgi->param('desc');
+	my $desc = $cgi->param('desc') || " ";
 	my $type = $cgi->param('type');
 	my $upd_dt = $mgr->now();
 	my $upd_id = $mgr->{UserId};

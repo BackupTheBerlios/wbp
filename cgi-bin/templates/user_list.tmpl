@@ -16,8 +16,8 @@
     	    <td><h3>Nachname<br>&nbsp;</h3></td>
     	    <td><h3>Type<br>&nbsp;</h3></td>
    	    <td><h3>Status<br>&nbsp;</h3></td>
-	    <td align="center"><h3>letzte &Auml;nd.<br>am</h3></td>
-	    <td align="center"><h3>durch<br>Benutzer</h3></td>
+<!--	    <td align="center"><h3>letzte &Auml;nd.<br>am</h3></td>  -->
+<!--	    <td align="center"><h3>durch<br>Benutzer</h3></td>	     -->
 	</tr>
         <TMPL_LOOP USERLOOP>
     	<tr>
@@ -44,12 +44,12 @@
 		    <a href="<TMPL_VAR FORM>&method=aktiv&user=<TMPL_VAR ID>">inaktiv</a>
 		</TMPL_IF>
             </td>
-	    <td align="center">
+<!--	    <td align="center">
 		<TMPL_VAR UPD_DT>
 	    </td>
 	    <td align="center">
 		<TMPL_VAR UPD_ID>
-	    </td>
+//-->	    </td>
         </tr>
         </TMPL_LOOP>
 	</table>

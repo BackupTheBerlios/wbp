@@ -10,7 +10,6 @@
   <tr>
     <td align="center">
       <h3><TMPL_VAR OUTPUT><TMPL_VAR ID></h3>
-      <input type="submit" name="ok" value="&uuml;bernehmen">
     </td>
     <td>
       <table cellspacing="0" cellpadding="0" border="0" align="center">
@@ -155,7 +154,7 @@
 			</TMPL_IF>
 			<TMPL_IF C_USER>
 			    <select name="type">
-	        		<option value="C" selected>Typ C
+	        		<option value="D" selected>Typ D
 			    </select>
 			</TMPL_IF>
 		    </td>
@@ -165,16 +164,22 @@
 		    	Beschreibung <br>
 		    </td>
 		    <td colspan="2">	
-			<TMPL_IF DESC>
-			    <input type="text" name="desc" size=50 maxlength=100 value="<TMPL_VAR DESC>">
-			<TMPL_ELSE>
-			    <input type="text" name="desc" size=50 maxlength=100>
-			</TMPL_IF>		
+			<textarea name="desc" rows=3 cols=40 wrap="virtual">
+			    <TMPL_VAR DESC>
+			</textarea>
 		    </td>
     		</tr>
-      </table>	
+		<tr>
+		    <td>
+		    </td>
+		    <td>
+			<input type="submit" name="ok" value="&uuml;bernehmen">
+		    </td>
+		</tr>
+          </table>	
     </td>
-  </tr>        
+     </tr>        
 </table>
 </form>
 <TMPL_INCLUDE footer.tmpl>
+
