@@ -8,7 +8,7 @@ use vars qw($VERSION $C_MSG $C_TMPL);
 
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $message_config::MSG;
 $C_TMPL = $message_config::TMPL;
@@ -685,7 +685,7 @@ sub compose_message {
 
 
 #====================================================================================================#
-# SYNOPSIS: choose_receivers();
+# SYNOPSIS: choose_receivers($msg,$recv_ids);
 # PURPOSE:  Auswahl der Empfaenger
 # RETURN:   1
 #====================================================================================================#

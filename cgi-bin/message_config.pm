@@ -2,11 +2,10 @@ package message_config;
 
 use vars qw($VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
 
 # Ausgabemeldungen, sowohl fuer Meldungen im Header, als auch fuer das Error-Template
 $MSG = {
-    NoMessages       => "Sie haben keine Nachrichten.", # wird z.Z. nicht benutzt
     InboxEmpty       => "Sie haben keine neuen Nachrichten.", # zero
     InboxMessage     => "Sie haben eine neue Nachricht.",     # singular
     InboxMessages    => "Sie haben %s neue Nachrichten.",     # plural
