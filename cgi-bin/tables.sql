@@ -93,6 +93,7 @@ CREATE TABLE wbp_receive (
         from_uid INT(10) UNSIGNED NOT NULL,
         to_uid INT(10) UNSIGNED NOT NULL,
         parent_mid INT(10) UNSIGNED NOT NULL DEFAULT 0,
+        status    enum('0','1','2')     not null default '0',
         date DATETIME NOT NULL,
         subject VARCHAR(255) NOT NULL,
         content TEXT NOT NULL
