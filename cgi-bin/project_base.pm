@@ -949,6 +949,8 @@ sub add_phase {
         }
  
         if ($check) {
+		$mgr->{Template} = $self->{C_TMPL}->{ProPhaNew}; 
+		$self->set_phasen_data($self->{C_MSG}->{ErrorAddPha});
                 return -1;
         } else {
  
@@ -978,10 +980,11 @@ sub add_phase {
 #
 sub check_phasen_name {
    	
-	my $self = shift;
-        my $name = shift;
-        my $pid  = shift;
- 
+	my $self   = shift;
+        my $name   = shift;
+        my $pid    = shift;
+	my $pha_id = shift;;
+  
         my $mgr = $self->{MGR};
  
         my ($error, $check);
@@ -993,14 +996,14 @@ sub check_phasen_name {
                 $mgr->fatal_error($self->{C_MSG}->{DbError});
         }
         my $sth;
-        unless ($pid) {
-                $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ?});
-                unless ($sth->execute($name)) {
+        unless ($pha_id) {
+                $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ? AND project_id = ?});
+                unless ($sth->execute($name, $pid)) {
                         $error++;
                 }
         } else {
-                $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ? AND id <> ?});
-                unless ($sth->execute($name, $pid)) {
+                $sth = $dbh->prepare(qq{SELECT id FROM $mgr->{PhaTable} WHERE name = ? AND project_id = ? AND id <> ?});
+                unless ($sth->execute($name, $pid, $pha_id)) {
                         $error++;
                 }
         }
@@ -1019,10 +1022,6 @@ sub check_phasen_name {
         $sth->finish;
         $dbh->do("UNLOCK TABLES");
         return $check;                    
-}
-
-sub set_pha_data {
-
 }
 
 #
@@ -1050,6 +1049,207 @@ sub change_pha_status {
 
 	$sth->finish;
 	$dbh->do("UNLOCK TABLES");
+}
+
+#
+# Eine Phase loeschen, aus einem Projekt.
+#
+sub del_phase {
+
+	my ($self, $pha_id) = @_;
+	my $mgr             = $self->{MGR};
+        my $dbh             = $mgr->connect();
+
+	unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        my $sth = $dbh->prepare(qq{DELETE FROM $mgr->{PhaTable} WHERE id = ?});
+        unless ($sth->execute($pha_id)) {
+                warn sprintf("[Error]: Trouble updating [%s]. Reason: [%s].",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        $sth->finish;
+        $dbh->do("UNLOCK TABLES");
+}
+
+#
+# Anzeigen von Daten einer Phase, um sie zu aendern.
+#
+sub show_one_phase {
+ 
+        my ($self, $pid, $pha_id) = @_; 
+ 
+        my $mgr = $self->{MGR};
+        my $dbh = $mgr->connect();
+ 
+        unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} READ")) {
+                warn srpintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                        $mgr->{ProTable}, $dbh->errstr);
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        my $sth = $dbh->prepare(qq{SELECT start_dt, end_dt, name, desc_phase FROM $mgr->{PhaTable} WHERE id = ?});
+        unless ($sth->execute($pha_id)) {
+                warn sprintf("[Error]: Trouble selecting data from [%s]. Reason: [%s]",
+                        $mgr->{PhaTable}, $dbh->errstr);
+                $dbh->do("UNLOCK TABLES");
+                $mgr->fatal_error($self->{C_MSG}->{DbError});
+        }
+ 
+        my @data = $sth->fetchrow_array();
+
+	$mgr->{TmplData}{PID}          = $pid; 
+        $mgr->{TmplData}{PHA_ID}       = $pha_id;
+        $mgr->{TmplData}{NAME}         = $mgr->decode_some($data[2]);
+        $mgr->{TmplData}{START_TAG}    = substr($data[0], 8, 2);
+        $mgr->{TmplData}{START_MONAT}  = substr($data[0], 5, 2);
+        $mgr->{TmplData}{START_JAHR}   = substr($data[0], 0, 4);
+        $mgr->{TmplData}{ENDE_TAG}     = substr($data[1], 8, 2);
+        $mgr->{TmplData}{ENDE_MONAT}   = substr($data[1], 5, 2);
+        $mgr->{TmplData}{ENDE_JAHR}    = substr($data[1], 0, 4);
+        $mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($data[3]);
+ 
+        $sth->finish;
+        $dbh->do("UNLOCK TABLES");
+ 
+        $mgr->{TmplData}{FORM}      = $mgr->my_url();
+	$mgr->{TmplData}{BACK_LINK} = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".$pid.
+                                      "&method=show_phase"; 
+}
+
+#
+# Aenderungen zu einem Projekt in die Datenbank speichern.
+#
+sub change_phase {
+
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+        my $cgi  = $mgr->{CGI};
+ 
+        my $pid          = $cgi->param('pid');
+        my $pha_id       = $cgi->param('pha_id');
+        my $name         = $cgi->param('name')         || "";
+        my $start_tag    = $cgi->param('start_tag')    || "";
+        my $start_monat  = $cgi->param('start_monat')  || "";
+        my $start_jahr   = $cgi->param('start_jahr')   || "";
+        my $ende_tag     = $cgi->param('ende_tag')     || "";
+        my $ende_monat   = $cgi->param('ende_monat')   || "";
+        my $ende_jahr    = $cgi->param('ende_jahr')    || "";
+        my $beschreibung = $cgi->param('beschreibung') || "";
+ 
+        my $check = 0;
+        my ($start_dt, $end_dt);
+ 
+        if (length($name) > 255) {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{LengthName});
+                $check++;
+        } elsif ($name eq "") {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{EmptyName});
+                $check++;
+        }
+ 
+        if (($start_tag eq "") || ($start_monat eq "") || ($start_jahr eq "")) {
+                $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+        }
+ 
+        if (($ende_tag eq "") || ($ende_monat eq "") || ($ende_jahr eq "")) {
+                $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+        }
+ 
+        my $check_start_dt = $start_jahr.$start_monat.$start_tag;
+        my $check_end_dt   = $ende_jahr.$ende_monat.$ende_tag;
+        my $date_check;
+ 
+        if ($check_start_dt =~ m/\D/) {
+                $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+                $date_check++;
+        } else {
+                $start_dt = date [$start_jahr, $start_monat, $start_tag, 00, 00, 00];
+        }
+ 
+        if ($check_end_dt =~ m/\D/) {
+                $mgr->{TmplData}{ERROR_ENDE_DATUM} = $mgr->decode_all($self->{C_MSG}->{ErrorDate});
+                $check++;
+                $date_check++;
+        } else {             
+		$end_dt = date [$ende_jahr, $ende_monat, $ende_tag, 00, 00, 00];
+        }
+ 
+        unless ($date_check) {
+                if ($start_dt >= $end_dt) {
+                        $mgr->{TmplData}{ERROR_START_DATUM} = $mgr->decode_all($self->{C_MSG}->{StartEndDate});
+                        $mgr->{TmplData}{ERROR_ENDE_DATUM}  = $mgr->decode_all($self->{C_MSG}->{StartEndDate});
+                        $check++;
+                }
+        }
+ 
+        if ($self->check_phasen_name($name, $pid, $pha_id)) {
+                $mgr->{TmplData}{ERROR_NAME} = $mgr->decode_all($self->{C_MSG}->{ExistName});
+                $check++;
+        }
+
+        if ($check) {
+		$mgr->{Template}         = $self->{C_TMPL}->{ProPhaChange};
+		$mgr->{TmplData}{PHA_ID} = $pha_id; 
+                $self->set_phasen_data($self->{C_MSG}->{ErrorChangePro});
+                return -1;
+        } else {
+ 
+                my $dbh = $mgr->connect;
+                unless ($dbh->do("LOCK TABLES $mgr->{PhaTable} WRITE")) {
+                        warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+                                $mgr->{PhaTable}, $dbh->errstr);
+                }
+                my $sth = $dbh->prepare(qq{UPDATE $mgr->{PhaTable} SET name = ?, desc_phase = ?,
+                                                        start_dt = ?, end_dt = ?,
+                                                        upd_dt = ?, upd_id = ? WHERE id = ?});
+ 
+                unless ($sth->execute($name, $beschreibung, $start_dt, $end_dt, $mgr->now, $mgr->{UserId}, $pha_id)) { 
+                        warn sprintf("[Error]: Trouble updating phase in [%s]. Reason [%s].",
+                                $mgr->{PhaTable}, $dbh->errstr);
+                        $dbh->do("UNLOCK TABLES");
+                        $mgr->fatal_error($self->{C_MSG}->{DbError});
+                }
+ 
+                $dbh->do("UNLOCK TABLES");
+                $sth->finish;
+                return ();
+        }                                     
+}
+
+#
+# Wenn beim anlegen oder aendern Fehler auftreten, wird diese Methode aufgerufen und die Daten neu eingetragen.
+#
+sub set_phasen_data {
+	
+	my $self = shift;
+	my $msg  = shift;
+	my $mgr  = $self->{MGR};
+	my $cgi  = $mgr->{CGI};
+
+	$mgr->{TmplData}{PID}          = $cgi->param('pid');
+	$mgr->{TmplData}{NAME}         = $mgr->decode_some($cgi->param('name'));
+	$mgr->{TmplData}{BESCHREIBUNG} = $mgr->decode_some($cgi->param('beschreibung'));
+	$mgr->{TmplData}{START_TAG}    = $cgi->param('start_tag');
+	$mgr->{TmplData}{START_MONAT}  = $cgi->param('start_monat');
+	$mgr->{TmplData}{START_JAHR}   = $cgi->param('start_jahr');
+	$mgr->{TmplData}{ENDE_TAG}     = $cgi->param('ende_tag');
+	$mgr->{TmplData}{ENDE_MONAT}   = $cgi->param('ende_monat');
+	$mgr->{TmplData}{ENDE_JAHR}    = $cgi->param('ende_jahr');
+	$mgr->{TmplData}{FORM}         = $mgr->my_url();
+        $mgr->{TmplData}{BACK_LINK}    = "$mgr->{ScriptName}?action=$mgr->{Action}&sid=$mgr->{Sid}&pid=".
+					 $cgi->param('pid')."&method=show_phase";
+
+	$mgr->fill($msg);
 }
 
 1;

@@ -8,7 +8,7 @@ use project_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG  = $project_config::MSG;
 $C_TMPL = $project_config::TMPL;
@@ -90,8 +90,9 @@ sub parameter {
 		} elsif (defined $cgi->param('change_project')) {
 			$self->change_project();
 			return 1;
-		} elsif (defined $cgi->param('change_phase')) {	
-
+		} elsif (defined $cgi->param('change_phase')) {
+			$self->change_phase();
+			return 1;
 		} elsif (defined $cgi->param('change_user_ab')) {
 
 		} elsif (defined $cgi->param('change_user_c')) {
@@ -396,7 +397,7 @@ sub add_phase {
 	
 	my $check = $self->{BASE}->add_phase();
 
-	if ($check == -1) {
+	if ($check eq "-1") {
 		$self->add_phase_menu($C_MSG->{ErrorAddPha});
 		return;
 	}
@@ -482,10 +483,52 @@ sub change_pha_status {
 
 sub del_phase {
 
+	my $self   = shift;
+	my $mgr    = $self->{MGR};
+	my $pid    = $mgr->{CGI}->param('pid')    || "";
+	my $pha_id = $mgr->{CGI}->param('pha_id') || "";
+
+	unless ($pid && $pha_id) {
+		warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});	
+	}
+
+	$self->{BASE}->del_phase($pha_id);
+
+	$self->show_phase($pid, $C_MSG->{DelPhaOk});
 }
 
 sub show_one_phase {
+	
+	my $self   = shift;
+        my $mgr    = $self->{MGR};
+        my $pid    = $mgr->{CGI}->param('pid')    || "";
+	my $pha_id = $mgr->{CGI}->param('pha_id') || "";
+ 
+        unless ($pid && $pha_id) {
+                warn "[Error]: Wrong script parameters.";
+                $mgr->fatal_error($C_MSG->{NotAllowed});
+        }
+ 
+        $mgr->{Template} = $C_TMPL->{ProPhaChange};
+ 
+        $self->{BASE}->show_one_phase($pid, $pha_id);
+ 
+        $mgr->fill;             
+}
 
+sub change_phase {
+
+	my $self = shift;
+	my $mgr  = $self->{MGR};
+	my $pid  = $self->{MGR}->{CGI}->param('pid');
+
+	my $check = $self->{BASE}->change_phase() || "";
+	if ($check eq "-1") {
+		return;
+	}
+	
+	$self->show_phase($pid, $C_MSG->{UpdatePhaOk});
 }
 
 1;

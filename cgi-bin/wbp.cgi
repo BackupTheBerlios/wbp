@@ -43,7 +43,7 @@ use fields (
 use strict;
 use vars qw(%FIELDS $VERSION);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/;
 
 &handler;
 
@@ -203,11 +203,11 @@ sub _output {
 	}
 
 	my $tmpl = HTML::Template->new(filename => $self->{Template}, path => $self->{TmplDir});
-
+	
 	$self->{TmplData}{ACTION} = $self->{Action};
 	$self->{TmplData}{SID}    = $self->{Sid};
 	$tmpl->param(%{$self->{TmplData}});
-
+	
 	print $tmpl->output;
 }
 
@@ -383,6 +383,9 @@ sub decode_all {
 	$value =~ s/ü/&uuml;/g;
 	$value =~ s/Ü/&Uuml;/g;
 	$value =~ s/ß/&szlig;/g;
+	$value =~ s/\n\r/<br>/g;
+	$value =~ s/\n/<br>/g;
+	$value =~ s/\r/<br>/g; 
 
 	return $value;
 }
