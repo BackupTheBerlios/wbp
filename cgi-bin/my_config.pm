@@ -1,8 +1,10 @@
 use strict;
 
-my $database = "DBI:mysql:perl;host=localhost;port=3306";
-my $password = "neues";
-my $user     = "wurch";
+# fill the xxx with your own configdata. 
+
+my $database = "DBI:mysql:wbp_db";
+my $password = "";
+my $user     = "root";
 
 sub get {
 	return ($database, $password, $user);

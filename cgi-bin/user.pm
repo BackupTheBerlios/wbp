@@ -6,7 +6,7 @@ use user_config;
 use vars qw($VERSION $C_MSG $C_TMPL);
 use strict;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 $C_MSG = $user_config::MSG;
 $C_TMPL = $user_config::TMPL;
@@ -17,37 +17,44 @@ sub parameter {
 	my $mgr  = shift;
 	my $cgi  = $mgr->{CGI};
 	
+	# kick D-Users
 	if ($mgr->{UserType} eq 'D') {
 	    $mgr->{Template} = $C_TMPL->{WeiterZmpl};
 	    $mgr->{TmplData}{OUTPUT} = "Leider kein Zutritt f&uuml;r Sie";
 	} else {
 	
-            if (defined($cgi->param('search'))) {
+            # Post-Parameter ============================================
+	    # search user
+	    if (defined($cgi->param('search'))) {
     		$self->user_search($mgr);
     	    }
+	    # confirm some changes
 	    elsif (defined($cgi->param('ok'))) {
 		$self->user_ok($mgr);
 	    }
+	    # add new user
 	    elsif (defined($cgi->param('add'))) {
 		$self->user_add($mgr);
 	    }
+	    # GET-Parameter =============================================
 	    elsif (defined($cgi->param('method'))) {
 	
 		my $method = $cgi->param('method');
 	
+		# edit user-data
 		if ($method eq 'edit') {
 		    $self->user_edit($mgr);
 		}
+		# change user-state to active
 		elsif ($method eq 'aktiv') {
 		    $self->user_aktiv($mgr);
 		}
+		# change user-state to not active
 	        elsif ($method eq 'inaktiv') {
 		    $self->user_inaktiv($mgr);
 		}
-	        elsif ($method eq 'edit') {
-		$self->user_edit($mgr);
-		}
 	    }	
+	    # if no action is set, go to startscreen
 	    else {
 		$self->user_start($mgr);
 	    }
@@ -55,18 +62,22 @@ sub parameter {
 	return 1;
 }
 
+#=============================================================================
+# SYNOPSIS: user_start($mgr);
+# PURPOSE:  displays the User-Startscreen to search or add users
+# RETURN: 1;
+#=============================================================================
 sub user_start {
 
     my $self = shift;
     my $mgr  = shift;    
     
+    # to distinguish User-Classes for add new user
     if ($mgr->{UserType} eq 'A') {
 	$mgr->{TmplData}{A_USER} = "A";
     } elsif ($mgr->{UserType} eq 'B') {
 	$mgr->{TmplData}{A_USER} = "B";
     }
-
-#    $mgr->{TmplData}{USERTYPE} = $mgr->{UserType};
 
     $mgr->{Template} = $C_TMPL->{UserStartTmpl};
     $mgr->{TmplData} {FORM} = $mgr->my_url;
@@ -76,34 +87,50 @@ sub user_start {
     
 }
 
+#=============================================================================
+# SYNOPSIS: user_search($mgr);
+# PURPOSE:  search users by id or username and show the result
+# RETURN: 1;
+#=============================================================================
 sub user_search {
 
     my $self = shift;
     my $mgr  = shift;
     my $cgi  = $mgr->{CGI};
     my $type = $mgr->{UserType};
-    my $search = " ";
-    
-    if (defined($cgi->param('username'))) {
-	$search = $cgi->param('username');
+    my $loopdata;
+    my $href;
+    my $name;
+    my $ref;
+    my $flag;
+    my $flag_search = 0;
+    my $search_name = $cgi->param('search_username');
+    my $search_id = $cgi->param('search_id');
+        
+    my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+    	warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+		     $mgr->{UserTable}, $dbh->ersstr);
     }
     
-    my $dbh = $mgr->connect;
     my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable}});
     
     unless ($sth->execute()) {
     }
     
-    my $loopdata;
-    my $href;
-    my $name;
-    my $ref;
-    my $flag = 0;
-
     while ($ref = $sth->fetchrow_arrayref()) {
         
-	if ($ref->[1] =~ /\L$search\E/) {
+	$flag = 0;
+	my $uid = sprintf("%s", $ref->[0]);
+	if ($ref->[1] =~ /\L$search_name\E/) {
 	    $flag = 1;
+	} elsif ($search_id eq $ref->[0]) {
+	    $flag = 1;
+	}
+	if ($flag == 1) {
+	    my $date = $ref->[11];
+	    $date = $mgr->format_date($date);
+	    
 	    if ($ref->[7] eq '1') {
 		$href = {
 		    ID		=> $ref->[0],
@@ -112,50 +139,72 @@ sub user_search {
 		    LASTNAME	=> $ref->[4],
 		    TYPE	=> $ref->[6],
 		    AKTIV	=> sprintf(" "),
+		    UPD_DT	=> $date,
+		    UPD_ID	=> $ref->[12],
 		    FORM	=> $mgr->my_url
 		};
 	    } else {
-		$href = {
-		    ID		=> $ref->[0],
-		    USERNAME	=> $ref->[1],
-		    FIRSTNAME   => $ref->[3],
-		    LASTNAME	=> $ref->[4],
-		    TYPE	=> $ref->[6],
-		    INAKTIV	=> sprintf(" "),
-		    FORM	=> $mgr->my_url
-		};
+	        $href = {
+	    	ID		=> $ref->[0],
+	    	USERNAME	=> $ref->[1],
+	    	FIRSTNAME   	=> $ref->[3],
+	    	LASTNAME	=> $ref->[4],
+	    	TYPE		=> $ref->[6],
+        	INAKTIV		=> sprintf(" "),
+	    	UPD_DT		=> $date,
+	    	UPD_ID		=> $ref->[12],
+	    	FORM		=> $mgr->my_url
+	        };
 	    }
+	
+	    
 	    if ($type eq "A") {
-		# Admin sieht alle
-		push @$loopdata, $href;
+		# Admin sees every user
+	        push @$loopdata, $href;
+		# loopdata is filled
+		$flag_search = 1;
 	    } elsif ($type eq "B") {
-		if ($type gt $ref->[6]) {
-		    # Usertyp liegt hoeher als eigener
-		} else {
-		    # Usertyp liegt tiefer
+		# B sees all except admin
+	        if ($type gt $ref->[6]) {
+		    # for example B is gt A -> do not show
+	        } else {
 		    push @$loopdata, $href;
+		    $flag_search = 1;
 		}
 	    } else {
 		if ($type lt $ref->[6]) {
-		    # Type sieht alle Typ D
+		    # C-Users only see D-User -> C lt D
 		    push @$loopdata, $href;
+		    $flag_search = 1;
 		}
 	    }
-	}
-    }
-    if ($flag == 1) {
+	} # if flag
+    } # while 
+    
+    if ($flag_search == 1) {
+	# there are some users to show
 	$mgr->{TmplData} {USERLOOP} = $loopdata;
         $mgr->{Template} = $C_TMPL->{UserListTmpl};
     } else {
+	# nothing found
 	$mgr->{TmplData}{OUTPUT} = "keine Entsprechungen gefunden";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
     }	
 	
     $mgr->{TmplData} {FORM} = $mgr->my_url;    
     $mgr->fill;
+    
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    
     1;
 }
 
+#=============================================================================
+# SYNOPSIS: user_aktiv($mgr);
+# PURPOSE:  changes the state of an user to active (allowed to login)              
+# RETURN: 1;
+#=============================================================================
 sub user_aktiv {
     
     my $self = shift;
@@ -163,11 +212,18 @@ sub user_aktiv {
     my $id   = $mgr->{CGI}->param('user');
     
     my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     my $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '1' WHERE id = $id});
     
     unless ($sth->execute()) {
     }
     
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+        
     $mgr->{Template} = $C_TMPL->{WeiterTmpl};
     $mgr->{TmplData} {OUTPUT} = "Benutzer wurde aktiviert";
     $mgr->{TmplData} {FORM} = $mgr->my_url;
@@ -178,6 +234,11 @@ sub user_aktiv {
     
 }
 
+#=============================================================================
+# SYNOPSIS: user_inaktiv($mgr);
+# PURPOSE:  changes the state of an user to not active  (not allowed to login)            
+# RETURN: 1;
+#=============================================================================
 sub user_inaktiv {
     
     my $self = shift;
@@ -185,11 +246,18 @@ sub user_inaktiv {
     my $id   = $mgr->{CGI}->param('user');
     
     my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     my $sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET STATUS = '0' WHERE id = $id});
     
     unless ($sth->execute()) {
     }
      
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    
     $mgr->{Template} = $C_TMPL->{WeiterTmpl};
     $mgr->{TmplData} {OUTPUT} = "Benutzer wurde deaktiviert";
     $mgr->{TmplData} {FORM} = $mgr->my_url;
@@ -200,6 +268,11 @@ sub user_inaktiv {
     
 }
 
+#=============================================================================
+# SYNOPSIS: user_edit($mgr);
+# PURPOSE:  displays the user-data to edit something                                  
+# RETURN: 1;
+#=============================================================================
 sub user_edit {
 
     my $self = shift;
@@ -207,6 +280,10 @@ sub user_edit {
     my $id   = $mgr->{CGI}->param('user');
     
     my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     my $sth = $dbh->prepare(qq{SELECT * FROM $mgr->{UserTable} WHERE id = '$id'});
     
     unless ($sth->execute()) {
@@ -214,9 +291,14 @@ sub user_edit {
         
     my $ref = $sth->fetchrow_arrayref();
     
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    
+    # fill textfields with values    
     $mgr->{TmplData} {ID} = $ref->[0];
     $mgr->{TmplData} {USERNAME}	= $ref->[1];
     $mgr->{TmplData} {PASSWORD}	= $ref->[2];
+    $mgr->{TmplData} {PASSWORD2} = $ref->[2];
     $mgr->{TmplData} {FIRST_NAME} = $ref->[3];
     $mgr->{TmplData} {LAST_NAME} = $ref->[4];
     $mgr->{TmplData} {EMAIL} = $ref->[5];
@@ -225,6 +307,7 @@ sub user_edit {
     
     my $type = $mgr->{UserType};
     
+    # distingiush usertype (if usertype had to change)
     if ($type eq "A") {
 	if ($ref->[6] eq 'B') {
 	    $mgr->{TmplData}{A_USER_B} = " ";
@@ -260,6 +343,11 @@ sub user_edit {
 }
 
 
+#=============================================================================
+# SYNOPSIS: user_ok($mgr);
+# PURPOSE:  saves changings of an user into user_database, also add user              
+# RETURN: 1;
+#=============================================================================
 sub user_ok {
     
     my $self = shift;
@@ -273,11 +361,16 @@ sub user_ok {
     my $id = $cgi->param('id');
     
     my $dbh = $mgr->connect;
+    unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+    }
     my $sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE username = '$username'});
     
     unless ($sth->execute()) {
     }
     
+    # check if username already exists
     while (my $ref = $sth->fetchrow_arrayref()) {
 	if ($ref->[0] < $id) {
 	    $error = 1;
@@ -288,6 +381,10 @@ sub user_ok {
 	}
     }
     
+    $sth->finish;
+    $dbh->do("UNLOCK TABLES");
+    
+    # check if all fields were filled
     if ($cgi->param('username') lt " ") {
 	$error = 1;
     }
@@ -308,6 +405,7 @@ sub user_ok {
 	$error = 1;
     }
     
+    # if some fields are empty fill out the rest
     if ($error == 1) {
      	$mgr->{TmplData}{ID} = $id;
 	$mgr->{TmplData}{USERNAME} = $cgi->param('username');
@@ -324,12 +422,22 @@ sub user_ok {
     
     } else {
 	
+	# fields were filled, so update database
+    
 	my $password = $cgi->param('password');
 	my $firstname = $cgi->param('first_name');
 	my $lastname = $cgi->param('last_name');
 	my $email = $cgi->param('email');
 	my $desc = $cgi->param('desc');
 	my $type = $cgi->param('type');
+	my $upd_dt = $mgr->now();
+	my $upd_id = $mgr->{UserId};
+	
+	my $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
     
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET username = '$username' WHERE id = $id});
         unless ($sth->execute()) {}
@@ -345,7 +453,14 @@ sub user_ok {
         unless ($sth->execute()) {}
 	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET type = '$type' WHERE id = $id});
 	unless ($sth->execute()) {}
+	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET upd_dt = '$upd_dt' WHERE id = $id});
+	unless ($sth->execute()) {}
+	$sth = $dbh->prepare(qq{UPDATE $mgr->{UserTable} SET upd_id = '$upd_id' WHERE id = $id});
+	unless ($sth->execute()) {}
 	
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
+    
 	$mgr->{TmplData}{OUTPUT} = "neue Userdaten &uuml;bernommen";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};
 
@@ -356,6 +471,11 @@ sub user_ok {
     1;
 }
 
+#=============================================================================
+# SYNOPSIS: user_add($mgr);
+# PURPOSE:  adding new user-account             
+# RETURN: 1;
+#=============================================================================
 sub user_add {
     
     my $self = shift;
@@ -374,17 +494,25 @@ sub user_add {
 	$username = $cgi->param('username');
     
         $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} READ})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
 	$sth = $dbh->prepare(qq{SELECT * FROM  $mgr->{UserTable} WHERE username = '$username'});
     
 	unless ($sth->execute()) {
 	}
     
+	# check if new name already exists
 	while (my $ref = $sth->fetchrow_arrayref()) {
 	    $error = 1;
 	    $mgr->{TmplData}{USER_ERROR} = $username;
 	}
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
     }
     
+    # check if all fields were filled
     my $dummy = " ";
     
     if ($cgi->param('username') lt $dummy) {
@@ -407,6 +535,9 @@ sub user_add {
     }
     
     if ($error == 1) {
+	
+	# if some fields are empty, fill the rest
+    
 	$mgr->{TmplData}{USERNAME} = $cgi->param('username');
 	$mgr->{TmplData}{PASSWORD} = $cgi->param('password');
 	$mgr->{TmplData}{PASSWORD2} = $cgi->param('password2');
@@ -421,6 +552,8 @@ sub user_add {
 	$mgr->fill;
     
     } else {
+    
+	# all fields were filled, so create new user account
 	
 	my $password = $cgi->param('password');
 	my $firstname = $cgi->param('first_name');
@@ -428,14 +561,24 @@ sub user_add {
 	my $email = $cgi->param('email');
 	my $desc = $cgi->param('desc');
 	my $type = $cgi->param('type');
+	my $upd_dt = $mgr->now();
+	my $upd_id = $mgr->{UserId};
     
 	my $dbh = $mgr->connect;
+	unless ($dbh->do(qq{LOCK TABLES $mgr->{UserTable} WRITE})) {
+	    warn sprintf("[Error]: Trouble locking table [%s]. Reason: [%s].",
+			 $mgr->{UserTable}, $dbh->ersstr);
+	}
+
 	my $sth;	
 	
 	$sth = $dbh->prepare(qq{INSERT INTO $mgr->{UserTable}
-		     (username, password, firstname, lastname, email, type, desc_user, status) values
-		     ('$username', '$password', '$firstname', '$lastname', '$email', '$type', '$desc', '1')});
+		     (username, password, firstname, lastname, email, type, desc_user, status, upd_dt, upd_id, ins_dt, ins_id) values
+		     ('$username', '$password', '$firstname', '$lastname', '$email', '$type', '$desc', '1', '$upd_dt', '$upd_id', '$upd_dt', '$upd_id')});
 	unless ($sth->execute()) {}
+	
+	$sth->finish;
+	$dbh->do("UNLOCK TABLES");
 	
 	$mgr->{TmplData}{OUTPUT} = "neuen User angelegt";
 	$mgr->{Template} = $C_TMPL->{WeiterTmpl};

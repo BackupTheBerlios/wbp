@@ -10,12 +10,14 @@
     <td>
         <table align="center">
     	<tr>
-    	    <td><h3>Id</h3></td>
-    	    <td><h3>Username</h3></td>
-     	    <td><h3>Vorname</h3></td>
-    	    <td><h3>Nachname</h3></td>
-    	    <td><h3>Type</h3></td>
-   	    <td><h3>Status</h3></td>
+    	    <td><h3>Id<br>&nbsp;</h3></td>
+    	    <td><h3>Username<br>&nbsp;</h3></td>
+     	    <td><h3>Vorname<br>&nbsp;</h3></td>
+    	    <td><h3>Nachname<br>&nbsp;</h3></td>
+    	    <td><h3>Type<br>&nbsp;</h3></td>
+   	    <td><h3>Status<br>&nbsp;</h3></td>
+	    <td align="center"><h3>letzte &Auml;nd.<br>am</h3></td>
+	    <td align="center"><h3>durch<br>Benutzer</h3></td>
 	</tr>
         <TMPL_LOOP USERLOOP>
     	<tr>
@@ -31,10 +33,10 @@
             <td>
 		<TMPL_VAR LASTNAME>
             </td>
-            <td>
+            <td align="center">
 		<TMPL_VAR TYPE>
             </td>
-            <td>
+            <td align="center">
 		<TMPL_IF AKTIV>
 		    <a href="<TMPL_VAR FORM>&method=inaktiv&user=<TMPL_VAR ID>">aktiv</a>
 		</TMPL_IF>
@@ -42,6 +44,12 @@
 		    <a href="<TMPL_VAR FORM>&method=aktiv&user=<TMPL_VAR ID>">inaktiv</a>
 		</TMPL_IF>
             </td>
+	    <td align="center">
+		<TMPL_VAR UPD_DT>
+	    </td>
+	    <td align="center">
+		<TMPL_VAR UPD_ID>
+	    </td>
         </tr>
         </TMPL_LOOP>
 	</table>
